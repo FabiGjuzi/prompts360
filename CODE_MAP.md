@@ -412,3 +412,6 @@ Rate-limit names (`ratelimit.js LIMITS`): `signup`, `login`, `loginfail`, `forgo
 - `bidx` is a keyed fingerprint (blind index) of an email; `_csrf` and `_ft` are the hidden form tokens; `ft` is a logged-out form token.
 - `cursor` / `after` is the keyset-pagination marker for the next page.
 - `p.` is the `posts` table alias in SQL, `c.` communities, `u.` users, `t.` ai_tags.
+
+
+> `VALKEY_URL=memory` selects `MemoryClient` in `src/kv.js`: the same API as the Valkey client, kept in this process's memory (single-instance deploys only; data is lost on restart).

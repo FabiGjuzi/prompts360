@@ -244,8 +244,90 @@ class Client extends EventEmitter {
   }
 }
 
-/** The shared client instance used across the app (connect it once at boot with connectKv()). */
-export const kv = new Client(config.valkeyUrl);
+/**
+ * MemoryClient — drop-in replacement for Client that keeps everything in this process's memory.
+ * Selected with VALKEY_URL=memory (saves the cost of a separate Valkey server on a one-instance deploy).
+ * Trade-offs: data is lost on restart/redeploy (everyone is logged out, rate-limit counters reset) and
+ * it is NOT shared between app instances, so use a real Valkey as soon as you run more than one.
+ * Entries live in one Map: key → {v: string | Map (hash) | Set, exp: epoch-ms or 0 for "never"}.
+ */
+class MemoryClient extends EventEmitter {
+  constructor() {
+    super();
+    this.isOpen = false;
+    this.data = new Map();
+    this.maxKeys = 200_000;               // hard cap so floods of unique keys can't exhaust memory
+    this.sweeper = null;
+  }
+  /** "Connect": start the periodic sweep that frees expired entries (timer never blocks shutdown). */
+  async connect() {
+    this.isOpen = true;
+    this.sweeper ??= setInterval(() => this.#sweep(), 30_000).unref();
+  }
+  /** Stop the sweeper and drop all data. */
+  async quit() { this.isOpen = false; clearInterval(this.sweeper); this.sweeper = null; this.data.clear(); }
+  /** Remove every expired entry. */
+  #sweep() { const now = Date.now(); for (const [k, e] of this.data) if (e.exp && e.exp <= now) this.data.delete(k); }
+  /** Live entry for `key`, or undefined (expired entries are deleted on access). */
+  #live(key) {
+    const e = this.data.get(key);
+    if (e && e.exp && e.exp <= Date.now()) { this.data.delete(key); return undefined; }
+    return e;
+  }
+  /** Insert/replace an entry, evicting the oldest keys first when over the cap. */
+  #put(key, v, exp = 0) {
+    this.data.delete(key);                // re-insert so Map order = age order
+    this.data.set(key, { v, exp });
+    while (this.data.size > this.maxKeys) this.data.delete(this.data.keys().next().value);
+  }
+  async get(key) { const e = this.#live(key); return typeof e?.v === 'string' ? e.v : null; }
+  async set(key, value, opts = {}) { this.#put(key, String(value), opts.EX ? Date.now() + opts.EX * 1000 : 0); return 'OK'; }
+  async del(keys) { let n = 0; for (const k of Array.isArray(keys) ? keys : [keys]) if (this.data.delete(k)) n++; return n; }
+  async expire(key, seconds) { const e = this.#live(key); if (!e) return 0; e.exp = Date.now() + seconds * 1000; return 1; }
+  async hSet(key, obj) {
+    let e = this.#live(key);
+    if (!e) { this.#put(key, new Map()); e = this.data.get(key); }
+    for (const [f, v] of Object.entries(obj)) e.v.set(f, String(v));
+    return Object.keys(obj).length;
+  }
+  async hGet(key, field) { return this.#live(key)?.v.get?.(field) ?? null; }
+  async hGetAll(key) { const e = this.#live(key); return e?.v instanceof Map ? Object.fromEntries(e.v) : {}; }
+  async sAdd(key, member) {
+    let e = this.#live(key);
+    if (!e) { this.#put(key, new Set()); e = this.data.get(key); }
+    e.v.add(member); return 1;
+  }
+  async sRem(key, member) { return this.#live(key)?.v.delete?.(member) ? 1 : 0; }
+  async sMembers(key) { const e = this.#live(key); return e?.v instanceof Set ? [...e.v] : []; }
+  /** Only the rate-limiter's script is supported: INCR key, set expiry on first use, return [count, ms left]. */
+  async eval(script, { keys = [], arguments: argv = [] } = {}) {
+    if (!script.includes("redis.call('INCR'")) throw new Error('MemoryClient supports only the rate-limit script');
+    const [key] = keys; const e = this.#live(key);
+    const count = e ? Number(e.v) + 1 : 1;
+    this.#put(key, String(count), e ? e.exp : Date.now() + Number(argv[0]));
+    return [count, this.data.get(key).exp - Date.now()];
+  }
+  /** Glob match (only * wildcard) — tests/admin only. */
+  async keys(pattern) {
+    const re = new RegExp('^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$');
+    return [...this.data.keys()].filter(k => this.#live(k) && re.test(k));
+  }
+  async flushDb() { this.data.clear(); return 'OK'; }
+  /** Same chainable shape as Client.multi(); the commands run back-to-back (single-threaded, so atomic). */
+  multi() {
+    const ops = [];
+    const tx = {
+      hSet: (k, o) => (ops.push(() => this.hSet(k, o)), tx),
+      expire: (k, s) => (ops.push(() => this.expire(k, s)), tx),
+      sAdd: (k, m) => (ops.push(() => this.sAdd(k, m)), tx),
+      exec: async () => { const out = []; for (const op of ops) out.push(await op()); return out; },
+    };
+    return tx;
+  }
+}
+
+/** The shared client instance used across the app (connect it once at boot with connectKv()). VALKEY_URL=memory → in-process store. */
+export const kv = config.valkeyUrl === 'memory' ? new MemoryClient() : new Client(config.valkeyUrl);
 kv.on('error', e => console.error('[kv]', e.message));
 
 /** Connect the shared client (no-op if already connected). */

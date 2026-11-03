@@ -1,5 +1,10 @@
 # Deploying prompts360.si
 
+
+> **Budget layout (≈ $20/month):** `.do/app.yaml` runs one 512 MB web container ($5) plus a managed PostgreSQL cluster (~$15) and uses
+> `VALKEY_URL=memory` (an in-process store, see `MemoryClient` in `src/kv.js`) instead of a managed Valkey. Sessions and rate-limit
+> counters then reset on every deploy and are not shared between instances, so add a real Valkey before running 2+ instances.
+
 ## Free test link first (Render, $0, about 10 minutes)
 
 `render.yaml` sets up the whole stack on Render's free tier: the app, PostgreSQL and Valkey. It's for trying the site, not launching it:
