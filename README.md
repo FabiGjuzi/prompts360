@@ -14,14 +14,14 @@ A fast, minimal, Reddit-style community for AI/LLM prompts and discussion. It's 
 
 | Layer | Choice | Why |
 |---|---|---|
-| Server | Node.js 22, plain `node:http` (no framework) | Fewer dependencies means less attack surface and nothing to purge |
+| Server | Node.js 24.7+, plain `node:http` (no framework) | Fewer dependencies means less attack surface and nothing to purge |
 | Database | PostgreSQL 17+ | Keyset-paginated, partial indexes, full-text search, read replicas |
-| Cache / sessions / rate limits | Valkey (Redis-compatible) | Sub-millisecond, shared across instances |
+| Cache / sessions / rate limits | Valkey (Redis-compatible), our own 270-line client | Sub-millisecond, shared across instances, no library |
 | Front end | 7 KB of hand-written CSS + 2 KB of JS, no frameworks | There's nothing third-party to purge. A full page is about 5 KB over the wire |
 | Captcha | Cloudflare Turnstile (only on signup, login and forgot-password) | Free and privacy-friendly |
 | Email | Gmail API over HTTPS (free) with a durable encrypted queue | Works where SMTP ports are blocked |
 
-There are 3 runtime dependencies: `pg`, `@node-rs/argon2` and `@redis/client`, with 0 known vulnerabilities (`npm audit`).
+The only third-party library is `pg`, the PostgreSQL driver (about 160 KB), with 0 known vulnerabilities (`npm audit`). Everything else is our own code: the web server, the Valkey client, templates, Markdown, CSS and JS. Password hashing uses Node's built-in Argon2. See **CODE_MAP.md** for every file, function and setting.
 
 ## Run locally
 
@@ -29,7 +29,7 @@ There are 3 runtime dependencies: `pg`, `@node-rs/argon2` and `@redis/client`, w
 docker compose up --build          # http://localhost:8080 — emails (verify links) print in the log
 ```
 
-Without Docker, start PostgreSQL and Valkey, set `DATABASE_URL` and `VALKEY_URL`, then run `npm ci && npm start`.
+Without Docker you need Node.js 24.7 or newer, PostgreSQL and Valkey. Set `DATABASE_URL` and `VALKEY_URL`, then run `npm ci && npm start`.
 Make yourself admin with `node scripts/make-admin.js <username>`.
 
 ## Tests
@@ -65,7 +65,8 @@ One Node process on a shared 2-vCPU box, with the database and load generator on
 ```
 src/server.js        request pipeline (headers, origin lock, throttle, sessions, CSRF, routing)
 src/http.js          responses, body parsing, CSRF, caching, micro-cache
-src/crypto.js        Argon2id, AES-256-GCM, HMAC blind index, tokens
+src/crypto.js        Argon2id (built-in), AES-256-GCM, HMAC email fingerprint, tokens
+src/kv.js            our own Valkey/Redis client
 src/session.js       Valkey sessions (2 h idle / 24 h max, browser-session cookie)
 src/ratelimit.js     shared rate limits + per-IP flood guard
 src/mail.js          encrypted outbox + Gmail/Resend transports + templates
@@ -77,4 +78,4 @@ public/              app.css, app.js, favicon.svg, logo-*.svg (generated)
 scripts/             migrate, make-admin, gen-keys, gmail-auth, build-logo (regenerates the animated logo)
 ```
 
-See **DEPLOY.md** to go live and **SECURITY.md** for the threat model and test results.
+See **DEPLOY.md** to go live, **SECURITY.md** for the threat model and test results, and **CODE_MAP.md** for a guide to every file, function, variable and setting.

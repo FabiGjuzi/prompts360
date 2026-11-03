@@ -9,17 +9,19 @@ import { encrypt, decrypt } from './crypto.js';
 export const sentForTests = [];
 
 // ---------- Queue ----------
+/** Add an email to the encrypted outbox (inside the caller's transaction if `client` is given) and wake the sender. msg = {to, subject, text, html}. */
 export async function queueEmail(client, msg) {
   const db = client || primary;
   await db.query('INSERT INTO email_outbox (payload_enc) VALUES ($1)', [encrypt(JSON.stringify(msg), 'outbox')]);
   if (!client) setImmediate(() => drainOutbox().catch(() => {})); // inside a tx: the worker picks it up after commit
 }
 
-let inflight = null;
+let inflight = null;   // the drain run currently in progress (concurrent callers share it)
 /** Send due emails. Concurrent callers share the run in progress instead of starting another. */
 export function drainOutbox() {
   return (inflight ||= drain().finally(() => { inflight = null; }));
 }
+/** Worker loop: lease up to 10 due messages at a time, send each, delete on success or reschedule with back-off (give up after 12 attempts). */
 async function drain() {
   {
     for (;;) {
@@ -49,6 +51,7 @@ async function drain() {
 }
 
 // ---------- Transports ----------
+/** Deliver one message, trying each configured transport in order until one succeeds. */
 async function send(msg) {
   let lastErr;
   for (const name of config.mail.transports) {
@@ -57,7 +60,9 @@ async function send(msg) {
   throw lastErr || new Error('no mail transport configured');
 }
 
+// Cached Gmail access token and its expiry time (ms since epoch).
 let gmailToken = { value: '', exp: 0 };
+/** Exchange the stored refresh token for a short-lived Gmail access token (cached until a minute before expiry). */
 async function gmailAccessToken() {
   if (gmailToken.value && Date.now() < gmailToken.exp - 60_000) return gmailToken.value;
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -75,7 +80,9 @@ async function gmailAccessToken() {
   return gmailToken.value;
 }
 
+/** Encode a header value as an RFC 2047 UTF-8 'encoded word' so non-ASCII subjects survive. */
 const b64h = s => `=?UTF-8?B?${Buffer.from(s).toString('base64')}?=`;
+/** Build a multipart/alternative (plain text + HTML) email message as a raw MIME string. */
 function mime(msg) {
   const boundary = `b_${crypto.randomBytes(12).toString('hex')}`;
   return [
@@ -89,7 +96,9 @@ function mime(msg) {
   ].join('\r\n');
 }
 
+// Available transports, selected by MAIL_TRANSPORT (comma list = try in order). Each takes {to, subject, text, html}.
 const TRANSPORTS = {
+  /** Transport: send via the Gmail API over HTTPS. Flags quota errors (about 500/day on a personal account) so the queue backs off. */
   async gmail(msg) {
     if (!/^[^\s<>"',;]+@[^\s<>"',;]+$/.test(msg.to)) throw new Error('bad recipient'); // header-injection guard
     const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -105,6 +114,7 @@ const TRANSPORTS = {
     if (res.status === 401) gmailToken = { value: '', exp: 0 };
     throw err;
   },
+  /** Transport: send via the Resend HTTPS API (optional fallback; set RESEND_API_KEY). */
   async resend(msg) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -119,10 +129,13 @@ const TRANSPORTS = {
 };
 
 // ---------- Templates ----------
+/** Wrap an email body in the shared HTML layout (title + footer). */
 const wrap = (title, bodyHtml) => `<!doctype html><html><body style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1a1a1b">
 <h2 style="margin:0 0 16px">${title}</h2>${bodyHtml}
 <p style="color:#787c7e;font-size:12px;margin-top:32px">${config.siteName} · If you didn't request this, you can ignore this email.</p></body></html>`;
+/** HTML snippet for a call-to-action button plus the raw link underneath it. */
 const button = (href, label) => `<p><a href="${href}" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">${label}</a></p><p style="font-size:12px;color:#787c7e;word-break:break-all">${href}</p>`;
+/** Escape text for the HTML part of an email. */
 const escMail = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 export const templates = {
@@ -143,4 +156,3 @@ export const templates = {
   }),
 };
 
-export async function emailCount() { return Number((await q('SELECT count(*) FROM email_outbox')).rows[0].count); }

@@ -7,11 +7,13 @@ import { fileURLToPath } from 'node:url';
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
+/** Minify CSS: strip comments and whitespace around punctuation (pure string work, no tooling needed). */
 const minCss = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\n\s*/g, '').replace(/\s*([{};,>])\s*/g, '$1').replace(/;}/g, '}').trim();
 // JS: only strip whole-line comments and indentation (safe: no regex/strings are rewritten).
 const minJs = s => s.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//')).join('\n');
 
 const files = new Map();
+/** Read one file from public/, transform it, content-hash its name, pre-compress it (brotli + gzip) and register it in `files`. Returns the public URL (/s/<name>.<hash>.<ext>). */
 function add(name, ext, type, transform) {
   const src = transform(fs.readFileSync(path.join(dir, name), 'utf8'));
   const buf = Buffer.from(src);

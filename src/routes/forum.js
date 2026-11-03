@@ -1,3 +1,6 @@
+// routes/forum.js — the public product: feeds, communities, posts, comments, votes, reports, profiles, search.
+// Feeds use keyset pagination (a cursor of the last item) so any page costs the same as the first.
+// Every route is listed at the bottom in forumRoutes: [method, URL regex, handler, options].
 import { q, qr, one, tx } from '../db.js';
 import { cached } from '../kv.js';
 import { hit, LIMITS } from '../ratelimit.js';
@@ -8,26 +11,37 @@ import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
 
 // ---------- AI tags (tiny table, cached in-process) ----------
+// In-process copy of the AI tags: when it was loaded, and the rows.
 let tagCache = { at: 0, list: [] };
+/** All AI model tags (cached in-process for 60 s). */
 export async function tags() {
   if (Date.now() - tagCache.at > 60_000) tagCache = { at: Date.now(), list: (await qr('SELECT id, slug, name FROM ai_tags ORDER BY sort, name')).rows };
   return tagCache.list;
 }
+/** Make the next tags() call reload from the database (after an admin edits tags). */
 export const resetTagCache = () => { tagCache.at = 0; };
+/** Find one AI tag by its slug, or null. */
 const tagBySlug = async s => (await tags()).find(t => t.slug === s) || null;
 
 // ---------- Feeds (keyset pagination: cost is independent of page depth) ----------
+// SQL fragment: only posts that are neither deleted by the author nor removed by an admin.
 const VIS = 'p.deleted_at IS NULL AND p.removed_at IS NULL';
+// Columns and joins shared by every feed query (one place so all feeds return the same shape).
 const POST_COLS = `p.id, p.title, p.url, p.score, p.comment_count, p.created_at, p.hot, left(p.body, 300) AS excerpt,
   c.name AS community, t.slug AS tag_slug, t.name AS tag_name, CASE WHEN u.deleted_at IS NULL THEN u.username END AS author`;
 const POST_FROM = `FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
   LEFT JOIN users u ON u.id = p.author_id`;
+// Top-feed time windows -> SQL interval. Values are constants, never user text (safe to inline in SQL).
 const WINDOWS = { day: '1 day', week: '7 days', month: '30 days', year: '365 days' }; // constants, never user text
+// Posts per page.
 const PAGE = 25;
 
+/** Validate the ?sort= value (hot | new | top), defaulting to hot. */
 const parseSort = s => (s === 'new' || s === 'top' ? s : 'hot');
+/** Validate the ?t= time window for Top (day | week | month | year | all), defaulting to day. */
 const parseWindow = t => (t in WINDOWS || t === 'all' ? t : 'day');
 
+/** Parse the ?after= pagination cursor for the active sort; returns null if malformed. */
 function parseCursor(sort, c) {
   if (typeof c !== 'string' || c.length > 60) return null;
   let m;
@@ -36,9 +50,11 @@ function parseCursor(sort, c) {
   if (sort === 'new' && (m = c.match(/^n(\d{1,15})$/))) return { id: Number(m[1]) };
   return null;
 }
+/** Build the cursor for the NEXT page from the last post shown (keyset pagination). */
 const makeCursor = (sort, p) => sort === 'hot' ? `h${p.hot}_${p.id}` : sort === 'top' ? `s${p.score}_${p.id}` : `n${p.id}`;
 
-export async function loadFeed({ communityId, tagId, authorId, search, sort = 'hot', window = 'day', after }) {
+/** Fetch one page of posts for the given filters/sort (keyset-paginated, index-backed, cached briefly for ranked feeds). Returns {posts, next}. */
+async function loadFeed({ communityId, tagId, authorId, search, sort = 'hot', window = 'day', after }) {
   if (search) return searchFeed(search, after);
   if (authorId) sort = 'new';
   const cursor = parseCursor(sort, after);
@@ -64,12 +80,15 @@ export async function loadFeed({ communityId, tagId, authorId, search, sort = 'h
   return pageOf(rows, sort);
 }
 
+/** Trim the fetched rows (we ask for PAGE+1) to one page and compute the next cursor. */
 function pageOf(rows, sort) {
   const posts = rows.slice(0, PAGE);
   return { posts, next: rows.length > PAGE ? makeCursor(sort, posts[posts.length - 1]) : null };
 }
 
+// Newest post id and when we last looked (see maxPostId).
 let maxIdCache = { at: 0, v: 0 };
+/** Newest post id (cached 30 s); search uses it to bound its first phase. */
 async function maxPostId() {
   if (Date.now() - maxIdCache.at > 30_000) maxIdCache = { at: Date.now(), v: (await qr('SELECT coalesce(max(id), 0) AS m FROM posts')).rows[0].m };
   return maxIdCache.v;
@@ -80,7 +99,9 @@ async function maxPostId() {
  * full-table walk: (A) check only the newest 20k posts — enough to fill a page for any common word;
  * (B) if that found less than a page, the word is rare, so the GIN index finds older matches directly.
  */
+// How many of the newest posts search phase A scans before falling back to the full-text index.
 const RECENT = 20_000;
+/** Two-phase full-text search, newest first: scan the newest 20k posts, then fall back to the GIN index for rare words. */
 async function searchFeed(text, after) {
   const cursor = parseCursor('new', after);
   const floor = (await maxPostId()) - RECENT;
@@ -99,6 +120,7 @@ async function searchFeed(text, after) {
   return pageOf(rows, 'new');
 }
 
+/** Map of the logged-in user's votes for the given ids ({id -> 1 or -1}); empty for visitors. */
 async function myVotes(user, table, col, ids) {
   const m = new Map();
   if (!user || !ids.length) return m;
@@ -106,8 +128,10 @@ async function myVotes(user, table, col, ids) {
   for (const r of rows) m.set(Number(r.id), r.value);
   return m;
 }
+/** myVotes() for a list of posts. */
 const postVotes = (user, posts) => myVotes(user, 'post_votes', 'post_id', posts.map(p => p.id));
 
+/** Build a '?a=1&b=2' query string, skipping empty values. */
 function qs(params) {
   const s = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v) s.set(k, v);
@@ -116,6 +140,7 @@ function qs(params) {
 }
 
 // ---------- Home ----------
+/** GET / — the front page feed, optionally filtered by AI model (?tag=), sorted Hot/New/Top. */
 async function home(req, res) {
   const sort = parseSort(req.query.get('sort')), window = parseWindow(req.query.get('t'));
   const tag = await tagBySlug(req.query.get('tag') || '');
@@ -131,6 +156,7 @@ async function home(req, res) {
 }
 
 // ---------- Communities ----------
+/** Look up a live (not removed) community by name, case-insensitively, with its AI tag. */
 async function getCommunity(name) {
   if (!COMMUNITY_RE.test(name)) return null;
   return one(`SELECT c.id, c.name, c.title, c.description, c.post_count, c.created_at, c.ai_tag_id,
@@ -138,6 +164,7 @@ async function getCommunity(name) {
     WHERE lower(c.name) = lower($1) AND c.removed_at IS NULL`, [name]);
 }
 
+/** GET /c/:name — a community's feed. */
 async function communityPage(req, res, [name]) {
   const c = await getCommunity(name);
   if (!c) throw new HttpError(404, 'That community doesn’t exist.');
@@ -153,6 +180,7 @@ async function communityPage(req, res, [name]) {
   });
 }
 
+/** GET /communities — browse communities (popular/new, per AI model). */
 async function communitiesList(req, res) {
   const sort = req.query.get('sort') === 'new' ? 'new' : 'popular';
   const tag = await tagBySlug(req.query.get('tag') || '');
@@ -174,9 +202,11 @@ async function communitiesList(req, res) {
   });
 }
 
+/** GET /communities/new — the create-community form. */
 async function communityNewGet(req, res) {
   return page(req, res, { title: 'Create a community', content: V.communityForm({ user: req.user, tags: await tags() }) });
 }
+/** POST /communities/new — validate and create a community (3 per user per day). */
 async function communityNewPost(req, res) {
   const b = req.body;
   const v = { name: str(b.name, 21).trim(), title: str(b.title, 100).trim(), description: str(b.description, 1000).trim(), tag: str(b.tag, 30) };
@@ -199,10 +229,12 @@ async function communityNewPost(req, res) {
 }
 
 // ---------- Posts ----------
+/** GET /submit — the create-post form (optionally prefilled with ?c=community). */
 async function submitGet(req, res) {
   const c = str(req.query.get('c') || '', 21);
   return page(req, res, { title: 'Create a post', content: V.submitForm({ user: req.user, community: COMMUNITY_RE.test(c) ? c : '' }) });
 }
+/** POST /submit — create a post (rate-limited), auto-upvote it, bump the community's post count. */
 async function submitPost(req, res) {
   const b = req.body;
   const v = { community: str(b.community, 21).trim().replace(/^c\//, ''), title: str(b.title, 300).trim(), url: str(b.url, 2000).trim(), body: str(b.body, 40000).trim() };
@@ -228,6 +260,7 @@ async function submitPost(req, res) {
   return redirect(res, `/p/${id}/${slugify(v.title)}`);
 }
 
+/** GET /p/:id — a post with its comment tree. */
 async function postPage(req, res, [idStr]) {
   const id = Number(idStr);
   const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at,
@@ -259,6 +292,7 @@ async function postPage(req, res, [idStr]) {
   });
 }
 
+/** POST /p/:id/edit — the author edits the body. */
 async function postEdit(req, res, [idStr]) {
   const id = Number(idStr), body = str(req.body.body, 40000).trim();
   const rl = await hit(`edit:${req.user.id}`, ...LIMITS.edit);
@@ -269,6 +303,7 @@ async function postEdit(req, res, [idStr]) {
   return redirect(res, `/p/${id}?n=edited`);
 }
 
+/** POST /p/:id/delete — the author deletes their post (content erased, the row stays for the thread). */
 async function postDelete(req, res, [idStr]) {
   const id = Number(idStr);
   const ok = await tx(async db => {
@@ -283,6 +318,7 @@ async function postDelete(req, res, [idStr]) {
 }
 
 // ---------- Comments ----------
+/** POST /p/:id/comment — add a comment or reply (rate-limited), auto-upvote it, bump the post's comment count. */
 async function commentCreate(req, res, [idStr]) {
   const postId = Number(idStr), body = str(req.body.body, 10000).trim(), parentId = intId(req.body.parent);
   for (const [k, lim] of [['comment', LIMITS.comment], ['commentDay', LIMITS.commentDay]]) {
@@ -309,6 +345,7 @@ async function commentCreate(req, res, [idStr]) {
   return redirect(res, `/p/${postId}#c${id}`);
 }
 
+/** POST /comment/:id/edit — the author edits a comment. */
 async function commentEdit(req, res, [idStr]) {
   const id = Number(idStr), body = str(req.body.body, 10000).trim();
   if (!body) throw new HttpError(400, 'A comment can’t be empty.');
@@ -320,6 +357,7 @@ async function commentEdit(req, res, [idStr]) {
   return redirect(res, `/p/${r.rows[0].post_id}#c${id}`);
 }
 
+/** POST /comment/:id/delete — the author deletes a comment. */
 async function commentDelete(req, res, [idStr]) {
   const id = Number(idStr);
   const r = await q(`UPDATE comments SET body = '[deleted]', deleted_at = now() WHERE id = $1 AND author_id = $2
@@ -329,10 +367,12 @@ async function commentDelete(req, res, [idStr]) {
 }
 
 // ---------- Votes ----------
+// Per-target SQL for voting: table, votes table, key column and the score-update statement (p = post, c = comment).
 const VOTE_T = {
   p: { t: 'posts', v: 'post_votes', k: 'post_id', upd: 'UPDATE posts SET score = score + $2, hot = hot_rank(score + $2, created_at) WHERE id = $1 RETURNING score' },
   c: { t: 'comments', v: 'comment_votes', k: 'comment_id', upd: 'UPDATE comments SET score = score + $2 WHERE id = $1 RETURNING score' },
 };
+/** POST /vote — set, change or clear a vote on a post or comment. The target row is locked so the score can't drift under concurrent votes. */
 async function vote(req, res) {
   const b = req.body, T = VOTE_T[b.type], id = intId(b.id), dir = { '1': 1, '-1': -1, '0': 0 }[b.dir];
   if (!T || !id || dir === undefined) throw new HttpError(400, 'Bad vote.');
@@ -355,6 +395,7 @@ async function vote(req, res) {
 }
 
 // ---------- Reports ----------
+/** POST /report — a user reports a post, comment or community for the admin queue. */
 async function report(req, res) {
   const b = req.body, id = intId(b.id), reason = str(b.reason, 500).trim();
   const col = { p: 'post_id', c: 'comment_id', m: 'community_id' }[b.type];
@@ -370,6 +411,7 @@ async function report(req, res) {
 }
 
 // ---------- Profiles & search ----------
+/** GET /u/:name — a user's public profile with their posts or comments. */
 async function profile(req, res, [name]) {
   const prof = await one('SELECT id, username, created_at, banned_at FROM users WHERE lower(username) = lower($1) AND deleted_at IS NULL AND verified_at IS NOT NULL', [name]);
   if (!prof) throw new HttpError(404, 'No such user.');
@@ -394,6 +436,7 @@ async function profile(req, res, [name]) {
   });
 }
 
+/** GET /search — rate-limited full-text search. */
 async function search(req, res) {
   const qtext = (req.query.get('q') || '').trim().slice(0, 200);
   let posts = [], next = null;
@@ -408,6 +451,7 @@ async function search(req, res) {
   });
 }
 
+/** Handler factory for the Privacy and Terms pages. */
 const legal = kind => (req, res) => page(req, res, { title: kind === 'privacy' ? 'Privacy' : 'Terms', content: V.legalPage(kind) });
 
 export const forumRoutes = [

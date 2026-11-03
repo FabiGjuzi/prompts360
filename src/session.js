@@ -5,16 +5,22 @@ import { kv } from './kv.js';
 import { sha256, randomToken, csrfFor } from './crypto.js';
 import { config } from './config.js';
 
-export const COOKIE = config.cookieSecure ? '__Host-sid' : 'sid';
+// Cookie name. The __Host- prefix makes browsers require Secure + Path=/ and refuse a Domain attribute.
+const COOKIE = config.cookieSecure ? '__Host-sid' : 'sid';
+/** Valkey key for a session: SHA-256 of the cookie token (the raw token is never stored). */
 const skey = token => `s:${sha256(token).toString('base64url')}`;
+/** Valkey key of the set that lists all of one user's sessions (so they can be revoked together). */
 const ukey = uid => `us:${uid}`;
 
+/** Set-Cookie value for a session: HttpOnly, SameSite=Lax, Secure in production, and no Max-Age (so it ends when the browser closes). */
 export function cookieHeader(token) {
   // No Max-Age/Expires => session cookie. __Host- prefix forces Secure, Path=/ and no Domain (no subdomain overrides).
   return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax${config.cookieSecure ? '; Secure' : ''}`;
 }
+/** Set-Cookie value that deletes the session cookie. */
 export const clearCookieHeader = () => `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${config.cookieSecure ? '; Secure' : ''}`;
 
+/** Start a session for `user` ({id, username, is_admin}); returns the random token to put in the cookie. */
 export async function createSession(user) {
   const token = randomToken(32);
   const key = skey(token);
@@ -30,6 +36,7 @@ export async function createSession(user) {
   return token;
 }
 
+/** End one session (logout). */
 export async function destroySession(token) {
   if (!token) return;
   const key = skey(token);
@@ -57,6 +64,7 @@ export async function loadSession(token) {
   return { id: Number(s.u), username: s.n, is_admin: s.a === '1', csrf: csrfFor(token), token };
 }
 
+/** Pull one cookie value out of the request's Cookie header (null if absent or the header is oversized). */
 export function readCookie(req, name = COOKIE) {
   const h = req.headers.cookie;
   if (!h || h.length > 4096) return null;

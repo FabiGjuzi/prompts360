@@ -1,8 +1,11 @@
-import { html, raw, timeAgo, plural, slugify, esc } from './html.js';
+// views.js — every HTML page and component, written as html`` templates (escape-by-default).
+// Page-level functions (signupForm, postPage …) return html; layout() wraps them in the site chrome.
+import { html, raw, timeAgo, plural, slugify } from './html.js';
 import { markdown } from './markdown.js';
 import { config } from './config.js';
 import { assets } from './assets.js';
 
+// Flash messages shown after a redirect (?n=<key>); only these fixed strings are ever displayed.
 const NOTICES = {
   verified: 'Email verified — you can log in now.',
   reset: 'Password changed. Log in with your new password.',
@@ -18,7 +21,8 @@ const NOTICES = {
   accountdeleted: 'Your account and content were deleted.',
 };
 
-export const SLOGAN = 'Communicating better for a more intelligent World';
+// Site slogan shown under the logo (also used as the logo link's accessible name).
+const SLOGAN = 'Communicating better for a more intelligent World';
 
 // Animated logo (360.si → 3pSI and back, forever) is a separate, cached SVG made by scripts/build-logo.js.
 // <picture> picks the dark-mode file and, for visitors who ask for reduced motion, a still version.
@@ -28,12 +32,16 @@ const logo = () => html`<picture>
 <source media="(prefers-color-scheme: dark)" srcset="${assets.logoDark}">
 <img class="logo" src="${assets.logoLight}" alt="" width="74" height="34"></picture>`;
 
+/** Hidden CSRF input for logged-in forms (empty for visitors). */
 const csrfField = user => user ? html`<input type="hidden" name="_csrf" value="${user.csrf}">` : '';
-export const formField = ft => html`<input type="hidden" name="_ft" value="${ft}">`;
+/** Hidden signed token input for logged-out forms (login, signup, reset, …). */
+const formField = ft => html`<input type="hidden" name="_ft" value="${ft}">`;
+/** Cloudflare Turnstile widget for `action` (empty when no site key is configured). */
 const captcha = action => config.turnstileSiteKey
   ? html`<div class="cf-turnstile" data-sitekey="${config.turnstileSiteKey}" data-action="${action}" data-theme="auto"></div>`
   : '';
 
+/** The full HTML page: head, header (logo + slogan + search + account menu), main column + sidebar, footer. */
 export function layout({ title, user, content, sidebar, q = '', turnstile = false, notice, desc, noindex }) {
   const n = notice && NOTICES[notice];
   return html`<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -60,6 +68,7 @@ ${user.is_admin ? html`<a href="/admin">Admin</a>` : ''}
 </body></html>`;
 }
 
+/** Right-hand column: about box (home or community), AI model filter chips, sign-up prompt. */
 export function sidebar({ tags, activeTag, user, community }) {
   return html`<aside>
 ${community ? html`<section class="card about"><h2>c/${community.name}</h2><p>${community.description || community.title}</p>
@@ -75,8 +84,10 @@ ${!user ? html`<section class="card"><p>Join anonymously — no real name needed
 </aside>`;
 }
 
+/** Link to a user's profile, or '[deleted]'. */
 const author = name => name ? html`<a href="/u/${name}">u/${name}</a>` : html`<span>[deleted]</span>`;
 
+/** Up/down arrows with the score. Logged-in users get real forms (no-JS works; app.js upgrades them to in-place updates); visitors get login links. */
 function voteBox(type, id, score, vote, user, back) {
   if (!user) return html`<div class="vote"><a href="/login" class="up" aria-label="Upvote">▲</a><b>${score}</b><a href="/login" class="dn" aria-label="Downvote">▼</a></div>`;
   const f = dir => html`<form method="post" action="/vote" class="v">${csrfField(user)}<input type="hidden" name="type" value="${type}"><input type="hidden" name="id" value="${id}"><input type="hidden" name="dir" value="${vote === dir ? 0 : dir}"><input type="hidden" name="back" value="${back}"><button class="${dir > 0 ? 'up' : 'dn'}${vote === dir ? ' on' : ''}" aria-label="${dir > 0 ? 'Upvote' : 'Downvote'}" aria-pressed="${vote === dir}">${dir > 0 ? '▲' : '▼'}</button></form>`;
@@ -89,6 +100,7 @@ const excerpt = s => s ? s.replace(/```[\s\S]*?(?:```|$)/g, ' … ')
   .replace(/^[ \t]*(?:#{1,6}|>|[-*+]|\d{1,9}[.)])[ \t]+/gm, '')
   .replace(/[*_~`]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 220) : '';
 
+/** A list of post cards with vote boxes, plus a 'Next page' link when there are more. */
 export function postList(posts, votes, user, { back, showCommunity = true, nextUrl, empty = 'No posts yet.' }) {
   if (!posts.length) return html`<p class="card empty">${empty}</p>`;
   return html`<ol class="posts">${posts.map(p => html`<li class="card post">
@@ -100,8 +112,10 @@ ${p.excerpt ? html`<p class="ex">${excerpt(p.excerpt)}</p>` : ''}
 ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}" rel="next">Next page →</a>` : ''}`;
 }
 
+/** Domain shown next to link posts, e.g. 'example.com'. */
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return 'link'; } }
 
+/** Hot / New / Top tabs (plus time-window chips for Top). */
 export function sortTabs(base, sort, t, extra = '') {
   const sep = base.includes('?') ? '&' : '?';
   const tab = (s, label) => html`<a href="${base}${sep}sort=${s}${extra}"${sort === s ? raw(' class="on"') : ''}>${label}</a>`;
@@ -109,11 +123,13 @@ export function sortTabs(base, sort, t, extra = '') {
 ${sort === 'top' ? html`<span class="sp"></span>${['day', 'week', 'month', 'year', 'all'].map(w => html`<a href="${base}${sep}sort=top&t=${w}${extra}"${t === w ? raw(' class="on sm"') : raw(' class="sm"')}>${w}</a>`)}` : ''}</nav>`;
 }
 
+/** Title block at the top of a community page. */
 export function communityHeader(c) {
   return html`<section class="card chead"><h1>${c.title}</h1><p class="meta">c/${c.name} · <a class="tag" href="/?tag=${c.tag_slug}">${c.tag_name}</a></p></section>`;
 }
 
 // ---------- Post page ----------
+/** Edit / delete / report / admin-remove controls for a post or comment, shown according to who is looking. */
 function controls({ user, ownerName, type, id, back, editBody, removed, deleted, reportable = true }) {
   if (!user || removed || deleted) return '';
   const mine = user.username === ownerName;
@@ -125,12 +141,14 @@ ${!mine && reportable ? reportForm(user, type, id) : ''}
 ${user.is_admin ? html`<form method="post" action="/admin/remove" class="inline">${csrfField(user)}<input type="hidden" name="type" value="${type}"><input type="hidden" name="id" value="${id}"><input type="hidden" name="back" value="${back}"><button class="link danger">remove</button></form>` : ''}`;
 }
 
+/** Collapsible 'report' form for a post, comment or community. */
 export function reportForm(user, type, id) {
   return html`<details class="inline"><summary>report</summary><form method="post" action="/report" class="stack">${csrfField(user)}
 <input type="hidden" name="type" value="${type}"><input type="hidden" name="id" value="${id}">
 <input name="reason" maxlength="500" required placeholder="What's wrong?"><button class="btn sm">Send report</button></form></details>`;
 }
 
+/** A single post: body, comment box, sort tabs and the comment tree. */
 export function postPage({ post, comments, votes, cvotes, user, sort }) {
   const back = `/p/${post.id}`;
   const gone = post.deleted_at || post.removed_at;
@@ -149,6 +167,7 @@ ${user && !gone ? html`<form method="post" action="/p/${post.id}/comment" class=
 <section class="comments">${comments.length ? commentTree(comments, cvotes, user, back, gone) : html`<p class="muted pad">No comments yet.</p>`}</section>`;
 }
 
+/** Recursively render nested comments with collapse, vote, reply, edit, delete and report controls. */
 function commentTree(nodes, cvotes, user, back, locked) {
   return html`<ul class="tree">${nodes.map(c => {
     const gone = c.deleted_at || c.removed_at;
@@ -163,9 +182,12 @@ ${c.children.length ? commentTree(c.children, cvotes, user, back, locked) : ''}<
 }
 
 // ---------- Forms ----------
+/** Red error box for form pages (empty when there's no error). */
 const err = e => e ? html`<p class="error" role="alert">${e}</p>` : '';
+// Password rule text shown under every password field (enforced server-side in validate.passwordProblem).
 const pwRules = 'At least 12 characters, with an uppercase letter and a number.';
 
+/** Sign-up page: username (placeholder = generated anon name), email, password twice, captcha. */
 export function signupForm({ ft, suggested, v = {}, error }) {
   return html`<section class="card form"><h1>Create an account</h1>${err(error)}
 <form method="post" action="/signup" class="stack" id="signup">${formField(ft)}<input type="hidden" name="suggested" value="${suggested}">
@@ -178,6 +200,7 @@ ${captcha('signup')}<button class="btn wide">Sign up</button></form>
 <p class="muted">Already have an account? <a href="/login">Log in</a></p></section>`;
 }
 
+/** Login page: username, password, captcha, forgot/resend/sign-up links. */
 export function loginForm({ ft, error, username = '', back = '' }) {
   return html`<section class="card form"><h1>Log in</h1>${err(error)}
 <form method="post" action="/login" class="stack">${formField(ft)}<input type="hidden" name="back" value="${back}">
@@ -187,6 +210,7 @@ ${captcha('login')}<button class="btn wide">Log in</button></form>
 <p class="muted"><a href="/forgot">Forgot password?</a> · <a href="/resend">Resend verification</a> · <a href="/signup">Create an account</a></p></section>`;
 }
 
+/** Forgot-password page: email + captcha. */
 export function forgotForm({ ft, error }) {
   return html`<section class="card form"><h1>Forgot password</h1>${err(error)}
 <p>Enter the email you signed up with. If it matches an account, we'll send a reset link (valid 30 minutes).</p>
@@ -195,6 +219,7 @@ export function forgotForm({ ft, error }) {
 ${captcha('forgot')}<button class="btn wide">Send reset link</button></form></section>`;
 }
 
+/** Resend-verification page: email + captcha. */
 export function resendForm({ ft, error }) {
   return html`<section class="card form"><h1>Resend verification</h1>${err(error)}
 <p>Enter the email you signed up with. We don't store it, so we check it against a one-way fingerprint and, if it matches an unverified account, send a fresh link.</p>
@@ -203,6 +228,7 @@ export function resendForm({ ft, error }) {
 ${captcha('resend')}<button class="btn wide">Send new link</button></form></section>`;
 }
 
+/** Choose-a-new-password page (reached from the emailed link). */
 export function resetForm({ ft, token, error }) {
   return html`<section class="card form"><h1>Choose a new password</h1>${err(error)}
 <form method="post" action="/reset" class="stack" id="signup">${formField(ft)}<input type="hidden" name="t" value="${token}">
@@ -211,6 +237,7 @@ export function resetForm({ ft, token, error }) {
 <p class="hint" id="pwhint">${pwRules}</p><button class="btn wide">Change password</button></form></section>`;
 }
 
+/** Email verification confirmation button (a POST, so email-scanner bots can't consume the link). */
 export function verifyForm({ ft, token }) {
   return html`<section class="card form"><h1>Verify your email</h1>
 <form method="post" action="/verify" class="stack">${formField(ft)}<input type="hidden" name="t" value="${token}"><button class="btn wide">Verify my email</button></form></section>`;
@@ -218,6 +245,7 @@ export function verifyForm({ ft, token }) {
 
 export const message = (title, text, extra = '') => html`<section class="card form"><h1>${title}</h1><p>${text}</p>${extra}</section>`;
 
+/** Create-post form. */
 export function submitForm({ user, community = '', v = {}, error }) {
   return html`<section class="card form wide"><h1>Create a post</h1>${err(error)}
 <form method="post" action="/submit" class="stack">${csrfField(user)}
@@ -228,6 +256,7 @@ export function submitForm({ user, community = '', v = {}, error }) {
 <button class="btn">Post</button></form></section>`;
 }
 
+/** Create-community form with the AI model picker. */
 export function communityForm({ user, tags, v = {}, error }) {
   return html`<section class="card form wide"><h1>Create a community</h1>${err(error)}
 <p class="muted">A community is a topic space (like a subreddit) where people post. Pick which AI it's about.</p>
@@ -239,6 +268,7 @@ export function communityForm({ user, tags, v = {}, error }) {
 <button class="btn">Create community</button></form></section>`;
 }
 
+/** Browse communities: Popular/New tabs, model filter, list. */
 export function communitiesPage({ list, tags, tag, sort, nextUrl, user }) {
   const extra = tag ? `&tag=${tag}` : '';
   return html`<section class="card chead"><h1>Communities</h1>${user ? html`<a class="btn sm" href="/communities/new">+ New community</a>` : ''}</section>
@@ -249,6 +279,7 @@ ${list.length ? html`<ul class="clist">${list.map(c => html`<li class="card"><a 
 ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}">Next page →</a>` : ''}`;
 }
 
+/** A user's profile with Posts / Comments tabs (and the ban button for admins). */
 export function profilePage({ profile, tab, items, votes, user, nextUrl }) {
   const base = `/u/${profile.username}`;
   return html`<section class="card chead"><h1>u/${profile.username}</h1><p class="meta">joined ${timeAgo(profile.created_at)}${profile.banned_at ? ' · suspended' : ''}</p>
@@ -260,6 +291,7 @@ ${tab === 'comments'
     : postList(items, votes, user, { back: base, nextUrl, empty: 'No posts.' })}`;
 }
 
+/** Change password and delete account forms. */
 export function settingsPage({ user, error, ok }) {
   return html`<section class="card form"><h1>Settings</h1>${err(error)}${ok ? html`<p class="notice">${ok}</p>` : ''}
 <h2>Change password</h2><form method="post" action="/settings/password" class="stack" id="signup">${csrfField(user)}
@@ -273,12 +305,14 @@ export function settingsPage({ user, error, ok }) {
 <label>Type DELETE to confirm<input name="confirm" required pattern="DELETE"></label><button class="btn danger">Delete my account</button></form></section>`;
 }
 
+/** Search box and results. */
 export function searchPage({ q, posts, votes, user, nextUrl }) {
   return html`<section class="card"><h1>${q ? html`Results for “${q}”` : 'Search'}</h1>
 <form action="/search" class="sform" role="search"><input name="q" type="search" maxlength="200" value="${q}" placeholder="Search posts" aria-label="Search posts"><button class="btn">Search</button></form></section>
 ${q ? postList(posts, votes, user, { back: `/search?q=${encodeURIComponent(q)}`, nextUrl, empty: 'Nothing found.' }) : ''}`;
 }
 
+/** Admin: open reports queue (remove / dismiss) and AI tag management. */
 export function adminPage({ user, reports, tags }) {
   return html`<section class="card chead"><h1>Admin · open reports</h1></section>
 ${reports.length ? html`<ul class="clist">${reports.map(r => html`<li class="card"><p class="meta">#${r.id} · ${r.kind} · reported by ${author(r.reporter)} · ${timeAgo(r.created_at)}</p>
@@ -290,6 +324,7 @@ ${reports.length ? html`<ul class="clist">${reports.map(r => html`<li class="car
 <form method="post" action="/admin/tag" class="row">${csrfField(user)}<input name="slug" placeholder="slug (a-z, 0-9, -)" pattern="[a-z0-9\\-]{1,30}" required><input name="name" placeholder="Display name" maxlength="40" required><button class="btn sm">Save tag</button></form></section>`;
 }
 
+/** Privacy or Terms page (templates; have a lawyer review). */
 export function legalPage(kind) {
   if (kind === 'privacy') return html`<section class="card form wide md"><h1>Privacy</h1>
 <p><b>What we store:</b> your username, a one-way keyed fingerprint of your email (never the address itself, so we can find your account when you type it for verification or a password reset, but can't read it back), a one-way Argon2id hash of your password, and the posts, comments, communities and votes you create.</p>
@@ -302,5 +337,5 @@ export function legalPage(kind) {
 <p class="muted">Template — review with a lawyer before launch.</p></section>`;
 }
 
+/** Content of an error page. */
 export const errorPage = (status, text) => html`<section class="card form"><h1>${status}</h1><p>${text}</p><p><a href="/">Back to home</a></p></section>`;
-export { esc };

@@ -1,3 +1,7 @@
+// routes/auth.js — account lifecycle: signup, email verification, login/logout, forgot/reset password,
+// resend verification, change password, delete account. Each route is listed at the bottom in authRoutes.
+// The email address is never stored: only a keyed fingerprint (emailIndex) is kept; mail goes to the address
+// the user types at that moment.
 import { config } from '../config.js';
 import { q, one, tx } from '../db.js';
 import {
@@ -13,11 +17,13 @@ import * as V from '../views.js';
 import { html, safeBack } from '../html.js';
 import { genAnonName, usernameProblem, emailOk, passwordProblem, ANON_RE } from '../validate.js';
 
+/** Friendly 'try again in N minutes' message from a retry-after in seconds. */
 const tooMany = s => `Too many attempts. Try again in ${Math.ceil(s / 60)} minute${s > 60 ? 's' : ''}.`;
 // Captcha script loads only where a captcha is shown — never on pages whose URL carries a secret token.
 const authPage = (req, res, title, content, status = 200, captcha = true) =>
   page(req, res, { status, title, content, turnstile: captcha && turnstileEnabled(), cache: false, noindex: true });
 
+/** Create a single-use email token (verify or reset), replacing any older one. Only its SHA-256 is stored; the raw token is returned for the link. */
 async function issueToken(db, userId, purpose, ttlSec) {
   const token = randomToken(32);
   await db.query('DELETE FROM auth_tokens WHERE user_id = $1 AND purpose = $2', [userId, purpose]);
@@ -27,6 +33,7 @@ async function issueToken(db, userId, purpose, ttlSec) {
   return token;
 }
 
+/** Atomically use up a token: returns {user_id} once, then never again (also null if expired or malformed). */
 async function consumeToken(token, purpose) {
   if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
   return one(
@@ -35,11 +42,13 @@ async function consumeToken(token, purpose) {
 }
 
 // ---------- Sign up ----------
+/** GET /signup — the sign-up form with a freshly generated anon username suggestion. */
 async function signupGet(req, res) {
   if (req.user) return redirect(res, '/');
   return authPage(req, res, 'Sign up', V.signupForm({ ft: formToken(), suggested: genAnonName() }));
 }
 
+/** POST /signup — validate, hash the password, store the account (email fingerprint only), queue the verification email. Answers identically for already-registered emails. */
 async function signupPost(req, res) {
   const b = req.body;
   const v = { username: str(b.username, 20).trim(), email: str(b.email, 254).trim() };
@@ -93,9 +102,11 @@ async function signupPost(req, res) {
 }
 
 // ---------- Email verification (GET shows a button so link scanners can't burn the token) ----------
+/** GET /verify — confirmation page for an emailed link (the actual verification is the POST, so link scanners can't use it up). */
 async function verifyGet(req, res) {
   return authPage(req, res, 'Verify email', V.verifyForm({ ft: formToken(), token: req.query.get('t') || '' }), 200, false);
 }
+/** POST /verify — consume the emailed token and mark the account verified. */
 async function verifyPost(req, res) {
   const row = await consumeToken(req.body.t, 'verify');
   if (!row) return authPage(req, res, 'Link expired', V.message('Link expired or already used',
@@ -105,11 +116,13 @@ async function verifyPost(req, res) {
 }
 
 // ---------- Log in / out ----------
+/** GET /login — the login form. */
 async function loginGet(req, res) {
   if (req.user) return redirect(res, '/');
   return authPage(req, res, 'Log in', V.loginForm({ ft: formToken(), back: safeBack(req.query.get('back') || '', '') }));
 }
 
+/** POST /login — captcha, rate limits, constant-time password check, lockout after repeated failures, then a brand-new session. */
 async function loginPost(req, res) {
   const b = req.body;
   const username = str(b.username, 20).trim();
@@ -145,6 +158,7 @@ async function loginPost(req, res) {
   return redirect(res, back);
 }
 
+/** POST /logout — destroy the session and clear the cookie. */
 async function logoutPost(req, res) {
   await destroySession(req.cookieToken);
   res.setHeader('Set-Cookie', clearCookieHeader());
@@ -152,9 +166,11 @@ async function logoutPost(req, res) {
 }
 
 // ---------- Forgot / reset password ----------
+/** GET /forgot — the forgot-password form. */
 async function forgotGet(req, res) {
   return authPage(req, res, 'Forgot password', V.forgotForm({ ft: formToken() }));
 }
+/** POST /forgot — if the typed email's fingerprint matches an account, email a 30-minute reset link; the page answers the same either way. */
 async function forgotPost(req, res) {
   const email = str(req.body.email, 254).trim();
   const again = (error, status = 400) => authPage(req, res, 'Forgot password', V.forgotForm({ ft: formToken(), error }), status);
@@ -177,9 +193,11 @@ async function forgotPost(req, res) {
     'If that email belongs to an account, a reset link is on its way. It works once and expires in 30 minutes.'));
 }
 
+/** GET /reset — new-password form for a reset link. */
 async function resetGet(req, res) {
   return authPage(req, res, 'Reset password', V.resetForm({ ft: formToken(), token: req.query.get('t') || '' }), 200, false);
 }
+/** POST /reset — consume the reset token, set the new password, sign out every session. */
 async function resetPost(req, res) {
   const token = str(req.body.t, 100);
   const pw = str(req.body.password, 200), pw2 = str(req.body.password2, 200);
@@ -199,9 +217,11 @@ async function resetPost(req, res) {
 }
 
 // ---------- Resend verification (user types the address; we only keep its fingerprint) ----------
+/** GET /resend — the resend-verification form. */
 async function resendGet(req, res) {
   return authPage(req, res, 'Resend verification', V.resendForm({ ft: formToken() }));
 }
+/** POST /resend — send a fresh verification link if the typed email matches an unverified account (same answer either way). */
 async function resendPost(req, res) {
   const email = str(req.body.email, 254).trim();
   const again = (error, status = 400) => authPage(req, res, 'Resend verification', V.resendForm({ ft: formToken(), error }), status);
@@ -222,9 +242,11 @@ async function resendPost(req, res) {
 }
 
 // ---------- Settings ----------
+/** GET /settings — change password / delete account. */
 async function settingsGet(req, res) {
   return page(req, res, { title: 'Settings', content: V.settingsPage({ user: req.user }), noindex: true });
 }
+/** POST /settings/password — change password (needs the current one); signs out other sessions. */
 async function settingsPassword(req, res) {
   const b = req.body, user = req.user;
   const bad = error => page(req, res, { status: 400, title: 'Settings', content: V.settingsPage({ user, error }), noindex: true });
@@ -241,6 +263,7 @@ async function settingsPassword(req, res) {
   return redirect(res, '/settings?n=pwchanged');
 }
 
+/** POST /settings/delete — erase credentials and content; the username stays reserved. */
 async function settingsDelete(req, res) {
   const b = req.body, user = req.user;
   const bad = error => page(req, res, { status: 400, title: 'Settings', content: V.settingsPage({ user, error }), noindex: true });

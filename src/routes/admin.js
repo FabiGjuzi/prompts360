@@ -7,6 +7,7 @@ import * as V from '../views.js';
 import { intId, TAG_RE } from '../validate.js';
 import { tags, resetTagCache } from './forum.js';
 
+/** GET /admin — the open reports queue with a preview of each reported item. */
 async function reportsPage(req, res) {
   const { rows } = await q(`SELECT r.id, r.reason, r.created_at, r.post_id, r.comment_id, r.community_id,
       ru.username AS reporter,
@@ -29,6 +30,7 @@ async function reportsPage(req, res) {
   return page(req, res, { title: 'Admin', content: V.adminPage({ user: req.user, reports, tags: await tags() }), noindex: true });
 }
 
+/** POST /admin/remove — hide a post, comment or whole community and resolve its reports. */
 async function remove(req, res) {
   const id = intId(req.body.id), type = req.body.type;
   if (!id || !['p', 'c', 'm'].includes(type)) throw new HttpError(400, 'Bad request.');
@@ -50,6 +52,7 @@ async function remove(req, res) {
   return redirect(res, back.includes('#') ? back : `${back.split('?')[0]}?n=removed`);
 }
 
+/** POST /admin/dismiss — close a report without removing anything. */
 async function dismiss(req, res) {
   const id = intId(req.body.id);
   if (!id) throw new HttpError(400, 'Bad request.');
@@ -57,6 +60,7 @@ async function dismiss(req, res) {
   return redirect(res, '/admin');
 }
 
+/** Build the POST handler that bans or unbans a user (a ban also signs them out everywhere). */
 const setBan = banned => async (req, res) => {
   const id = intId(req.body.id);
   if (!id || id === req.user.id) throw new HttpError(400, 'Bad request.');
@@ -66,6 +70,7 @@ const setBan = banned => async (req, res) => {
   return redirect(res, `/u/${u.username}?n=${banned ? 'banned' : 'unbanned'}`);
 };
 
+/** POST /admin/tag — add an AI model tag, or rename an existing one. */
 async function saveTag(req, res) {
   const slug = str(req.body.slug, 30).trim().toLowerCase(), name = str(req.body.name, 40).trim();
   if (!TAG_RE.test(slug) || !name) throw new HttpError(400, 'Slug must be a-z, 0-9 or -, and a name is required.');

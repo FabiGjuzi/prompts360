@@ -6,9 +6,12 @@ import { layout, errorPage } from './views.js';
 import { checkFormToken, safeEqual } from './crypto.js';
 
 const brotli = promisify(zlib.brotliCompress), gzip = promisify(zlib.gzip);
+/** Error carrying an HTTP status; thrown by handlers and turned into an error page by server.js. */
 export class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 
+// Cloudflare's captcha origin, allowed by the CSP only on pages that show a captcha.
 const TURNSTILE = 'https://challenges.cloudflare.com';
+/** Set the security response headers (CSP, HSTS, nosniff, framing, referrer, permissions). `turnstile` additionally allows Cloudflare's captcha script and frame. */
 export function securityHeaders(res, { turnstile = false } = {}) {
   const ts = turnstile ? ` ${TURNSTILE}` : '';
   res.setHeader('Content-Security-Policy',
@@ -24,10 +27,12 @@ export function securityHeaders(res, { turnstile = false } = {}) {
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
 }
 
+/** Pick the best response compression the browser accepts: 'br', 'gzip' or null. */
 const encodingFor = req => {
   const ae = req.headers['accept-encoding'] || '';
   return /\bbr\b/.test(ae) ? 'br' : /\bgzip\b/.test(ae) ? 'gzip' : null;
 };
+/** Compress a Buffer with the chosen encoding (brotli quality 4 / gzip level 6: fast, good ratio). */
 const compress = (buf, enc) => enc === 'br'
   ? brotli(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } })
   : gzip(buf, { level: 6 });
@@ -52,6 +57,7 @@ export async function send(req, res, status, body, type = 'text/html; charset=ut
 // Only pages that are identical for every logged-out visitor are stored (never forms, notices or
 // personalised pages), so a burst of anonymous traffic costs one render per URL per MICROCACHE_SEC.
 const micro = new Map();
+/** Serve a recently rendered logged-out page from the in-process micro-cache if one exists. Returns true when it handled the request. */
 export function serveMicro(req, res) {
   const e = micro.get(req.url);
   if (!e) return false;
@@ -60,6 +66,7 @@ export function serveMicro(req, res) {
   send(req, res, 200, e.raw, 'text/html; charset=utf-8', e);
   return true;
 }
+/** Remember a rendered logged-out page for MICROCACHE_SEC seconds (bounded to 2000 entries, oldest evicted first). */
 function storeMicro(url, raw, cc) {
   if (micro.size >= 2000) micro.delete(micro.keys().next().value); // oldest first
   const entry = { raw, cc, exp: Date.now() + config.microCacheSec * 1000 };
@@ -86,6 +93,7 @@ export function page(req, res, { status = 200, title, content, sidebar, turnstil
   return send(req, res, status, body, 'text/html; charset=utf-8', entry);
 }
 
+/** Send a redirect (303 by default so a POST becomes a GET) and end the response. */
 export function redirect(res, location, status = 303) {
   res.statusCode = status;
   res.setHeader('Location', location);
@@ -93,11 +101,13 @@ export function redirect(res, location, status = 303) {
   res.end();
 }
 
+/** Send a JSON response (used by the no-reload vote buttons). */
 export function json(req, res, status, obj) {
   res.setHeader('Cache-Control', 'private, no-store');
   return send(req, res, status, JSON.stringify(obj), 'application/json; charset=utf-8');
 }
 
+/** Send an error as a normal page, or as JSON when the request came from fetch(). */
 export function renderError(req, res, status, text) {
   if (res.headersSent) return res.destroy();
   if (req.headers['x-requested-with'] === 'fetch') return json(req, res, status, { error: text });
@@ -105,10 +115,12 @@ export function renderError(req, res, status, text) {
 }
 
 // ---------- Body parsing ----------
+// Form keys that could pollute Object.prototype; silently dropped from parsed bodies.
 const BAD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 // Strip control characters except tab/newline (blocks NUL-byte and terminal-escape payloads).
 const clean = s => s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 
+/** Read and parse a urlencoded POST body with a hard size limit. Returns a prototype-less object; first value wins on duplicate keys; control characters are stripped. */
 export function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     const ct = (req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
@@ -135,9 +147,10 @@ export function readBody(req, limit) {
 }
 
 // ---------- Cross-site request checks ----------
+// This site's origin (scheme + host); POSTs from any other Origin are rejected as cross-site forgeries.
 const ORIGIN = new URL(config.baseUrl).origin;
 /** Browsers send Origin / Sec-Fetch-Site on POST; a foreign value means a cross-site forgery attempt. */
-export function sameOrigin(req) {
+function sameOrigin(req) {
   const o = req.headers.origin;
   if (o && o !== ORIGIN) return false;
   const sfs = req.headers['sec-fetch-site'];
@@ -154,4 +167,5 @@ export function checkCsrf(req, body, kind) {
   return checkFormToken(body._ft);
 }
 
+/** Coerce a value to a string of at most `max` characters ('' if it isn't a string). */
 export const str = (v, max = 10_000) => (typeof v === 'string' ? v : '').slice(0, max);

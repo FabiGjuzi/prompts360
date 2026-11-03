@@ -1,3 +1,6 @@
+// db.js — PostgreSQL access (the only third-party library in the project is `pg`, the database driver).
+// Exports: q/qr/one (parameterised queries on primary / read replica), tx (transaction), migrate, closeDb.
+// SECURITY: SQL text and values are always passed separately ($1, $2 …); user input is never concatenated into SQL.
 import pg from 'pg';
 import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
@@ -19,6 +22,7 @@ function tlsOptions(url) {
   if (config.isProd || /sslmode=(require|verify)/.test(url)) return { rejectUnauthorized: true };
   return undefined; // local development without TLS
 }
+/** Remove ssl-related query parameters from a connection URL; TLS is configured in code by tlsOptions() instead. */
 function stripSslParams(url) {
   try {
     const u = new URL(url);
@@ -27,6 +31,7 @@ function stripSslParams(url) {
   } catch { return url; }
 }
 
+/** Create a pg connection pool for `url` with TLS, a connection cap and per-query time limits. */
 function makePool(url) {
   const ssl = tlsOptions(url);
   const pool = new pg.Pool({
@@ -52,6 +57,7 @@ export function q(text, values) { return primary.query(text, values); }
 /** Read-only query that may be served by a read replica. */
 export function qr(text, values) { return replica.query(text, values); }
 
+/** Run a parameterised query on the primary and return the first row (or null). */
 export async function one(text, values) { return (await primary.query(text, values)).rows[0] || null; }
 
 /** Run fn inside a transaction; rolls back on any thrown error. */
@@ -90,6 +96,7 @@ export async function migrate() {
   });
 }
 
+/** Close both connection pools (shutdown and tests). */
 export async function closeDb() {
   await primary.end();
   if (replica !== primary) await replica.end();

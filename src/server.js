@@ -1,3 +1,7 @@
+// server.js — entry point and request pipeline. Run with `npm start`.
+// Boot: migrate the database -> (optionally fork WEB_CONCURRENCY workers) -> connect Valkey -> listen.
+// Per request: handle() applies security headers, origin lock, static assets, flood throttle, micro-cache,
+// routing, session loading, auth checks, body parsing + CSRF check, then calls the route handler.
 import http from 'node:http';
 import cluster from 'node:cluster';
 import { config } from './config.js';
@@ -13,8 +17,10 @@ import { authRoutes } from './routes/auth.js';
 import { forumRoutes } from './routes/forum.js';
 import { adminRoutes } from './routes/admin.js';
 
+// Flat route table built from the three route files: {method, re (URL regex), handler, opts: {auth, form, bodyLimit}}.
 const routes = [...authRoutes, ...forumRoutes, ...adminRoutes].map(([method, re, handler, opts = {}]) => ({ method, re, handler, opts }));
 
+/** The visitor's IP: the proxy header (e.g. do-connecting-ip) only when the request is verified, otherwise the socket address. */
 function clientIp(req) {
   // Trust the proxy header only when the request provably came through Cloudflare (origin secret).
   if (config.clientIpHeader && req.originVerified) {
@@ -24,8 +30,10 @@ function clientIp(req) {
   return req.socket.remoteAddress || '0.0.0.0';
 }
 
+// robots.txt: keep crawlers out of account, search and admin pages (everything else is indexable).
 const ROBOTS = 'User-agent: *\nDisallow: /login\nDisallow: /signup\nDisallow: /forgot\nDisallow: /reset\nDisallow: /verify\nDisallow: /search\nDisallow: /admin\nDisallow: /settings\n';
 
+/** The request pipeline: security headers -> health check -> origin lock -> static assets -> flood throttle -> micro-cache -> routing -> session -> auth checks -> body + CSRF check -> handler. */
 export async function handle(req, res) {
   securityHeaders(res);
   const url = new URL(req.url, 'http://x');
@@ -89,6 +97,7 @@ export async function handle(req, res) {
   return route.handler(req, res, params);
 }
 
+/** Wrap handle() so any thrown error becomes a safe error page (no stack traces or SQL ever reach the client). */
 async function onRequest(req, res) {
   try {
     await handle(req, res);
@@ -101,12 +110,14 @@ async function onRequest(req, res) {
 }
 
 // ---------- Background jobs (safe to run on every instance) ----------
+/** Background housekeeping every 10 minutes: delete expired tokens and unverified accounts older than 48 hours. */
 async function cleanup() {
   await q('DELETE FROM auth_tokens WHERE expires_at < now()');
   // Unverified accounts older than 48 h free their username and email again.
   await q(`DELETE FROM users WHERE verified_at IS NULL AND deleted_at IS NULL AND created_at < now() - interval '48 hours'`);
 }
 
+/** Build the HTTP server with header-size and timeout limits tuned against slow-client attacks. */
 export function createServer() {
   const server = http.createServer({ maxHeaderSize: 16_384, requestTimeout: 15_000, headersTimeout: 10_000 }, onRequest);
   server.keepAliveTimeout = 65_000;   // longer than load balancer idle timeouts
@@ -114,6 +125,7 @@ export function createServer() {
   return server;
 }
 
+/** Connect Valkey, start listening, start the background jobs (email queue, cleanup) and wire graceful shutdown. */
 async function startWorker() {
   await connectKv();
   const server = createServer();

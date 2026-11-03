@@ -3,17 +3,20 @@
 const env = process.env;
 const isProd = env.NODE_ENV === 'production';
 
+/** Read a required environment variable. In production a missing value aborts startup; in dev/test `fallbackForDev` is used. */
 function req(name, fallbackForDev) {
   const v = env[name];
   if (v && v.trim()) return v.trim();
   if (!isProd && fallbackForDev !== undefined) return fallbackForDev;
   throw new Error(`Missing required environment variable ${name}`);
 }
+/** Read an integer environment variable, falling back to `def` when unset or not a number. */
 function int(name, def) {
   const v = parseInt(env[name] ?? '', 10);
   return Number.isFinite(v) ? v : def;
 }
 
+// Fixed key used ONLY outside production so dev/tests work with no setup; production refuses to start with it.
 const DEV_KEY = Buffer.alloc(32, 0x5a).toString('base64'); // dev only — production rejects it
 
 export const config = Object.freeze({
@@ -32,6 +35,8 @@ export const config = Object.freeze({
   databaseTls: env.DATABASE_TLS === 'off' ? 'off' : 'verify',
   dbPoolMax: int('DB_POOL_MAX', 20),
   valkeyUrl: req('VALKEY_URL', 'redis://127.0.0.1:6380/0'),
+  // Optional CA certificate (PEM text or file path) for a rediss:// server whose cert isn't publicly trusted.
+  valkeyCa: env.VALKEY_CA_CERT || '',
 
   // Secrets: APP_SECRET derives the HMAC/pepper sub-keys (HKDF); DATA_KEY is the AES-256-GCM key.
   appSecret: req('APP_SECRET', DEV_KEY),

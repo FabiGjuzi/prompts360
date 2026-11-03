@@ -1,10 +1,13 @@
 // Cloudflare Turnstile server-side check. Fails closed: network errors or timeouts count as "not human".
 import { config } from './config.js';
 
+/** True when a Turnstile secret key is configured. */
 export const turnstileEnabled = () => Boolean(config.turnstileSecret);
 // Cloudflare's documented test secrets (1x…AA always passes) reply with a placeholder hostname/action.
+// True when using Cloudflare's published always-pass test secret (test deployments only).
 const TEST_SECRET = /^[123]x0+[A-Z]{2}$/.test(config.turnstileSecret);
 
+/** Ask Cloudflare whether `token` is a real solved captcha for this form (`action`) and this site. Any error or timeout counts as 'not human'. */
 export async function verifyHuman(token, ip, action) {
   if (!turnstileEnabled()) return !config.isProd; // dev/test only; production refuses to boot without keys
   if (typeof token !== 'string' || !token || token.length > 2048) return false;

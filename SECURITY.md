@@ -30,7 +30,7 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 | Open redirect | Only same-site relative paths are accepted. | ✅ |
 | IDOR (editing others' content) | Every write checks `author_id`; admin routes check the role. | ✅ |
 | Prototype / parameter pollution | Null-prototype body objects, dangerous keys dropped, first value wins. | ✅ |
-| Cryptojacking and injected miners | CSP blocks any script not served by the site. The only third-party script is Turnstile, and only on captcha pages. No CDNs or analytics. 3 dependencies, 0 vulnerabilities. | ✅ |
+| Cryptojacking and injected miners | CSP blocks any script not served by the site. The only third-party script is Turnstile, and only on captcha pages. No CDNs or analytics. One third-party library (the `pg` database driver), 0 known vulnerabilities. | ✅ |
 | Layer-7 DDoS / floods | Per-IP token bucket, rate limits on every write action, Argon2 concurrency cap, 16 KB default body limit, 10 s header and 15 s request timeouts, 5 s SQL statement timeout, and logged-out pages served from a micro-cache. | ✅ |
 | Volumetric DDoS | Absorbed at the edge: DigitalOcean's built-in Cloudflare (Path A), or your Cloudflare plus an origin lock (Path B). No application code can stop this kind; it must be the network. | ✅ origin lock |
 | ReDoS | Bounded, non-nested regexes, checked against 40,000-character pathological input. | ✅ |

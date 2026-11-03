@@ -1,3 +1,5 @@
+// flow.test.js — end-to-end tests of the product through real HTTP against a real PostgreSQL + Valkey:
+// signup/verify/login, communities, posts, comments, votes, moderation, recovery, account deletion.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { boot, client, field, makeUser, login, csrf, PW } from './_helpers.js';

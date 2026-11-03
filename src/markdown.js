@@ -4,9 +4,12 @@
 // and only http(s) links are emitted. All regexes use bounded, non-nested quantifiers (no ReDoS).
 import { esc } from './html.js';
 
+// Matches [label](https://url) (groups 1,2) or a bare https://url (group 3). Bounded quantifiers = no ReDoS.
 const LINK_RE = /\[([^\]\n]{1,300})\]\((https?:\/\/[^\s()<>]{1,2000})\)|(https?:\/\/[^\s<>()"']{1,2000})/gi;
+// rel attribute on every user link: no SEO value for spammers, no window.opener access, no referrer leak.
 const REL = 'nofollow ugc noopener noreferrer';
 
+/** Apply bold/italic/strikethrough to text that is ALREADY HTML-escaped. */
 function emphasis(escaped) {
   return escaped
     .replace(/\*\*([^*\n]{1,1000})\*\*/g, '<strong>$1</strong>')
@@ -15,6 +18,7 @@ function emphasis(escaped) {
     .replace(/~~([^~\n]{1,1000})~~/g, '<del>$1</del>');
 }
 
+/** Turn [label](https://…) and bare https:// URLs into rel=nofollow links; everything else is escaped. Only http(s) schemes are ever emitted. */
 function links(text) {
   let out = '', last = 0, m;
   LINK_RE.lastIndex = 0;
@@ -32,11 +36,13 @@ function links(text) {
   return out + emphasis(esc(text.slice(last)));
 }
 
+/** Render one line of inline Markdown: `code` spans are escaped verbatim, the rest goes through links() and emphasis(). */
 function inline(text) {
   const parts = text.split(/(`[^`\n]{1,1000}`)/g);
   return parts.map((p, i) => (i % 2 ? `<code>${esc(p.slice(1, -1))}</code>` : links(p))).join('');
 }
 
+/** Render a Markdown string to safe HTML (paragraphs, headings, quotes, lists, rules, code blocks). Raw HTML in the input is never passed through. */
 export function markdown(src) {
   const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];

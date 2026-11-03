@@ -1,6 +1,5 @@
 // Test harness: boots the real server against a scratch PostgreSQL database and Valkey db 1.
 import pg from 'pg';
-import { createClient } from '@redis/client';
 
 export const PORT = 18080;
 export const BASE = `http://localhost:${PORT}`;
@@ -17,8 +16,8 @@ export async function boot() {
   await admin.connect();
   await admin.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
   await admin.end();
-  const kv = createClient({ url: KV });
-  await kv.connect(); await kv.flushDb(); await kv.quit();
+  const { kv: shared } = await import('../src/kv.js');   // our own Valkey client (src/kv.js)
+  await shared.connect(); await shared.flushDb();
 
   const db = await import('../src/db.js');
   await db.migrate();
@@ -34,18 +33,16 @@ export async function boot() {
   };
 }
 
+/** Wipe the whole test Valkey database (sessions, rate limits, caches). */
 export async function flushKv() {
-  const kv = createClient({ url: KV });
-  await kv.connect(); await kv.flushDb(); await kv.quit();
+  const { kv } = await import('../src/kv.js');
+  await kv.flushDb();
 }
 
 /** Clear only rate-limit counters (sessions survive). */
 export async function flushLimits() {
-  const kv = createClient({ url: KV });
-  await kv.connect();
-  const keys = await kv.keys('rl:*');
-  if (keys.length) await kv.del(keys);
-  await kv.quit();
+  const { kv } = await import('../src/kv.js');
+  await kv.del(await kv.keys('rl:*'));
 }
 
 let ipSeq = 1;
