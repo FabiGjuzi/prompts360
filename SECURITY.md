@@ -7,10 +7,10 @@ Every row below is enforced in code and, where marked ✅, proven by the automat
 | Data | Storage | Notes |
 |---|---|---|
 | Password | **Argon2id** (64 MiB, t=3, p=1, RFC 9106) + secret pepper | Memory-hard, unlike SHA-256, which a GPU can test billions of times per second. A stolen database can't be cracked offline without the pepper, which lives outside the DB. ✅ |
-| Email | **AES-256-GCM** (authenticated) + **HMAC-SHA256** blind index | Lookups use the HMAC, so the plaintext email is never in the DB. ✅ |
+| Email | **Not stored.** Only a keyed **HMAC-SHA256** fingerprint | Signup, recovery and re-verification take the address the user types, fingerprint it, find the account, and mail the typed address. A database leak contains no addresses, encrypted or not. ✅ |
 | Email/reset tokens | **SHA-256** of a 256-bit random token | Single-use; 24 h for verification, 30 min for reset. ✅ |
 | Session tokens | **SHA-256** of a 256-bit random token, in Valkey | 2 h idle and 24 h absolute expiry; the cookie dies with the browser. ✅ |
-| Queued emails | AES-256-GCM | Deleted once sent. ✅ |
+| Queued emails | AES-256-GCM | The recipient is held only until the message is sent, then the row is deleted. ✅ |
 | IP addresses | **Never stored** | Rate-limit keys use an HMAC of the IP and expire. ✅ |
 | Posts, comments, communities | Plaintext | Public by design. Encrypting them would prevent indexing and search and protect nothing, since anyone can read them on the site. Disk-level encryption at rest comes from the managed database. |
 
@@ -40,6 +40,9 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 | Spoofed client IP | The IP header is trusted only when the platform sets it or the origin secret is present; production refuses to start otherwise. | ✅ |
 
 ## Remaining risks to know about
+
+- **Email fingerprints are guessable if the secret leaks.** The fingerprint is keyed with `APP_SECRET`, which is kept outside the database, so a stolen database alone reveals nothing. If the database and `APP_SECRET` both leak, an attacker can test a known address ("is this person a member?") but can't list members. **Never change `APP_SECRET`** after launch, or every account loses its recovery link.
+- **No stored address means no other emails.** The site can't email users about bans or announcements, and a user who typed their address wrong at signup can't be reached. Unverified accounts are deleted after 48 hours, and the username is freed.
 
 - **Account lockout abuse.** Someone could deliberately fail logins to lock a known username for 15 minutes. The captcha and per-IP limits make this costly, and "Forgot password" still works during a lockout.
 - **Gmail's cap** is about 500 emails a day. Past it, signups queue until the next day. Add a fallback transport before you get big.

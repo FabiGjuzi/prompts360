@@ -39,7 +39,8 @@ test('signup: generated anon username, encrypted email, argon2id hash, captcha-f
   const { rows: [u] } = await app.db.q("SELECT * FROM users WHERE username = 'alice_ai'");
   assert.ok(u.verified_at);
   assert.match(u.pass_hash, /^\$argon2id\$/);
-  assert.ok(!u.email_enc.toString('latin1').includes('alice_ai@example.com'), 'email must not be stored in plaintext');
+  assert.ok(!('email_enc' in u), 'the email address is not stored at all, not even encrypted');
+  assert.ok(!JSON.stringify(u).includes('alice_ai@example.com'));
   assert.equal(u.email_bidx.length, 32);
 
   const anon = await makeUser(app.mail);           // blank username => keeps the generated anon-xxxxxxxx name
@@ -186,6 +187,31 @@ test('ban signs the user out everywhere', async () => {
   await login(bob, 'bob-prompts');
 });
 
+test('resend verification: user types the address, only its fingerprint is stored', async () => {
+  const c = client();
+  const p = await c.get('/signup');
+  await c.post('/signup', { _ft: field(p.text, '_ft'), suggested: field(p.text, 'suggested'), username: 'resend_me', email: 'resend.me@example.com', password: PW, password2: PW });
+  await app.mail.drainOutbox(); await app.mail.drainOutbox();
+  const { rows: [u0] } = await app.db.q("SELECT * FROM users WHERE username = 'resend_me'");
+  assert.ok(!('email_enc' in u0) && u0.email_bidx.length === 32);
+  const r = await login(c, 'resend_me');
+  assert.equal(r.status, 403); assert.match(r.text, /Resend verification/);
+  const ask = async email => { const f = await c.get('/resend'); return c.post('/resend', { _ft: field(f.text, '_ft'), email }); };
+  const before = app.mail.sentForTests.length;
+  const hit = await ask('resend.me@example.com');
+  const miss = await ask('nobody.here@example.com');
+  assert.equal(hit.status, 200);
+  assert.equal(hit.text.replace(/value="[^"]*"/g, ''), miss.text.replace(/value="[^"]*"/g, ''), 'same answer for unknown addresses');
+  await app.mail.drainOutbox(); await app.mail.drainOutbox();
+  const sent = app.mail.sentForTests.slice(before);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].to, 'resend.me@example.com');
+  const token = sent[0].text.match(/verify\?t=([A-Za-z0-9_-]+)/)[1];
+  const vp = await c.get(`/verify?t=${token}`);
+  assert.equal((await c.post('/verify', { _ft: field(vp.text, '_ft'), t: token })).status, 303);
+  assert.equal((await login(c, 'resend_me')).status, 303);
+});
+
 test('forgot password: same answer for unknown emails, reset revokes old sessions', async () => {
   const c = client();
   const ask = async email => { const p = await c.get('/forgot'); return c.post('/forgot', { _ft: field(p.text, '_ft'), email }); };
@@ -215,8 +241,8 @@ test('account deletion erases personal data and content', async () => {
   const pid = r0.location.match(/\/p\/(\d+)/)[1];
   const r = await carol.post('/settings/delete', { _csrf: t, current: PW, confirm: 'DELETE' });
   assert.equal(r.status, 303);
-  const { rows: [u] } = await app.db.q("SELECT email_enc, email_bidx, pass_hash, deleted_at FROM users WHERE username = 'carol_x'");
-  assert.equal(u.email_enc, null); assert.equal(u.email_bidx, null); assert.equal(u.pass_hash, null); assert.ok(u.deleted_at);
+  const { rows: [u] } = await app.db.q("SELECT email_bidx, pass_hash, deleted_at FROM users WHERE username = 'carol_x'");
+  assert.equal(u.email_bidx, null); assert.equal(u.pass_hash, null); assert.ok(u.deleted_at);
   const p = await client().get(`/p/${pid}`);
   assert.doesNotMatch(p.text, /private stuff|Carol secret post/);
   assert.equal((await login(client(), 'carol_x')).status, 401);

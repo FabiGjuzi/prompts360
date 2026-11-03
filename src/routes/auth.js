@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { q, one, tx } from '../db.js';
 import {
-  hashPassword, verifyPassword, burnPasswordTime, encrypt, decrypt, emailIndex, normalizeEmail,
+  hashPassword, verifyPassword, burnPasswordTime, emailIndex, normalizeEmail,
   randomToken, sha256, formToken, ipKey,
 } from '../crypto.js';
 import { createSession, destroySession, destroyAllSessions, cookieHeader, clearCookieHeader } from '../session.js';
@@ -80,8 +80,8 @@ async function signupPost(req, res) {
   try {
     await tx(async db => {
       const { rows: [u] } = await db.query(
-        'INSERT INTO users (username, email_enc, email_bidx, pass_hash) VALUES ($1, $2, $3, $4) RETURNING id',
-        [username, encrypt(normalizeEmail(v.email), 'email'), bidx, passHash]);
+        'INSERT INTO users (username, email_bidx, pass_hash) VALUES ($1, $2, $3) RETURNING id',
+        [username, bidx, passHash]);
       const t = await issueToken(db, u.id, 'verify', 86400);
       await queueEmail(db, templates.verify(normalizeEmail(v.email), username, `${config.baseUrl}/verify?t=${t}`));
     });
@@ -126,7 +126,7 @@ async function loginPost(req, res) {
 
   const pw = str(b.password, 200);
   const user = /^[A-Za-z0-9_-]{3,20}$/.test(username)
-    ? await one('SELECT id, username, pass_hash, is_admin, verified_at, banned_at, deleted_at, email_enc FROM users WHERE lower(username) = lower($1)', [username])
+    ? await one('SELECT id, username, pass_hash, is_admin, verified_at, banned_at, deleted_at FROM users WHERE lower(username) = lower($1)', [username])
     : null;
   const ok = user && !user.deleted_at ? await verifyPassword(user.pass_hash, pw) : await burnPasswordTime(pw);
   if (!ok) {
@@ -135,13 +135,8 @@ async function loginPost(req, res) {
   }
   if (user.banned_at) return again('This account is suspended.', 403);
   if (!user.verified_at) {
-    // Correct password but unverified: send a fresh link (at most one per 10 minutes).
-    const r = await hit(`resend:${user.id}`, 1, 600);
-    if (r.ok) {
-      const t = await issueToken({ query: q }, user.id, 'verify', 86400);
-      await queueEmail(null, templates.verify(decrypt(user.email_enc, 'email'), user.username, `${config.baseUrl}/verify?t=${t}`));
-    }
-    return again('Verify your email first — we sent you a new verification link.', 403);
+    // We no longer keep the address, so we can't re-send from here: the user types it on /resend.
+    return again('Verify your email first. Lost the link? Use “Resend verification” below.', 403);
   }
   await reset(failKey);
   await destroySession(req.cookieToken); // never reuse a pre-login session (fixation)
@@ -203,6 +198,29 @@ async function resetPost(req, res) {
   return redirect(res, '/login?n=reset');
 }
 
+// ---------- Resend verification (user types the address; we only keep its fingerprint) ----------
+async function resendGet(req, res) {
+  return authPage(req, res, 'Resend verification', V.resendForm({ ft: formToken() }));
+}
+async function resendPost(req, res) {
+  const email = str(req.body.email, 254).trim();
+  const again = (error, status = 400) => authPage(req, res, 'Resend verification', V.resendForm({ ft: formToken(), error }), status);
+  const rl = await hit(`resend-ip:${ipKey(req.ip)}`, ...LIMITS.resendIp);
+  if (!rl.ok) return again(tooMany(rl.retryAfter), 429);
+  if (!(await verifyHuman(req.body['cf-turnstile-response'], req.ip, 'resend'))) return again('Please complete the captcha.');
+  if (!emailOk(email)) return again('Enter a valid email address.');
+  const bidx = emailIndex(email);
+  if ((await hit(`resend-e:${bidx.toString('base64url')}`, 1, 600)).ok) {
+    const u = await one('SELECT id, username FROM users WHERE email_bidx = $1 AND verified_at IS NULL AND banned_at IS NULL AND deleted_at IS NULL', [bidx]);
+    if (u) {
+      const t = await issueToken({ query: q }, u.id, 'verify', 86400);
+      await queueEmail(null, templates.verify(normalizeEmail(email), u.username, `${config.baseUrl}/verify?t=${t}`));
+    }
+  }
+  return authPage(req, res, 'Check your email', V.message('Check your email',
+    'If that address belongs to an account that still needs verifying, a new link is on its way (valid 24 hours).'));
+}
+
 // ---------- Settings ----------
 async function settingsGet(req, res) {
   return page(req, res, { title: 'Settings', content: V.settingsPage({ user: req.user }), noindex: true });
@@ -233,7 +251,7 @@ async function settingsDelete(req, res) {
   if (!(await verifyPassword(row?.pass_hash, str(b.current, 200)))) return bad('Password is wrong.');
   await tx(async db => {
     // Erase credentials and personal data; username stays reserved so nobody can impersonate it.
-    await db.query(`UPDATE users SET email_enc = NULL, email_bidx = NULL, pass_hash = NULL, deleted_at = now() WHERE id = $1`, [user.id]);
+    await db.query(`UPDATE users SET email_bidx = NULL, pass_hash = NULL, deleted_at = now() WHERE id = $1`, [user.id]);
     await db.query(`UPDATE posts SET title = '[deleted]', body = '', url = NULL, deleted_at = coalesce(deleted_at, now()) WHERE author_id = $1`, [user.id]);
     await db.query(`UPDATE comments SET body = '[deleted]', deleted_at = coalesce(deleted_at, now()) WHERE author_id = $1`, [user.id]);
     await db.query(`DELETE FROM auth_tokens WHERE user_id = $1`, [user.id]);
@@ -248,6 +266,8 @@ export const authRoutes = [
   ['POST', /^\/signup$/, signupPost, { form: 'anon' }],
   ['GET', /^\/verify$/, verifyGet],
   ['POST', /^\/verify$/, verifyPost, { form: 'anon' }],
+  ['GET', /^\/resend$/, resendGet],
+  ['POST', /^\/resend$/, resendPost, { form: 'anon' }],
   ['GET', /^\/login$/, loginGet],
   ['POST', /^\/login$/, loginPost, { form: 'anon' }],
   ['POST', /^\/logout$/, logoutPost, { form: 'user', auth: 'user' }],

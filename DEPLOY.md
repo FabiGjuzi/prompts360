@@ -22,6 +22,8 @@ You need three things for either path: secrets, Turnstile keys and a Gmail sende
 
 ## 1. Generate secrets
 
+> `APP_SECRET` must never change after launch: it keys the email fingerprints, so changing it would lock every user out of password recovery.
+
 ```bash
 node scripts/gen-keys.js
 ```

@@ -184,7 +184,7 @@ export function loginForm({ ft, error, username = '', back = '' }) {
 <label>Username<input name="username" maxlength="20" required value="${username}" autocomplete="username"></label>
 <label>Password<input name="password" type="password" maxlength="128" required autocomplete="current-password"></label>
 ${captcha('login')}<button class="btn wide">Log in</button></form>
-<p class="muted"><a href="/forgot">Forgot password?</a> · <a href="/signup">Create an account</a></p></section>`;
+<p class="muted"><a href="/forgot">Forgot password?</a> · <a href="/resend">Resend verification</a> · <a href="/signup">Create an account</a></p></section>`;
 }
 
 export function forgotForm({ ft, error }) {
@@ -193,6 +193,14 @@ export function forgotForm({ ft, error }) {
 <form method="post" action="/forgot" class="stack">${formField(ft)}
 <label>Email<input name="email" type="email" maxlength="254" required autocomplete="email"></label>
 ${captcha('forgot')}<button class="btn wide">Send reset link</button></form></section>`;
+}
+
+export function resendForm({ ft, error }) {
+  return html`<section class="card form"><h1>Resend verification</h1>${err(error)}
+<p>Enter the email you signed up with. We don't store it, so we check it against a one-way fingerprint and, if it matches an unverified account, send a fresh link.</p>
+<form method="post" action="/resend" class="stack">${formField(ft)}
+<label>Email<input name="email" type="email" maxlength="254" required autocomplete="email"></label>
+${captcha('resend')}<button class="btn wide">Send new link</button></form></section>`;
 }
 
 export function resetForm({ ft, token, error }) {
@@ -284,7 +292,7 @@ ${reports.length ? html`<ul class="clist">${reports.map(r => html`<li class="car
 
 export function legalPage(kind) {
   if (kind === 'privacy') return html`<section class="card form wide md"><h1>Privacy</h1>
-<p><b>What we store:</b> your username, your email address (encrypted, AES-256-GCM, used only for verification and password resets), a one-way Argon2id hash of your password, and the posts, comments, communities and votes you create.</p>
+<p><b>What we store:</b> your username, a one-way keyed fingerprint of your email (never the address itself, so we can find your account when you type it for verification or a password reset, but can't read it back), a one-way Argon2id hash of your password, and the posts, comments, communities and votes you create.</p>
 <p><b>What we don't store:</b> your IP address, real name, or tracking cookies. The only cookie is a session cookie that ends when you close your browser or after 2 hours of inactivity.</p>
 <p><b>Third parties:</b> Cloudflare (network protection and captcha) and Google Gmail (sending account emails) process data on our behalf.</p>
 <p><b>Your rights:</b> you can delete your account and all your content at any time from Settings.</p>
