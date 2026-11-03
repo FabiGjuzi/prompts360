@@ -1,0 +1,60 @@
+# DigitalOcean App Platform spec (path 1 in DEPLOY.md).
+# Create with:  doctl apps create --spec .do/app.yaml      Update with:  doctl apps update <app-id> --spec .do/app.yaml
+# Secrets marked type: SECRET are set in the control panel (Settings → App-Level / Component env vars) — never commit them.
+name: prompts360
+region: nyc              # closest to most English-speaking traffic; use "fra" (Frankfurt) to keep data in the EU
+
+# App-level env vars: shared by the web service and the migrate job.
+envs:
+  - { key: NODE_ENV, value: production }
+  - { key: BASE_URL, value: "https://prompts360.si" }
+  - { key: DATABASE_URL, value: "${db.DATABASE_URL}" }
+  - { key: DATABASE_CA_CERT, value: "${db.CA_CERT}" }
+  - { key: DATABASE_READ_URL, type: SECRET }        # optional: read-replica connection string
+  - { key: VALKEY_URL, type: SECRET }               # rediss://default:…@…:25061 from the managed Valkey cluster
+  - { key: APP_SECRET, type: SECRET }               # node scripts/gen-keys.js
+  - { key: DATA_KEY, type: SECRET }
+  - { key: TURNSTILE_SITE_KEY, value: "REPLACE_ME" }
+  - { key: TURNSTILE_SECRET, type: SECRET }
+  - { key: MAIL_TRANSPORT, value: gmail }
+  - { key: MAIL_FROM, value: "prompts360 <REPLACE_ME@gmail.com>" }
+  - { key: GMAIL_CLIENT_ID, type: SECRET }
+  - { key: GMAIL_CLIENT_SECRET, type: SECRET }
+  - { key: GMAIL_REFRESH_TOKEN, type: SECRET }
+  - { key: CLIENT_IP_HEADER, value: do-connecting-ip }  # set by App Platform's edge; can't be spoofed through it
+  - { key: EDGE_CACHE_SEC, value: "0" }                 # App Platform's CDN can't bypass on session cookie
+  - { key: WEB_CONCURRENCY, value: "1" }                # 1 process per 1-vCPU container
+
+databases:
+  - name: db
+    engine: PG
+    production: true
+    cluster_name: prompts360-db          # create this managed PostgreSQL cluster first (same region)
+
+services:
+  - name: web
+    github:
+      repo: FabiGjuzi/prompts360
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 8080
+    instance_size_slug: apps-d-1vcpu-2gb  # dedicated CPU: required for CPU-based autoscaling
+    autoscaling:
+      min_instance_count: 2              # 2+ for zero-downtime deploys and failover
+      max_instance_count: 20
+      metrics:
+        cpu:
+          percent: 70
+    health_check:
+      http_path: /healthz
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY                     # schema migrations run once before each deploy goes live
+    github:
+      repo: FabiGjuzi/prompts360
+      branch: main
+    dockerfile_path: Dockerfile
+    run_command: node scripts/migrate.js
+    instance_size_slug: apps-s-1vcpu-1gb

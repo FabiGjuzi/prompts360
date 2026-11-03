@@ -1,0 +1,22 @@
+# Local development: PostgreSQL + Valkey + the app.   docker compose up --build   →   http://localhost:8080
+services:
+  db:
+    image: postgres:17-alpine
+    environment: { POSTGRES_PASSWORD: devpass, POSTGRES_DB: prompts360 }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD", "pg_isready", "-U", "postgres"], interval: 2s, retries: 30 }
+  cache:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+  web:
+    build: .
+    ports: ["8080:8080"]
+    depends_on: { db: { condition: service_healthy }, cache: { condition: service_started } }
+    environment:
+      NODE_ENV: development
+      BASE_URL: http://localhost:8080
+      DATABASE_URL: postgres://postgres:devpass@db:5432/prompts360
+      VALKEY_URL: redis://cache:6379/0
+      MAIL_TRANSPORT: console          # verification/reset links are printed to the log
+volumes:
+  pgdata:

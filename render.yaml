@@ -1,0 +1,52 @@
+# FREE TEST deployment on Render — one click, $0. Not for launch:
+#   • the free web service sleeps after 15 min without visitors (first request then takes ~1 min)
+#   • the free PostgreSQL database is deleted after 30 days; free Key Value keeps no data on restart
+#   • captcha uses Cloudflare's always-pass TEST keys, and emails go to the Logs tab instead of inboxes
+# Deploy: https://render.com/deploy?repo=https://github.com/FabiGjuzi/prompts360
+services:
+  - type: web
+    name: prompts360
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prompts360-db
+          property: connectionString
+      - key: DATABASE_TLS
+        value: "off"                 # Render's private network; the DB is not reachable from the internet
+      - key: VALKEY_URL
+        fromService:
+          type: keyvalue
+          name: prompts360-kv
+          property: connectionString
+      - key: APP_SECRET
+        generateValue: true
+      - key: DATA_KEY
+        generateValue: true
+      - key: TURNSTILE_SITE_KEY
+        value: 1x00000000000000000000AA              # Cloudflare TEST key (always passes)
+      - key: TURNSTILE_SECRET
+        value: 1x0000000000000000000000000000000AA   # Cloudflare TEST key (always passes)
+      - key: MAIL_TRANSPORT
+        value: console               # verify / reset links are printed in the service's Logs tab
+      - key: EDGE_CACHE_SEC
+        value: "0"
+      - key: ARGON_MEMORY_KIB
+        value: "19456"               # lighter Argon2id (OWASP minimum) for the 0.1-CPU free instance
+      - key: ARGON_TIME
+        value: "2"
+
+  - type: keyvalue
+    name: prompts360-kv
+    plan: free
+    ipAllowList: []                  # internal access only
+
+databases:
+  - name: prompts360-db
+    plan: free
+    databaseName: prompts360

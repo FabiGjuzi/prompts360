@@ -1,0 +1,80 @@
+# prompts360
+
+A fast, minimal, Reddit-style community for AI/LLM prompts and discussion. It's anonymous by default: every account gets an `anon-xxxxxxxx` username unless the user picks another.
+
+- **Browse** Hot / New / Top feeds (day, week, month, year, all), filter by AI model, search.
+- **Communities**: any verified user creates one (`c/name`) and tags it with the AI model it's about.
+- **Posts**: a title, an optional link and Markdown text (bold, italic, code, code blocks, quotes, lists, links).
+- **Comments** are threaded and collapsible, with replies, editing and deleting.
+- **Votes** on posts and comments update without a page reload, and voting also works with JavaScript off.
+- **Accounts**: sign up with an optional username, email, the password twice and a captcha. The email link must be clicked before the first login. Logging in takes username, password and captcha. Forgot-password, change password and delete account are all there.
+- **Moderation**: anyone can report; the site admin removes content, bans users and manages AI tags.
+
+## Stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Server | Node.js 22, plain `node:http` (no framework) | Fewer dependencies means less attack surface and nothing to purge |
+| Database | PostgreSQL 17+ | Keyset-paginated, partial indexes, full-text search, read replicas |
+| Cache / sessions / rate limits | Valkey (Redis-compatible) | Sub-millisecond, shared across instances |
+| Front end | 7 KB of hand-written CSS + 2 KB of JS, no frameworks | There's nothing third-party to purge. A full page is about 5 KB over the wire |
+| Captcha | Cloudflare Turnstile (only on signup, login and forgot-password) | Free and privacy-friendly |
+| Email | Gmail API over HTTPS (free) with a durable encrypted queue | Works where SMTP ports are blocked |
+
+There are 3 runtime dependencies: `pg`, `@node-rs/argon2` and `@redis/client`, with 0 known vulnerabilities (`npm audit`).
+
+## Run locally
+
+```bash
+docker compose up --build          # http://localhost:8080 — emails (verify links) print in the log
+```
+
+Without Docker, start PostgreSQL and Valkey, set `DATABASE_URL` and `VALKEY_URL`, then run `npm ci && npm start`.
+Make yourself admin with `node scripts/make-admin.js <username>`.
+
+## Tests
+
+```bash
+npm test     # 28 tests: 12 end-to-end flows + 16 attack/security tests, against a real PostgreSQL + Valkey
+```
+
+Set `TEST_DATABASE_URL` and `TEST_VALKEY_URL` to point at a scratch database. The suite **drops and recreates** that database's schema.
+
+## Performance (measured)
+
+Measured on a 1,000,000-post, 2,000,000-comment database:
+
+| Query | Time |
+|---|---|
+| Home / tag / community feeds (hot, new, top-all), any page depth | 0.1–0.5 ms |
+| Post page comments, user profile, login lookup | 0.04–0.5 ms |
+| Search (two-phase: recent scan, then GIN index) | 0.1–17 ms |
+| Top of day/week (worst case, then cached 60 s) | 10–65 ms |
+
+One Node process on a shared 2-vCPU box, with the database and load generator on the same box:
+
+| Request | Throughput |
+|---|---|
+| Logged-out page (micro-cached) | about 45,000 req/s, median under 1 ms |
+| Logged-in feed (personalised) | about 900 req/s per process |
+
+100M views a day averages about 1,200 req/s, so a handful of instances covers it.
+
+## Layout
+
+```
+src/server.js        request pipeline (headers, origin lock, throttle, sessions, CSRF, routing)
+src/http.js          responses, body parsing, CSRF, caching, micro-cache
+src/crypto.js        Argon2id, AES-256-GCM, HMAC blind index, tokens
+src/session.js       Valkey sessions (2 h idle / 24 h max, browser-session cookie)
+src/ratelimit.js     shared rate limits + per-IP flood guard
+src/mail.js          encrypted outbox + Gmail/Resend transports + templates
+src/markdown.js      safe Markdown renderer
+src/views.js         all HTML (escape-by-default templates)
+src/routes/*.js      auth, forum, admin
+migrations/          SQL schema
+public/              app.css, app.js, favicon.svg, logo-*.svg (generated)
+scripts/             migrate, make-admin, gen-keys, gmail-auth, build-logo (regenerates the animated logo)
+```
+
+See **DEPLOY.md** to go live and **SECURITY.md** for the threat model and test results.
