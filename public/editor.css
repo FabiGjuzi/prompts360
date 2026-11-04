@@ -1,0 +1,17 @@
+/* WYSIWYG editor (shared by the site and the dashboard). Falls back to a plain textarea without JavaScript. */
+.wys{margin:.25rem 0}
+.wys-bar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px;border:1px solid var(--bd,#dde1e7);border-bottom:0;border-radius:8px 8px 0 0;background:var(--hl,#f6f7f9)}
+.wys-btn{min-width:32px;min-height:32px;padding:4px 8px;border:1px solid var(--bd,#dde1e7);border-radius:6px;background:var(--card,#fff);color:var(--tx,#1c1e21);font:600 13px/1 system-ui,sans-serif;cursor:pointer}
+.wys-btn:hover{border-color:var(--ac,#4f46e5);color:var(--ac,#4f46e5)}
+.wys-btn:focus-visible,.wys-area:focus-visible{outline:2px solid var(--ac,#4f46e5);outline-offset:1px}
+.wys-bold{font-weight:800}.wys-italic{font-style:italic}.wys-strike{text-decoration:line-through}.wys-code,.wys-pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+.wys-count{margin-left:auto;font-size:12px;color:var(--mu,#565e6a);padding:0 4px}.wys-count.over{color:var(--er,#c62828);font-weight:700}
+.wys-area{min-height:12rem;max-height:60vh;overflow:auto;padding:10px 12px;border:1px solid var(--bd,#dde1e7);border-radius:0 0 8px 8px;background:var(--card,#fff);color:var(--tx,#1c1e21);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:anywhere}
+.wys-area.bad{border-color:var(--er,#c62828)}
+.wys-area p{margin:.4em 0}.wys-area h2,.wys-area h3,.wys-area h4{margin:.7em 0 .3em;line-height:1.25}
+.wys-area blockquote{margin:.5em 0;padding:.1em 0 .1em .8em;border-left:3px solid var(--bd,#dde1e7);color:var(--mu,#565e6a)}
+.wys-area pre{margin:.5em 0;padding:8px 10px;background:var(--hl,#f6f7f9);border:1px solid var(--bd,#dde1e7);border-radius:6px;overflow:auto;white-space:pre-wrap;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace}
+.wys-area code{padding:1px 4px;background:var(--hl,#f6f7f9);border-radius:4px;font:.92em ui-monospace,Menlo,Consolas,monospace}
+.wys-area pre code{padding:0;background:none}.wys-area a{color:var(--ac,#4f46e5);text-decoration:underline}.wys-area ul,.wys-area ol{margin:.4em 0;padding-left:1.4em}
+.wys-area hr{border:0;border-top:1px solid var(--bd,#dde1e7);margin:.8em 0}
+.wys.on textarea{display:none}

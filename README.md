@@ -77,6 +77,7 @@ src/admin/           superadmin dashboard: auth, CRUD engine, metrics views, imp
 src/site.js          editable texts / menus / pages (DB overrides over code defaults)
 src/metrics.js       aggregate request metrics (no IPs), event log
 src/seo.js           robots.txt, sitemap.xml, JSON-LD
+src/wys.js           WYSIWYG editor markup (client: public/editor.js); content is still stored as Markdown
 migrations/          SQL schema
 public/              app.css, app.js, favicon.svg, logo-*.svg (generated)
 scripts/             migrate, make-admin-hash, gen-keys, gmail-auth, build-logo (regenerates the animated logo)

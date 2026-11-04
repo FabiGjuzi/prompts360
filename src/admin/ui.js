@@ -5,6 +5,7 @@ import { html, raw, timeAgo } from '../html.js';
 import { config } from '../config.js';
 import { assets } from '../assets.js';
 import { securityHeaders, send } from '../http.js';
+import { hasEditor } from '../wys.js';
 
 export const P = config.adminPath;
 
@@ -24,7 +25,7 @@ export function adminPage(req, res, { title, active = '', content, status = 200,
   const body = html`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><title>${title} · Dashboard</title>
 <link rel="stylesheet" href="${assets.adminCss}"><link rel="icon" href="${assets.icon}" type="image/svg+xml">
-<script src="${assets.adminJs}" defer></script>${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
+<script src="${assets.adminJs}" defer></script>${hasEditor(content) ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 </head><body class="adm" data-base="${P}"${req.admin ? html` data-csrf="${req.admin.csrf}"` : ''}>
 ${req.admin ? html`<aside class="side"><a class="brand" href="${P}">prompts360<small>superadmin</small></a>
 ${NAV.map(([group, items]) => html`<h2>${group}</h2><ul>${items.map(([href, label]) => html`<li><a href="${P}${href}"${active === href ? raw(' class="on" aria-current="page"') : ''}>${label}</a></li>`)}</ul>`)}

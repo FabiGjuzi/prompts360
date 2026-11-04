@@ -39,8 +39,14 @@ function links(text) {
 /** Render one line of inline Markdown: `code` spans are escaped verbatim, the rest goes through links() and emphasis(). */
 function inline(text) {
   const parts = text.split(/(`[^`\n]{1,1000}`)/g);
-  return parts.map((p, i) => (i % 2 ? `<code>${esc(p.slice(1, -1))}</code>` : links(p))).join('');
+  return parts.map((p, i) => (i % 2 ? `<code>${esc(p.slice(1, -1))}</code>` : unescapeMd(links(hideEscapes(p))))).join('');
 }
+
+// Backslash escapes (\* \_ \# …) so the WYSIWYG editor can store literal punctuation. An escaped character is swapped for a
+// private-use placeholder before any formatting runs, then restored (HTML-escaped) afterwards.
+const ESC = '\\`*_~[]()#>+-.!';
+const hideEscapes = s => s.replace(/[\uE000-\uE00F]/g, '').replace(/\\([\\`*_~\[\]()#>+\-.!])/g, (_, c) => String.fromCharCode(0xE000 + ESC.indexOf(c)));
+const unescapeMd = s => s.replace(/[\uE000-\uE00F]/g, ch => esc(ESC[ch.charCodeAt(0) - 0xE000]));
 
 /** Render a Markdown string to safe HTML (paragraphs, headings, quotes, lists, rules, code blocks). Raw HTML in the input is never passed through. */
 export function markdown(src, { min = 3, off = 2 } = {}) {
@@ -89,4 +95,10 @@ export function markdown(src, { min = 3, off = 2 } = {}) {
   }
   flush();
   return out.join('\n');
+}
+
+/** Plain text of a Markdown string (formatting symbols removed, whitespace collapsed) — for meta descriptions and list previews. */
+export function plain(body) {
+  return String(body || '').replace(/```[\s\S]*?(?:```|$)/g, ' ').replace(/\[([^\]\n]*)\]\([^)\n]*\)/g, '$1').replace(/^[ \t]*(?:#{1,6}|>|[-*+]|\d{1,9}[.)])[ \t]+/gm, '')
+    .replace(/\\([\\`*_~\[\]()#>+\-.!])/g, '$1').replace(/[*_~`]+/g, '').replace(/\s+/g, ' ').trim();
 }

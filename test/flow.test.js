@@ -86,7 +86,7 @@ test('communities, posts, comments, replies, votes', async () => {
   r = await alice.post('/communities/new', { _csrf: t, name: 'CLAUDE_prompts', title: 'dup', tag: 'claude' });
   assert.match(r.text, /already exists/);
 
-  r = await alice.post('/submit', { _csrf: t, community: 'claude_prompts', title: 'My best system prompt', url: '', body: '**Bold** and `code`\n\n```\nYou are a helpful assistant\n```' });
+  r = await alice.post('/submit', { _csrf: t, community: 'claude_prompts', tag: 'claude', title: 'My best system prompt', url: '', body: '**Bold** and `code`\n\n```\nYou are a helpful assistant\n```' });
   assert.equal(r.status, 303);
   postId = Number(r.location.match(/\/p\/(\d+)/)[1]);
   const page = await client().get(r.location);
@@ -240,7 +240,7 @@ test('forgot password: same answer for unknown emails, reset revokes old session
 test('account deletion erases personal data and content', async () => {
   const carol = await makeUser(app.mail, { username: 'carol_x' });
   const t = await csrf(carol);
-  const r0 = await carol.post('/submit', { _csrf: t, community: 'claude_prompts', title: 'Carol secret post', body: 'private stuff' });
+  const r0 = await carol.post('/submit', { _csrf: t, community: 'claude_prompts', tag: 'claude', title: 'Carol secret post', body: 'private stuff' });
   const pid = r0.location.match(/\/p\/(\d+)/)[1];
   const r = await carol.post('/settings/delete', { _csrf: t, current: PW, confirm: 'DELETE' });
   assert.equal(r.status, 303);

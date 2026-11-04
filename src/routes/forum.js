@@ -12,6 +12,7 @@ import { ldHome, ldBreadcrumbs, ldPost, ldCollection, ldWebPage } from '../seo.j
 import { safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
+import { plain } from '../markdown.js';
 
 // ---------- AI tags (tiny table, cached in-process) ----------
 // In-process copy of the AI tags: when it was loaded, and the rows.
@@ -192,8 +193,8 @@ async function communityPage(req, res, [name]) {
   const votes = await postVotes(req.user, posts);
   const base = `/c/${c.name}`;
   return page(req, res, {
-    title: `c/${c.name} — ${c.title}`, desc: (c.description || `${c.title} — ${c.tag_name} prompts and discussion.`).slice(0, 300),
-    jsonld: [ldCollection(`c/${c.name} — ${c.title}`, c.description || c.title, base), ldBreadcrumbs([['Home', '/'], [c.tag_name, `/m/${c.tag_slug}`], [`c/${c.name}`, base]])],
+    title: `c/${c.name} — ${c.title}`, desc: (plain(c.description) || `${c.title} — ${c.tag_name} prompts and discussion.`).slice(0, 300),
+    jsonld: [ldCollection(`c/${c.name} — ${c.title}`, plain(c.description) || c.title, base), ldBreadcrumbs([['Home', '/'], [c.tag_name, `/m/${c.tag_slug}`], [`c/${c.name}`, base]])],
     content: [V.communityHeader(c), req.user ? V.reportForm(req.user, 'm', c.id) : '', V.sortTabs(base, sort, window),
       V.postList(posts, votes, req.user, { back: base, showCommunity: false, nextUrl: next && `${base}${qs({ sort, t: sort === 'top' && window, after: next })}` })],
     sidebar: V.sidebar({ tags: await tags(), user: req.user, community: c }),
@@ -229,7 +230,7 @@ async function communityNewGet(req, res) {
 /** POST /communities/new — validate and create a community (3 per user per day). */
 async function communityNewPost(req, res) {
   const b = req.body;
-  const v = { name: str(b.name, 21).trim(), title: str(b.title, 100).trim(), description: str(b.description, 1000).trim(), tag: str(b.tag, 30) };
+  const v = { name: str(b.name, 21).trim(), title: str(b.title, 100).trim(), description: str(b.description, 4000).trim(), tag: str(b.tag, 30) };
   const bad = (error, status = 400) => page(req, res, { status, title: 'Create a community', content: V.communityForm({ user: req.user, tags: allTags, v, error }) });
   const allTags = await tags();
   const rl = await hit(`community:${req.user.id}`, ...LIMITS.community);
@@ -251,20 +252,30 @@ async function communityNewPost(req, res) {
 // ---------- Posts ----------
 /** GET /submit — the create-post form (optionally prefilled with ?c=community). */
 async function submitGet(req, res) {
-  const c = str(req.query.get('c') || '', 21);
-  return page(req, res, { title: 'Create a post', content: V.submitForm({ user: req.user, community: COMMUNITY_RE.test(c) ? c : '' }) });
+  const c = str(req.query.get('c') || '', 21), m = str(req.query.get('m') || '', 30);
+  const cname = COMMUNITY_RE.test(c) ? c : '';
+  const known = cname ? await getCommunity(cname) : null;          // browsing a community → its name (and its model) are pre-filled
+  const all = await tags();
+  const tag = known?.tag_slug || (all.some(t => t.slug === m) ? m : '');
+  return page(req, res, { title: 'Create a post', content: V.submitForm({ user: req.user, community: known ? known.name : cname, v: { tag }, tags: all, communities: await communityChoices() }) });
+}
+/** The communities offered in the post form's community picker (most popular first). */
+async function communityChoices() {
+  return (await qr(`SELECT c.name, t.slug AS tag FROM communities c JOIN ai_tags t ON t.id = c.ai_tag_id WHERE c.removed_at IS NULL ORDER BY c.post_count DESC, c.id LIMIT 500`)).rows;
 }
 /** POST /submit — create a post (rate-limited), auto-upvote it, bump the community's post count. */
 async function submitPost(req, res) {
   const b = req.body;
-  const v = { community: str(b.community, 21).trim().replace(/^c\//, ''), title: str(b.title, 300).trim(), url: str(b.url, 2000).trim(), body: str(b.body, 40000).trim() };
-  const bad = (error, status = 400) => page(req, res, { status, title: 'Create a post', content: V.submitForm({ user: req.user, v, error }) });
+  const v = { community: str(b.community, 21).trim().replace(/^c\//, ''), tag: str(b.tag, 30), title: str(b.title, 300).trim(), url: str(b.url, 2000).trim(), body: str(b.body, 40000).trim() };
+  const bad = async (error, status = 400) => page(req, res, { status, title: 'Create a post', content: V.submitForm({ user: req.user, v, error, tags: await tags(), communities: await communityChoices() }) });
   for (const [k, lim] of [['post', LIMITS.post], ['postDay', LIMITS.postDay]]) {
     const rl = await hit(`${k}:${req.user.id}`, ...lim);
     if (!rl.ok) return bad(`You're posting too fast. Try again in ${Math.ceil(rl.retryAfter / 60)} min.`, 429);
   }
   const c = await getCommunity(v.community);
-  if (!c) return bad('That community doesn’t exist. Check the name or create it first.');
+  if (!c) return bad('That community doesn’t exist. Pick one from the list, or create it first.');
+  const llm = (await tags()).find(t => t.slug === v.tag);
+  if (!llm) return bad('Pick which AI model this post is about.');
   if (!v.title) return bad('A title is required.');
   let url = null;
   if (v.url && !(url = safeUrl(v.url))) return bad('Links must start with http:// or https://');
@@ -272,7 +283,7 @@ async function submitPost(req, res) {
     const { rows: [p] } = await db.query(
       `INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot)
        VALUES ($1, $2, $3, $4, $5, $6, 1, hot_rank(1, now())) RETURNING id`,
-      [c.id, c.ai_tag_id, req.user.id, v.title, url, v.body]);
+      [c.id, llm.id, req.user.id, v.title, url, v.body]);
     await db.query('INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1)', [req.user.id, p.id]);
     await db.query('UPDATE communities SET post_count = post_count + 1 WHERE id = $1', [c.id]);
     return p.id;
@@ -319,8 +330,8 @@ async function postPage(req, res, [idStr]) {
 
 /** Meta description from a post body: plain text of the first ~155 characters (Markdown symbols removed), else the title. */
 function descOf(body, title) {
-  const plain = (body || '').replace(/```[\s\S]*?(?:```|$)/g, ' ').replace(/\[([^\]\n]*)\]\([^)\n]*\)/g, '$1').replace(/^[ \t]*(?:#{1,6}|>|[-*+]|\d{1,9}[.)])[ \t]+/gm, '').replace(/[*_~`]+/g, '').replace(/\s+/g, ' ').trim();
-  const src = plain.length >= 30 ? plain : `${title}${plain ? ` — ${plain}` : ''}`;
+  const text = plain(body);
+  const src = text.length >= 30 ? text : `${title}${text ? ` — ${text}` : ''}`;
   return src.length > 155 ? `${src.slice(0, 152).replace(/\s+\S*$/, '')}…` : src;
 }
 

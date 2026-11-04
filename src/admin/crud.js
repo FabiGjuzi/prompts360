@@ -7,6 +7,7 @@
 import { q, one, tx } from '../db.js';
 import { kv } from '../kv.js';
 import { html, raw, esc, safeUrl } from '../html.js';
+import { wys } from '../wys.js';
 import { redirect, str, HttpError } from '../http.js';
 import { logEvent } from '../metrics.js';
 import { destroyAllSessions } from '../session.js';
@@ -50,7 +51,7 @@ export const TABLES = {
   pages: {
     label: 'Pages', pk: ['id'], list: ['id', 'slug', 'title', 'published', 'updated_at'], search: ['slug', 'title', 'body'], order: 'id', view: r => `/${r.slug}`,
     cols: [text('slug', 'URL slug (a-z, 0-9, -) — the page lives at /slug', { req: true, max: 60, pattern: SLUG_RE }), text('title', 'Title (H1 and <title>)', { req: true, max: 120 }),
-      area('body', 'Body (Markdown: ## headings, **bold**, lists, [links](https://…))', { rows: 22, max: 100000 }),
+      area('body', 'Body', { rows: 22, max: 100000, md: true, hl: 2, ho: 0 }),
       area('meta_description', 'Meta description (shown in search results, ~150 characters)', { rows: 2, max: 300 }),
       bool('published', 'Published', { def: true }), bool('noindex', 'Hide from search engines (noindex)'), ro('created_at', 'Created', 'ts'), ro('updated_at', 'Updated', 'ts')],
     before: (db, v, ctx) => { if (RESERVED_SLUGS.has(v.slug)) throw new Problem('That slug is reserved for a built-in page.'); if (ctx.op === 'update') v.updated_at = new Date().toISOString(); },
@@ -77,21 +78,20 @@ export const TABLES = {
     label: 'Communities', pk: ['id'], list: ['id', 'name', 'title', 'ai_tag_id', 'post_count', 'removed_at'], search: ['name', 'title', 'description'], order: 'id DESC', view: r => `/c/${r.name}`,
     filters: ['ai_tag_id'],
     cols: [text('name', 'Name (3–21 letters, digits or _) — page at /c/name', { req: true, max: 21, pattern: /^[A-Za-z0-9_]{3,21}$/ }), text('title', 'Title', { req: true, max: 100 }),
-      area('description', 'Description', { rows: 4, max: 1000 }), sel('ai_tag_id', 'AI model', tagOptions, { req: true }),
+      area('description', 'Description', { rows: 6, max: 4000, md: true }), sel('ai_tag_id', 'AI model', tagOptions, { req: true }),
       int('creator_id', 'Creator user ID (blank = the site account)', { def: official }), ts('removed_at', 'Removed at (UTC; set to hide the community)'), ro('post_count', 'Posts', 'int'), ro('created_at', 'Created', 'ts')],
-    after: async (db, row, ctx) => { if (ctx.op === 'update') await db.query('UPDATE posts SET ai_tag_id = $2 WHERE community_id = $1 AND ai_tag_id <> $2', [row.id, row.ai_tag_id]); },
   },
   posts: {
     label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => `/p/${r.id}`,
     filters: ['community_id', 'ai_tag_id', 'author_id'],
     cols: [sel('community_id', 'Community', communityOptions, { req: true }), text('title', 'Title', { req: true, max: 300 }), text('url', 'Link (optional)', { max: 2000, check: u => !u || safeUrl(u) }),
-      area('body', 'Body (Markdown)', { rows: 22, max: 40000 }), int('author_id', 'Author user ID (default: the site account)', { def: official }),
+      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body', { rows: 22, max: 40000, md: true }), int('author_id', 'Author user ID (default: the site account)', { def: official }),
       ts('created_at', 'Created (UTC; leave blank for now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC; set to hide the post)'),
       ro('score', 'Score', 'int'), ro('comment_count', 'Comments', 'int')],
     before: async (db, v, ctx) => {
       const c = (await db.query('SELECT ai_tag_id FROM communities WHERE id = $1', [v.community_id])).rows[0];
       if (!c) throw new Problem('That community does not exist.');
-      v.ai_tag_id = c.ai_tag_id;
+      v.ai_tag_id ??= c.ai_tag_id;
       if (ctx.op === 'insert') v.hot = 0;
       if (ctx.op === 'update') v.edited_at = new Date().toISOString();
       if (!v.created_at) delete v.created_at;
@@ -107,7 +107,7 @@ export const TABLES = {
     label: 'Comments', pk: ['id'], list: ['id', 'post_id', 'author_id', 'body', 'score', 'created_at', 'removed_at'], search: ['body'], order: 'id DESC', filters: ['post_id', 'author_id'],
     view: r => `/p/${r.post_id}#c${r.id}`,
     cols: [int('post_id', 'Post ID', { req: true }), int('parent_id', 'Reply to comment ID (blank = top level)'), int('author_id', 'Author user ID', { def: official }),
-      area('body', 'Body (Markdown)', { rows: 8, req: true, max: 10000 }), ts('created_at', 'Created (UTC; blank = now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC)'), ro('score', 'Score', 'int')],
+      area('body', 'Body', { rows: 8, req: true, max: 10000, md: true }), ts('created_at', 'Created (UTC; blank = now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC)'), ro('score', 'Score', 'int')],
     before: async (db, v, ctx) => {
       if (!(await db.query('SELECT 1 FROM posts WHERE id = $1', [v.post_id])).rowCount) throw new Problem('That post does not exist.');
       v.depth = 0;
@@ -225,6 +225,7 @@ async function fieldHtml(c, v) {
   const id = `f_${c.n}`;
   const label = (inner) => html`<label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${inner}`;
   if (c.t === 'bool') return html`<div class="fld chk"><input type="hidden" name="${c.n}" value="0"><input type="checkbox" id="${id}" name="${c.n}" value="1"${v ? raw(' checked') : ''}><label for="${id}">${c.label}</label></div>`;
+  if (c.t === 'area' && c.md) return html`<div class="fld"><label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${wys({ name: c.n, id, md: v ?? '', rows: c.rows, max: c.max, required: Boolean(c.req), label: c.label, hlevel: c.hl ?? 3, hoff: c.ho ?? 2 })}</div>`;
   if (c.t === 'area') return html`<div class="fld">${label(html`<textarea id="${id}" name="${c.n}" rows="${c.rows}" maxlength="${c.max}">${v ?? ''}</textarea>`)}</div>`;
   if (c.t === 'sel') {
     const opts = await c.opts();

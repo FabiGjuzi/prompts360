@@ -30,6 +30,8 @@ function add(name, ext, type, transform) {
 export const assets = {
   css: add('app.css', 'css', 'text/css; charset=utf-8', minCss),
   js: add('app.js', 'js', 'text/javascript; charset=utf-8', minJs),
+  editorJs: add('editor.js', 'js', 'text/javascript; charset=utf-8', minJs),
+  editorCss: add('editor.css', 'css', 'text/css; charset=utf-8', minCss),
   adminCss: add('admin.css', 'css', 'text/css; charset=utf-8', minCss),
   adminJs: add('admin.js', 'js', 'text/javascript; charset=utf-8', minJs),
   og: add('og.png', 'png', 'image/png', null),

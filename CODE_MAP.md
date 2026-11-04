@@ -419,4 +419,5 @@ Rate-limit names (`ratelimit.js LIMITS`): `signup`, `login`, `loginfail`, `forgo
 
 ## Superadmin dashboard (`src/admin/`)
 - `index.js` route table under `ADMIN_PATH`; `auth.js` separate login/session/password; `crud.js` generic table CRUD over a whitelist registry (`TABLES`); `pages.js` dashboard, live data, logs, texts, import, reports, account; `stats.js` metric queries; `ui.js` shell and SVG charts.
+- `src/wys.js` + `public/editor.js` / `editor.css`: WYSIWYG editor for Markdown fields (post text, community description, all dashboard Markdown fields). The textarea is the no-JS fallback; the editor script converts its DOM to Markdown on submit (no innerHTML, pasted HTML dropped). Markdown supports `\*` style escapes.
 - `src/site.js` (editable texts, menus, pages), `src/metrics.js` (per-minute aggregates, event log), `src/seo.js` (robots, sitemap, JSON-LD).

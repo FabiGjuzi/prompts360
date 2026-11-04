@@ -1,7 +1,8 @@
 // views.js — every HTML page and component, written as html`` templates (escape-by-default).
 // Page-level functions (signupForm, postPage …) return html; layout() wraps them in the site chrome.
 import { html, raw, timeAgo, plural, slugify } from './html.js';
-import { markdown } from './markdown.js';
+import { markdown, plain } from './markdown.js';
+import { wys, hasEditor } from './wys.js';
 import { config } from './config.js';
 import { assets } from './assets.js';
 import { t, nav, siteName } from './site.js';
@@ -32,6 +33,7 @@ const ldJson = o => JSON.stringify(o).replace(/</g, '\\u003c').replace(/\u2028/g
 /** The full HTML page: head (SEO, social cards, structured data), header (logo + slogan + search + account menu), main column + sidebar, footer. */
 export function layout({ title, fullTitle, user, content, sidebar, q = '', turnstile = false, notice, desc, noindex, canonical, jsonld, ogType = 'website' }) {
   const n = notice && NOTICE_KEYS.has(notice) && t(`n.${notice}`);
+  const edit = hasEditor([].concat(content, sidebar).join(''));
   const site = siteName(), slogan = t('slogan');
   const docTitle = fullTitle || (title ? `${title} · ${site}` : site);
   const description = desc || t('seo.description');
@@ -53,7 +55,7 @@ ${url && !noindex ? html`<link rel="canonical" href="${url}">` : ''}
 ${tw ? html`<meta name="twitter:site" content="${tw}">` : ''}
 <link rel="stylesheet" href="${assets.css}"><link rel="icon" href="${assets.icon}" type="image/svg+xml"><link rel="apple-touch-icon" href="${assets.touch}">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<script src="${assets.js}" defer></script>
+<script src="${assets.js}" defer></script>${edit ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}
 ${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 ${ld.map(o => raw(`<script type="application/ld+json">${ldJson(o)}</script>`))}
 </head><body>
@@ -76,11 +78,11 @@ ${links.length ? html`<nav class="links" aria-label="Main">${links.map(l => html
 /** Right-hand column: about box (home or community), AI model filter chips, sign-up prompt. */
 export function sidebar({ tags, activeTag, user, community }) {
   return html`<aside>
-${community ? html`<section class="card about"><h2>c/${community.name}</h2><p>${community.description || community.title}</p>
+${community ? html`<section class="card about"><h2>c/${community.name}</h2><div class="md">${community.description ? raw(markdown(community.description)) : html`<p>${community.title}</p>`}</div>
 <p class="meta">${plural(community.post_count, 'post')} · <a href="/m/${community.tag_slug}">${community.tag_name}</a> · created ${timeAgo(community.created_at)}</p>
 <a class="btn wide" href="/submit?c=${community.name}">${t('side.create_post')}</a></section>` : html`<section class="card">
 <h2>${t('side.home_title')}</h2><p>${t('side.home_text')}</p>
-<a class="btn wide" href="/submit">${t('side.create_post')}</a><a class="btn ghost wide" href="/communities/new">${t('side.create_community')}</a></section>`}
+<a class="btn wide" href="/submit${activeTag ? `?m=${activeTag}` : ''}">${t('side.create_post')}</a><a class="btn ghost wide" href="/communities/new">${t('side.create_community')}</a></section>`}
 <section class="card"><h2>${t('side.models_title')}</h2><ul class="tags">
 <li><a href="/"${!activeTag ? raw(' class="on" aria-current="page"') : ''}>${t('side.all')}</a></li>
 ${tags.map(tg => html`<li><a href="/m/${tg.slug}"${activeTag === tg.slug ? raw(' class="on" aria-current="page"') : ''}>${tg.name}</a></li>`)}
@@ -140,7 +142,7 @@ function controls({ user, ownerName, type, id, back, editBody, removed, deleted,
   const mine = user.username === ownerName;
   return html`${mine && editBody !== undefined ? html`<details class="inline"><summary>edit</summary>
 <form method="post" action="/${type === 'p' ? 'p' : 'comment'}/${id}/edit" class="stack">${csrfField(user)}
-<textarea name="body" rows="5" maxlength="${type === 'p' ? 40000 : 10000}"${type === 'c' ? raw(' required') : ''}>${editBody}</textarea><button class="btn">Save</button></form></details>` : ''}
+${type === 'p' ? wys({ name: 'body', md: editBody, rows: 8, max: 40000, label: 'Post text' }) : html`<textarea name="body" rows="5" maxlength="10000" required>${editBody}</textarea>`}<button class="btn">Save</button></form></details>` : ''}
 ${mine ? html`<details class="inline"><summary>delete</summary><form method="post" action="/${type === 'p' ? 'p' : 'comment'}/${id}/delete">${csrfField(user)}<button class="btn danger sm">Yes, delete</button></form></details>` : ''}
 ${!mine && reportable ? reportForm(user, type, id) : ''}`;
 }
@@ -249,26 +251,29 @@ export function verifyForm({ ft, token }) {
 
 export const message = (title, text, extra = '') => html`<section class="card form"><h1>${title}</h1><p>${text}</p>${extra}</section>`;
 
-/** Create-post form. */
-export function submitForm({ user, community = '', v = {}, error }) {
+/** Create-post form: community (pre-filled when you came from a community) + AI model tag + WYSIWYG text. */
+export function submitForm({ user, community = '', v = {}, error, tags = [], communities = [] }) {
+  const tag = v.tag || '';
   return html`<section class="card form wide"><h1>${t('submit.title')}</h1>${err(error)}
 <form method="post" action="/submit" class="stack">${csrfField(user)}
-<label>Community<input name="community" maxlength="21" required placeholder="e.g. prompt_engineering" value="${v.community || community}"></label>
+<label>Community<input name="community" maxlength="21" required list="community-list" autocomplete="off" placeholder="Start typing a community name" value="${v.community || community}" data-tags="1"></label>
+<datalist id="community-list">${communities.map(c => html`<option value="${c.name}" data-tag="${c.tag}"></option>`)}</datalist>
+<label>AI model <small>(shown as the post's tag)</small><select name="tag" required><option value="">Choose…</option>${tags.map(m => html`<option value="${m.slug}"${tag === m.slug ? raw(' selected') : ''}>${m.name}</option>`)}</select></label>
 <label>Title<input name="title" maxlength="300" required value="${v.title || ''}"></label>
 <label>Link <small>(optional)</small><input name="url" type="url" maxlength="2000" placeholder="https://" value="${v.url || ''}"></label>
-<label>Text <small>(optional · Markdown: **bold**, *italic*, \`code\`, \`\`\`blocks\`\`\`, [links](https://…))</small><textarea name="body" rows="10" maxlength="40000">${v.body || ''}</textarea></label>
+<div class="lbl">Text <small>(optional)</small>${wys({ name: 'body', md: v.body || '', rows: 10, max: 40000, label: 'Post text' })}</div>
 <button class="btn">${t('submit.button')}</button></form></section>`;
 }
 
-/** Create-community form with the AI model picker. */
+/** Create-community form with the AI model picker and a WYSIWYG description. */
 export function communityForm({ user, tags, v = {}, error }) {
   return html`<section class="card form wide"><h1>${t('cform.title')}</h1>${err(error)}
 <p class="muted">${t('cform.intro')}</p>
 <form method="post" action="/communities/new" class="stack">${csrfField(user)}
-<label>Name <small>(3–21 letters, numbers or _ · becomes c/name · can't be changed)</small><input name="name" maxlength="21" pattern="[A-Za-z0-9_]{3,21}" required value="${v.name || ''}"></label>
+<label>Name <small>(3–21 letters, numbers or _ · becomes c/name · unique · can't be changed)</small><input name="name" maxlength="21" pattern="[A-Za-z0-9_]{3,21}" required value="${v.name || ''}"></label>
 <label>Title<input name="title" maxlength="100" required value="${v.title || ''}"></label>
 <label>AI model<select name="tag" required><option value="">Choose…</option>${tags.map(t => html`<option value="${t.slug}"${v.tag === t.slug ? raw(' selected') : ''}>${t.name}</option>`)}</select></label>
-<label>Description <small>(optional)</small><textarea name="description" rows="4" maxlength="1000">${v.description || ''}</textarea></label>
+<div class="lbl">Description <small>(optional)</small>${wys({ name: 'description', md: v.description || '', rows: 6, max: 4000, label: 'Community description' })}</div>
 <button class="btn">${t('cform.button')}</button></form></section>`;
 }
 
@@ -279,7 +284,7 @@ export function communitiesPage({ list, tags, tag, sort, nextUrl, user }) {
 <nav class="tabs card"><a href="/communities?sort=popular${extra}"${sort !== 'new' ? raw(' class="on"') : ''}>Popular</a><a href="/communities?sort=new${extra}"${sort === 'new' ? raw(' class="on"') : ''}>New</a>
 <span class="sp"></span><form action="/communities" class="tagpick"><input type="hidden" name="sort" value="${sort}"><select name="tag" aria-label="Filter by AI model"><option value="">All models</option>${tags.map(t => html`<option value="${t.slug}"${tag === t.slug ? raw(' selected') : ''}>${t.name}</option>`)}</select><button class="btn sm ghost">Filter</button></form></nav>
 ${list.length ? html`<ul class="clist">${list.map(c => html`<li class="card"><a href="/c/${c.name}"><b>c/${c.name}</b> — ${c.title}</a>
-<p class="meta"><a class="tag" href="/m/${c.tag_slug}">${c.tag_name}</a> · ${plural(c.post_count, 'post')}</p>${c.description ? html`<p class="ex">${c.description.slice(0, 200)}</p>` : ''}</li>`)}</ul>` : html`<p class="card empty">${t('communities.empty')}</p>`}
+<p class="meta"><a class="tag" href="/m/${c.tag_slug}">${c.tag_name}</a> · ${plural(c.post_count, 'post')}</p>${c.description ? html`<p class="ex">${plain(c.description).slice(0, 200)}</p>` : ''}</li>`)}</ul>` : html`<p class="card empty">${t('communities.empty')}</p>`}
 ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}" rel="next">${t('feed.next')}</a>` : ''}`;
 }
 

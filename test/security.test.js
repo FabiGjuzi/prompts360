@@ -30,7 +30,7 @@ test('SQL injection: payloads in every input are treated as data', async () => {
   await c.get(`/search?q=${encodeURIComponent("'); SELECT pg_sleep(3); --")}`);
   assert.ok(Date.now() - t0 < 2000, 'no time-based injection');
   // Payloads stored literally in content.
-  const r = await eve.post('/submit', { _csrf: et, community: 'sec_test', title: SQLI[1], body: SQLI.join('\n') });
+  const r = await eve.post('/submit', { _csrf: et, community: 'sec_test', tag: 'general', title: SQLI[1], body: SQLI.join('\n') });
   assert.equal(r.status, 303);
   const { rows } = await app.db.q("SELECT count(*)::int AS n FROM users");
   assert.ok(rows[0].n >= 2, 'users table intact');
@@ -48,7 +48,7 @@ const XSS = [
 test('XSS: user content can never produce executable markup', async () => {
   for (const p of XSS) {
     await flushLimits();
-    const r = await eve.post('/submit', { _csrf: et, community: 'sec_test', title: p, body: p, url: '' });
+    const r = await eve.post('/submit', { _csrf: et, community: 'sec_test', tag: 'general', title: p, body: p, url: '' });
     assert.equal(r.status, 303, `submit ${p}`);
     const page = (await client().get(r.location)).text;
     const content = page.slice(page.indexOf('<main'));
@@ -61,7 +61,7 @@ test('XSS: user content can never produce executable markup', async () => {
     assert.doesNotMatch(after.slice(after.indexOf('<main')), /<script|<[a-z][^<>]*\son[a-z]+\s*=|href="javascript:/i, `comment ${p}`);
   }
   // Link field only accepts http(s).
-  const r = await eve.post('/submit', { _csrf: et, community: 'sec_test', title: 'x', url: 'javascript:alert(1)' });
+  const r = await eve.post('/submit', { _csrf: et, community: 'sec_test', tag: 'general', title: 'x', url: 'javascript:alert(1)' });
   assert.match(r.text, /must start with http/);
   // Search box reflection is escaped.
   const s = await client().get(`/search?q=${encodeURIComponent('"><script>alert(1)</script>')}`);
@@ -74,13 +74,13 @@ test('XSS: user content can never produce executable markup', async () => {
 
 test('CSRF: forged and token-less requests are rejected', async () => {
   // No token.
-  let r = await eve.post('/submit', { community: 'sec_test', title: 'csrf' });
+  let r = await eve.post('/submit', { community: 'sec_test', tag: 'general', title: 'csrf' });
   assert.equal(r.status, 403);
   // Another user's token.
-  r = await eve.post('/submit', { _csrf: await csrf(victim), community: 'sec_test', title: 'csrf' });
+  r = await eve.post('/submit', { _csrf: await csrf(victim), community: 'sec_test', tag: 'general', title: 'csrf' });
   assert.equal(r.status, 403);
   // Valid token but cross-site Origin / Sec-Fetch-Site.
-  r = await eve.post('/submit', { _csrf: et, community: 'sec_test', title: 'csrf' }, { headers: { origin: 'https://evil.example' } });
+  r = await eve.post('/submit', { _csrf: et, community: 'sec_test', tag: 'general', title: 'csrf' }, { headers: { origin: 'https://evil.example' } });
   assert.equal(r.status, 403);
   r = await eve.post('/vote', { _csrf: et, type: 'p', id: '1', dir: '1' }, { headers: { 'sec-fetch-site': 'cross-site' } });
   assert.equal(r.status, 403);
@@ -208,7 +208,7 @@ test('Write rate limits: voting and posting', async () => {
   await flushKv();
   const c2 = await (async () => { const x = client(); await login(x, 'eve_attacker'); return x; })();
   const t2 = await csrf(c2);
-  for (let i = 0; i < 6; i++) status = (await c2.post('/submit', { _csrf: t2, community: 'sec_test', title: `flood ${i}` })).status;
+  for (let i = 0; i < 6; i++) status = (await c2.post('/submit', { _csrf: t2, community: 'sec_test', tag: 'general', title: `flood ${i}` })).status;
   assert.equal(status, 429);
   await flushKv();
 });

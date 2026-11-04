@@ -58,4 +58,20 @@
     p1.addEventListener('input', check);
     p2.addEventListener('input', check);
   }
+
+  // Post form: choosing a community pre-selects its AI model (unless the person already picked one).
+  const cin = document.querySelector('input[name="community"][data-tags]');
+  const sel = document.querySelector('select[name="tag"]');
+  if (cin && sel) {
+    let touched = Boolean(sel.value);
+    sel.addEventListener('change', () => { touched = true; });
+    const pick = () => {
+      if (touched) return;
+      for (const o of document.querySelectorAll('#community-list option')) {
+        if (o.value.toLowerCase() === cin.value.trim().toLowerCase()) { sel.value = o.dataset.tag; return; }
+      }
+    };
+    cin.addEventListener('input', pick);
+    cin.addEventListener('change', pick);
+  }
 })();
