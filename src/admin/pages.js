@@ -14,6 +14,7 @@ import { invalidate } from './crud.js';
 import * as S from './stats.js';
 import { adminPage, csrf, captcha, tile, table, card, lineChart, barChart, nf, ms, mb, bytes, pct, uptime, when, timeAgo, P } from './ui.js';
 import { COMMUNITY_RE } from '../validate.js';
+import { parseObjects, unprotect } from '../csv.js';
 
 const note = (k, v) => html`<div class="kv"><span>${k}</span><b>${v}</b></div>`;
 
@@ -174,10 +175,26 @@ const bundled = () => { try { return fs.readFileSync(SEED, 'utf8'); } catch { re
 const EXAMPLE = JSON.stringify({ communities: [{ name: 'Example_Prompts', title: 'Example prompts', description: 'What this community is about.', model: 'chatgpt' }],
   posts: [{ community: 'Example_Prompts', title: 'A useful prompt', body: 'Explain **{topic}** to me like I am new to it.\n\n```\nYou are a patient teacher…\n```' }] }, null, 2);
 
+/** Accepts JSON ({communities, posts}) or CSV (communities file or posts file, detected from the header row). */
+export function parseImportText(text) {
+  const t = String(text ?? '').replace(/^\ufeff/, '');
+  if (!t.trim()) return { error: 'Nothing to import: paste JSON or CSV, or choose a file.' };
+  if (/^\s*[{[]/.test(t)) { try { const d = JSON.parse(t); return { data: Array.isArray(d) ? { posts: d } : d }; } catch { return { error: 'That is not valid JSON.' }; } }
+  let parsed;
+  try { parsed = parseObjects(t, { maxRows: 5000 }); } catch (e) { return { error: `That is not valid CSV. ${e.message}` }; }
+  const { headers, records } = parsed;
+  const has = h => headers.includes(h);
+  const cell = (r, k) => unprotect(String(r[k] ?? '')).replace(/\r\n/g, '\n');
+  if (has('community') && has('title')) return { data: { posts: records.map(r => ({ community: cell(r, 'community').trim(), title: cell(r, 'title').trim(), body: cell(r, 'body'), model: cell(r, 'model').trim(), url: cell(r, 'url').trim(), _line: r._line })) } };
+  if (has('name') && (has('model') || has('title'))) return { data: { communities: records.map(r => ({ name: cell(r, 'name').trim(), title: cell(r, 'title').trim(), description: cell(r, 'description'), model: cell(r, 'model').trim(), _line: r._line })) } };
+  return { error: 'Could not tell what this CSV is. A posts file needs the columns community, title (and optionally body, model, url). A communities file needs name, model (and optionally title, description). The first row must be the column names.' };
+}
+
 /** Validate and (unless `dry`) import communities + posts. Returns counts and problems. Duplicates (same community + title) are skipped. */
 export async function runImport(text, { dry }) {
-  let data;
-  try { data = JSON.parse(text); } catch { return { error: 'That is not valid JSON.' }; }
+  const parsed = parseImportText(text);
+  if (parsed.error) return { error: parsed.error };
+  const data = parsed.data;
   const comms = Array.isArray(data?.communities) ? data.communities : [], posts = Array.isArray(data?.posts) ? data.posts : [];
   if (!comms.length && !posts.length) return { error: 'Nothing to import: expected {"communities": [...], "posts": [...]}.' };
   if (comms.length > 300 || posts.length > 1500) return { error: 'Too much at once (max 300 communities and 1,500 posts per import).' };
@@ -186,19 +203,22 @@ export async function runImport(text, { dry }) {
   const C = new Map();          // lower(name) -> {name, title, description, tag}
   for (const [i, c] of comms.entries()) {
     const name = typeof c?.name === 'string' ? c.name.trim() : '';
-    if (!COMMUNITY_RE.test(name)) { problems.push(`Community #${i + 1}: invalid name "${String(c?.name).slice(0, 30)}".`); continue; }
-    if (!tags.has(c.model)) { problems.push(`Community ${name}: unknown model "${String(c.model).slice(0, 30)}" (use an AI model slug).`); continue; }
-    C.set(name.toLowerCase(), { name, title: String(c.title || name).slice(0, 100), description: String(c.description || '').slice(0, 1000), tag: tags.get(c.model) });
+    if (!COMMUNITY_RE.test(name)) { problems.push(`Community ${c?._line ? `(line ${c._line})` : `#${i + 1}`}: invalid name "${String(c?.name).slice(0, 30)}".`); continue; }
+    const cmodel = typeof c.model === 'string' ? c.model.trim().toLowerCase() : '';
+    if (!tags.has(cmodel)) { problems.push(`Community ${name}: unknown model "${String(c.model).slice(0, 30)}" (use an AI model slug).`); continue; }
+    C.set(name.toLowerCase(), { name, title: String(c.title || name).slice(0, 100), description: String(c.description || '').slice(0, 1000), tag: tags.get(cmodel) });
   }
   const P2 = [];
   for (const [i, p] of posts.entries()) {
     const cname = typeof p?.community === 'string' ? p.community.trim().replace(/^c\//, '') : '';
     const title = typeof p?.title === 'string' ? p.title.trim() : '', body = typeof p?.body === 'string' ? p.body.trim() : '';
     const urlv = p?.url ? safeUrl(p.url) : null;
-    if (!title || title.length > 300) { problems.push(`Post #${i + 1}: title is missing or longer than 300 characters.`); continue; }
+    const model = typeof p?.model === 'string' && p.model.trim() ? p.model.trim().toLowerCase() : null;
+    if (model && !tags.has(model)) { problems.push(`Post "${title.slice(0, 40)}": unknown model "${model.slice(0, 30)}" (use an AI model slug).`); continue; }
+    if (!title || title.length > 300) { problems.push(`Post ${p?._line ? `(line ${p._line})` : `#${i + 1}`}: title is missing or longer than 300 characters.`); continue; }
     if (body.length > 40000) { problems.push(`Post "${title.slice(0, 40)}": body is too long.`); continue; }
     if (p.url && !urlv) { problems.push(`Post "${title.slice(0, 40)}": the link must start with http:// or https://.`); continue; }
-    P2.push({ cname, key: cname.toLowerCase(), title, body, url: urlv });
+    P2.push({ cname, key: cname.toLowerCase(), title, body, url: urlv, tag: model ? tags.get(model) : null });
   }
   const res = { communitiesNew: 0, communitiesExisting: 0, postsNew: 0, postsDuplicate: 0, problems };
   const run = async db => {
@@ -211,7 +231,7 @@ export async function runImport(text, { dry }) {
       let c = ids.get(p.key);
       if (!c) { const r = (await db.query('SELECT id, ai_tag_id AS tag FROM communities WHERE lower(name) = $1 AND removed_at IS NULL', [p.key])).rows[0]; if (!r) { problems.push(`Post "${p.title.slice(0, 40)}": community "${p.cname.slice(0, 30)}" does not exist.`); continue; } c = r; ids.set(p.key, c); }
       if ((await db.query('SELECT 1 FROM posts WHERE community_id = $1 AND lower(title) = lower($2) AND deleted_at IS NULL', [c.id, p.title])).rowCount) { res.postsDuplicate++; continue; }
-      const { rows: [row] } = await db.query(`INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot) VALUES ($1,$2,$3,$4,$5,$6,1, hot_rank(1, now())) RETURNING id`, [c.id, c.tag, official, p.title, p.url, p.body]);
+      const { rows: [row] } = await db.query(`INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot) VALUES ($1,$2,$3,$4,$5,$6,1, hot_rank(1, now())) RETURNING id`, [c.id, p.tag ?? c.tag, official, p.title, p.url, p.body]);
       await db.query('INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1)', [official, row.id]);
       res.postsNew++;
     }
@@ -226,14 +246,16 @@ export async function runImport(text, { dry }) {
 
 const importPage = (req, res, { text = '', result, status = 200 } = {}) => {
   const r = result;
-  const content = html`<p class="muted">Paste JSON, or load the starter set that ships with the site. <b>Preview</b> shows what would happen without changing anything. Posts that already exist (same community + title) are skipped, so importing twice is safe. Imported posts belong to the site account <code>u/prompts360</code>.</p>
+  const content = html`<p class="muted">Paste <b>JSON or CSV</b> (or choose a file), or load the starter set that ships with the site. Import communities first, then posts. <b>Preview</b> shows what would happen without changing anything. Posts that already exist (same community + title) are skipped, so importing twice is safe. Imported posts belong to the site account <code>u/prompts360</code>.</p>
 ${r?.error ? html`<p class="error" role="alert">${r.error}</p>` : ''}
 ${r && !r.error ? html`<div class="card"><h2>${r.dry ? 'Preview' : 'Done'}</h2><div class="kvs">${note('New communities', r.communitiesNew)}${note('Communities already there', r.communitiesExisting)}${note('New posts', r.postsNew)}${note('Duplicate posts skipped', r.postsDuplicate)}</div>
 ${r.problems.length ? html`<h3>Problems (${r.problems.length})</h3><ul class="plain">${r.problems.slice(0, 60).map(p => html`<li>${p}</li>`)}</ul>` : ''}</div>` : ''}
 <form method="post" action="${P}/import" class="edit wide">${csrf(req)}
-<div class="fld"><label for="data">JSON</label><textarea id="data" name="data" rows="16" maxlength="4000000" placeholder="${EXAMPLE}">${text}</textarea></div>
+<div class="fld"><label for="importfile">Choose a .csv or .json file <small>(its text is loaded into the box below; nothing is uploaded until you press Preview or Import)</small></label><input type="file" id="importfile" accept=".csv,.json,.txt,text/csv,application/json,text/plain" data-fill="data"><small id="importfile-note" aria-live="polite"></small></div>
+<div class="fld"><label for="data">JSON or CSV</label><textarea id="data" name="data" rows="16" maxlength="4000000" placeholder="${EXAMPLE}">${text}</textarea></div>
 <div class="row"><button class="btn" name="mode" value="preview">Preview</button><button class="btn primary" name="mode" value="import">Import</button>
-${bundled() ? html`<button class="btn" name="mode" value="bundled-preview">Preview starter set</button><button class="btn primary" name="mode" value="bundled-import">Import starter set</button>` : ''}</div></form>`;
+${bundled() ? html`<button class="btn" name="mode" value="bundled-preview">Preview starter set</button><button class="btn primary" name="mode" value="bundled-import">Import starter set</button>` : ''}</div></form>
+<p class="muted">CSV templates: <a href="${P}/export/template/communities.csv">communities.csv</a> · <a href="${P}/export/template/posts.csv">posts.csv</a> (first row = column names; <code>model</code> is an AI model slug such as <code>claude</code> or <code>general</code>). To get the data out, see <a href="${P}/export">Export</a>.</p>`;
   return adminPage(req, res, { title: 'Import prompts', active: '/import', content, status });
 };
 export const importGet = (req, res) => importPage(req, res);

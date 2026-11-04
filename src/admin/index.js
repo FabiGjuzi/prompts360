@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import * as A from './pages.js';
 import * as C from './crud.js';
 import * as G from './design.js';
+import * as X from './export.js';
 
 const P = config.adminPath;
 const R = rest => new RegExp(`^${P}${rest}$`);
@@ -29,6 +30,11 @@ export const adminRoutes = !P ? [] : [
   ['POST', R('/design/restore'), G.designRestore, post],
   ['GET', R('/design/preview'), G.designPreview, need],
   ['GET', R('/design/draft\\.([A-Za-z0-9_-]{10})\\.(css|js)'), G.designDraftFile, need],
+  ['GET', R('/export'), X.exportPage, need],
+  ['GET', R('/export/content/(communities|posts)\\.csv'), X.exportContent, need],
+  ['GET', R('/export/table/([a-z_]{1,40})\\.csv'), X.exportTable, need],
+  ['GET', R('/export/all\\.zip'), X.exportAll, need],
+  ['GET', R('/export/template/(communities|posts)\\.csv'), X.exportTemplate, need],
   ['GET', R('/import'), A.importGet, need],
   ['POST', R('/import'), A.importPost, big],
   ['GET', R('/reports'), A.reports, need],

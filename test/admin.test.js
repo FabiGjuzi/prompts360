@@ -230,7 +230,7 @@ test('import: preview changes nothing, import is idempotent, problems are report
   r = await adm.apost('/import', { mode: 'import', data });
   assert.match(r.text, /Duplicate posts skipped/);
   assert.equal((await app.db.q("SELECT count(*)::int AS n FROM posts WHERE title = 'First prompt'")).rows[0].n, 1, 'second import adds nothing');
-  r = await adm.apost('/import', { mode: 'import', data: 'not json' });
+  r = await adm.apost('/import', { mode: 'import', data: '{not json' });
   assert.equal(r.status, 400); assert.match(r.text, /not valid JSON/);
   r = await adm.apost('/import', { mode: 'drop', data });
   assert.equal(r.status, 400);

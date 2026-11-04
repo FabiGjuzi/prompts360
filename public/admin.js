@@ -30,6 +30,18 @@
     const upd = () => { out.textContent = t.value.length.toLocaleString('en-US') + ' characters' + (max ? ' · max ' + max.toLocaleString('en-US') : ''); };
     t.addEventListener('input', upd); upd();
   });
+  // Import page: load a chosen .csv/.json file into the textarea (read in the browser; nothing is sent until the form is submitted).
+  d.querySelectorAll('input[type=file][data-fill]').forEach(inp => {
+    const target = d.getElementById(inp.dataset.fill), note = d.getElementById(inp.id + '-note');
+    if (!target) return;
+    inp.addEventListener('change', async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      if (f.size > 3900000) { if (note) note.textContent = 'That file is larger than 3.9 MB. Split it into several files.'; return; }
+      try { target.value = await f.text(); if (note) note.textContent = `Loaded ${f.name} (${f.size.toLocaleString('en-US')} bytes). Press Preview to check it.`; }
+      catch { if (note) note.textContent = 'Could not read that file.'; }
+    });
+  });
   const live = d.querySelector('[data-live]');
   if (!live) return;
   const base = d.body.dataset.base;

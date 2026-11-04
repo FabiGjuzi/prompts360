@@ -1,0 +1,21 @@
+name,title,description,model
+Writing_Craft,Writing craft,"Editing, rewriting, tone and clarity: prompts that make your writing sharper without losing your voice.",general
+Fiction_Workshop,Fiction workshop,"Characters, plots, dialogue, worldbuilding and interactive stories. Share prompts for writers and game masters.",general
+Coding_Help,Coding help,"Everyday programming prompts: debugging, code review, tests, refactoring and learning new languages.",general
+DevOps_Automation,DevOps and automation,"Scripting, CI/CD, infrastructure and running models locally. Practical prompts for people who ship and maintain things.",local
+Data_Analysis,Data analysis,"Spreadsheets, SQL, statistics and charts. Prompts for cleaning, analyzing and sanity-checking data.",general
+Study_Smarter,Study smarter,"Learning techniques, flashcards, study plans and exam prep with AI as a tutor, not a shortcut.",general
+Language_Learning,Language learning,"Conversation practice, translation with context, grammar and vocabulary prompts for any language.",general
+Career_Growth,Career growth,"Resumes, interviews, negotiation and difficult conversations. Prompts for getting hired and growing.",general
+Business_Strategy,Business strategy,"Planning, analysis, decision memos and meeting work for founders, managers and consultants.",general
+Marketing_Copy,Marketing copy,"Headlines, emails, product pages and social posts. Prompts for clear, honest, specific copy.",general
+Productivity_Systems,Productivity systems,"Task triage, planning, reviews, templates and personal workflows that survive a busy week.",general
+Cooking_Kitchen,Cooking and kitchen,"Meal plans, substitutions, scaling recipes and food photography. Prompts for home cooks.",general
+Fitness_Training,Fitness and training,"Training plans, warm-ups, form checks and tracking. General information, not medical advice.",general
+Personal_Finance,Personal finance,"Budgets, loans, fine print and financial concepts explained. Educational, not financial advice.",general
+Plain_English_Legal,Plain-English legal,"Reading contracts, policies and terms in plain language. Educational, not legal advice.",general
+Health_Literacy,Health literacy,"Understanding terms, studies and appointments. Educational prompts, not medical advice or diagnosis.",general
+Travel_Planning,Travel planning,"Itineraries, entry rules, packing and phrases for the road.",general
+Image_Prompts,Image prompts,"Midjourney, Stable Diffusion and Flux prompts, parameters and workflows for generating better images.",midjourney
+Research_Science,Research and science,"Literature review, reading papers, experimental design and checking claims against sources.",general
+Decision_Making,Decision making,"Thinking tools and mental models: pre-mortems, inversion, trade-offs and honest second opinions.",general

@@ -1,0 +1,1626 @@
+{
+ "communities": [
+  {
+   "name": "Writing_Craft",
+   "title": "Writing craft",
+   "description": "Editing, rewriting, tone and clarity: prompts that make your writing sharper without losing your voice.",
+   "model": "general"
+  },
+  {
+   "name": "Fiction_Workshop",
+   "title": "Fiction workshop",
+   "description": "Characters, plots, dialogue, worldbuilding and interactive stories. Share prompts for writers and game masters.",
+   "model": "general"
+  },
+  {
+   "name": "Coding_Help",
+   "title": "Coding help",
+   "description": "Everyday programming prompts: debugging, code review, tests, refactoring and learning new languages.",
+   "model": "general"
+  },
+  {
+   "name": "DevOps_Automation",
+   "title": "DevOps and automation",
+   "description": "Scripting, CI/CD, infrastructure and running models locally. Practical prompts for people who ship and maintain things.",
+   "model": "local"
+  },
+  {
+   "name": "Data_Analysis",
+   "title": "Data analysis",
+   "description": "Spreadsheets, SQL, statistics and charts. Prompts for cleaning, analyzing and sanity-checking data.",
+   "model": "general"
+  },
+  {
+   "name": "Study_Smarter",
+   "title": "Study smarter",
+   "description": "Learning techniques, flashcards, study plans and exam prep with AI as a tutor, not a shortcut.",
+   "model": "general"
+  },
+  {
+   "name": "Language_Learning",
+   "title": "Language learning",
+   "description": "Conversation practice, translation with context, grammar and vocabulary prompts for any language.",
+   "model": "general"
+  },
+  {
+   "name": "Career_Growth",
+   "title": "Career growth",
+   "description": "Resumes, interviews, negotiation and difficult conversations. Prompts for getting hired and growing.",
+   "model": "general"
+  },
+  {
+   "name": "Business_Strategy",
+   "title": "Business strategy",
+   "description": "Planning, analysis, decision memos and meeting work for founders, managers and consultants.",
+   "model": "general"
+  },
+  {
+   "name": "Marketing_Copy",
+   "title": "Marketing copy",
+   "description": "Headlines, emails, product pages and social posts. Prompts for clear, honest, specific copy.",
+   "model": "general"
+  },
+  {
+   "name": "Productivity_Systems",
+   "title": "Productivity systems",
+   "description": "Task triage, planning, reviews, templates and personal workflows that survive a busy week.",
+   "model": "general"
+  },
+  {
+   "name": "Cooking_Kitchen",
+   "title": "Cooking and kitchen",
+   "description": "Meal plans, substitutions, scaling recipes and food photography. Prompts for home cooks.",
+   "model": "general"
+  },
+  {
+   "name": "Fitness_Training",
+   "title": "Fitness and training",
+   "description": "Training plans, warm-ups, form checks and tracking. General information, not medical advice.",
+   "model": "general"
+  },
+  {
+   "name": "Personal_Finance",
+   "title": "Personal finance",
+   "description": "Budgets, loans, fine print and financial concepts explained. Educational, not financial advice.",
+   "model": "general"
+  },
+  {
+   "name": "Plain_English_Legal",
+   "title": "Plain-English legal",
+   "description": "Reading contracts, policies and terms in plain language. Educational, not legal advice.",
+   "model": "general"
+  },
+  {
+   "name": "Health_Literacy",
+   "title": "Health literacy",
+   "description": "Understanding terms, studies and appointments. Educational prompts, not medical advice or diagnosis.",
+   "model": "general"
+  },
+  {
+   "name": "Travel_Planning",
+   "title": "Travel planning",
+   "description": "Itineraries, entry rules, packing and phrases for the road.",
+   "model": "general"
+  },
+  {
+   "name": "Image_Prompts",
+   "title": "Image prompts",
+   "description": "Midjourney, Stable Diffusion and Flux prompts, parameters and workflows for generating better images.",
+   "model": "midjourney"
+  },
+  {
+   "name": "Research_Science",
+   "title": "Research and science",
+   "description": "Literature review, reading papers, experimental design and checking claims against sources.",
+   "model": "general"
+  },
+  {
+   "name": "Decision_Making",
+   "title": "Decision making",
+   "description": "Thinking tools and mental models: pre-mortems, inversion, trade-offs and honest second opinions.",
+   "model": "general"
+  }
+ ],
+ "posts": [
+  {
+   "community": "Writing_Craft",
+   "title": "Custom instructions that stop ChatGPT from padding answers",
+   "body": "Paste into Custom Instructions → \"How would you like ChatGPT to respond?\":\n\nLead with the answer in the first sentence. No preamble, no restating my question, no closing summary. Use plain paragraphs unless I ask for a list. If my request is ambiguous, ask one clarifying question instead of guessing. If you are not sure of a fact, say so in one short clause.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Rubber-duck a bug without getting a rewrite",
+   "body": "I'm going to describe a bug. Do not write any code yet. Ask me up to five questions, one at a time, that would help me find the cause myself. Only after I say \"give me a hint\" may you point at a suspect. Language: [language]. Symptom: [what happens vs. what should happen].",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Turn a messy brain dump into a ranked task list",
+   "body": "Here is everything on my mind, unsorted:\n\"\"\"\n[paste]\n\"\"\"\nGroup it into: Do today (max 3), This week, Waiting on others, Someday, Delete. For each Do-today item write the very first physical action (under 10 minutes). Flag anything that has a hidden deadline.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Interview me for a role, one question at a time",
+   "body": "Act as a hiring manager for [job title] at a [company type]. Ask me one interview question at a time and wait. After each of my answers give: a score from 1–5, what a strong answer would have included, and one sentence I could add. Mix behavioral, situational and one technical question. Start now.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Feynman check on a concept I think I understand",
+   "body": "I'll explain [concept] in my own words. Don't correct me immediately. First list what I got right, then every place my explanation was vague, wrong or skipped a step. Then ask me two questions that would expose a deeper gap. Here is my explanation:\n\"\"\"\n[paste]\n\"\"\"",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Ten subject lines in ten different angles",
+   "body": "Write 10 email subject lines for [offer] aimed at [audience]. Use one angle per line and label it: curiosity, benefit, urgency, social proof, question, number, contrarian, story, direct, personal. Max 45 characters each. No emojis, no ALL CAPS, no fake urgency.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Explain my CSV before I analyze it",
+   "body": "I'll paste the first 30 rows and the column headers of a dataset. Before any analysis: describe what each column probably means, flag columns with suspicious values or mixed types, list five questions the data could answer, and tell me what extra context you would need. Do not compute anything yet.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Cook from what's in my fridge",
+   "body": "I have: [ingredients]. Pantry staples: [list]. Equipment: [stove, oven, air fryer…]. Time: [minutes]. Suggest three dinners ranked by effort. For the top one give exact quantities for [number] people and numbered steps. Tell me which ingredient to buy if I'm only allowed one extra.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Fitness_Training",
+   "title": "Build a four-week plan around my actual schedule",
+   "body": "Make a four-week strength plan. My days available: [days]. Session length: [minutes]. Equipment: [list]. Goal: [goal]. Experience: [level]. Injuries or limits: [limits]. Give a table per week with exercises, sets × reps and an RPE target, plus one rule for when to add weight. Keep it boring and sustainable.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Stress-test my monthly budget",
+   "body": "Here are my monthly numbers: income [x], fixed costs [list], variable spending [list], debt payments [list]. Find the three biggest levers to improve my savings rate, and run these scenarios: income drops 20%, an unexpected [amount] bill, interest rates rise 2 points. Show the math in a small table. You are not a financial adviser; list what I should verify with one.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Build a day-by-day itinerary with realistic travel time",
+   "body": "Plan [number] days in [city] for [travelers]. Interests: [list]. Pace: [slow/medium/fast]. Budget per day: [amount]. Group stops by neighbourhood to avoid backtracking, include rough walking or transit time between stops, a lunch spot per day, and one rainy-day swap. Mark anything that needs a booking in advance.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "A conversation partner that corrects only what matters",
+   "body": "Let's chat in [language] at [CEFR level] about [topic]. Keep your replies to 2–3 short sentences. After each message of mine, add a line starting with \"Fix:\" that corrects at most two mistakes, the ones that most affect meaning. Don't translate unless I ask. Ask me a question every turn.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Pre-mortem for a launch",
+   "body": "We are launching [product] on [date]. Assume it has failed spectacularly six months later. Write 10 plausible reasons for the failure, grouped into product, market, execution and timing. Rate each by likelihood and impact (low/med/high) and propose one cheap action this month that reduces the top three.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Read a contract clause like a skeptical friend",
+   "body": "Rewrite the clause below in plain English, then list: what it obliges me to do, what it lets the other side do, any open-ended or one-sided terms, and three questions I should ask before signing. Remind me where a lawyer would be worth paying for. Clause:\n\"\"\"\n[paste]\n\"\"\"",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Prepare for a doctor's appointment",
+   "body": "I have an appointment about [topic]. Help me prepare: a one-paragraph timeline of my symptoms from the notes below, a list of questions to ask, what tests or information the doctor might want, and what to write down during the visit. Do not diagnose. Notes:\n[paste]",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Argue against my plan",
+   "body": "I'm planning to [decision]. Steelman the strongest case against it in five points. Then tell me which assumptions I'm making that I have not verified, and what evidence would change your mind either way. Be blunt, not harsh.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Summarize a paper with its limits attached",
+   "body": "Summarize the paper below in: the question, the method in two sentences, the main result with the actual numbers, three limitations the authors admit or should admit, and what a skeptical reviewer would ask for next. Do not add claims that are not in the text.\n\"\"\"\n[paste abstract or full text]\n\"\"\"",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Critique my scene without rewriting it",
+   "body": "Read my scene and give feedback in three parts: what is working (be specific), where the tension sags (quote the lines), and one question about each major character's motivation. Do not rewrite any sentences. Genre: [genre]. What I'm trying to achieve: [intent].\n\"\"\"\n[scene]\n\"\"\"",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Use XML tags to keep a long prompt unambiguous",
+   "body": "Structure long prompts with tags so Claude never confuses instructions with material:\n\n<instructions>Summarize the document in five bullets for a busy executive.</instructions>\n<document>[paste]</document>\n<format>Plain bullets, no headings, max 20 words each.</format>\n\nTag names don't matter as long as they are consistent and you refer to them in the instructions.",
+   "model": "claude"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Ask Claude to quote before it answers",
+   "body": "For long documents, ask for evidence first:\n\nRead the report below. First extract the exact quotes relevant to the question inside <quotes> tags. Then answer the question using only those quotes, and say \"not in the document\" if they do not support an answer.\n\n<question>[question]</question>\n<report>[paste]</report>",
+   "model": "claude"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Review my diff like a careful senior engineer",
+   "body": "You are reviewing a pull request. Read the diff and report, in this order: bugs or logic errors, security issues, missing tests, performance problems, naming or readability. Quote the line for each point and suggest a fix. If something is fine, don't mention it. End with a verdict: approve, approve with nits, or request changes.\n<diff>\n[paste]\n</diff>",
+   "model": "claude"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Ask for a plan before any code",
+   "body": "Before writing code for the task below, write a short plan: files you'd change, the approach in 3–5 steps, edge cases, and how you'd test it. Wait for my approval. Task: [task]. Constraints: [stack, versions, style].",
+   "model": "claude"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Keep a character's voice consistent across a long story",
+   "body": "I'll paste three samples of how [character] speaks. Write a one-page voice guide: vocabulary level, sentence rhythm, verbal tics, what they never say, how they speak under stress. Then check the draft I paste next for lines that break the voice and propose replacements.",
+   "model": "claude"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Think out loud before deciding",
+   "body": "Before you answer, reason through the problem step by step inside <thinking> tags: list the options, the criteria that matter, and the evidence for each. Then give your recommendation in <answer> tags in three sentences. Problem: [problem].",
+   "model": "claude"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Turn a rambling meeting transcript into decisions",
+   "body": "From the transcript below extract: decisions made (who decided, what), action items (owner, deadline, if stated), open questions, and disagreements that were not resolved. Do not invent owners or dates; write \"unassigned\" when unclear.\n<transcript>\n[paste]\n</transcript>",
+   "model": "claude"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Compare two versions of a document",
+   "body": "Compare <old> and <new>. List every substantive change as: section, what it said before, what it says now, and who benefits. Ignore formatting and typo fixes. Then list anything that was removed silently. Mark changes you are unsure about.\n<old>[paste]</old>\n<new>[paste]</new>",
+   "model": "claude"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Edit for concision without losing my voice",
+   "body": "Edit the draft below to be about 30% shorter. Keep my tone and any jokes. Cut hedging, repeated points and filler phrases. Show the result first, then a short list of the five biggest cuts and why. Don't add new ideas.\n<draft>\n[paste]\n</draft>",
+   "model": "claude"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Tailor my resume bullets to a job posting",
+   "body": "Rewrite each bullet in <resume> to match what <job_posting> emphasizes, using only facts already in the resume. Lead with outcomes and numbers. Mark any bullet where the resume gives no evidence for something the posting asks for, so I can add a true detail myself.\n<resume>[paste]</resume>\n<job_posting>[paste]</job_posting>",
+   "model": "claude"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Teach me through questions, not lectures",
+   "body": "Teach me [topic] using the Socratic method. Start with one question to find what I already know. Each reply: confirm or gently correct my answer in one sentence, then ask the next question, slightly harder. After eight questions, summarize what I now understand and what to review.",
+   "model": "claude"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Sanity-check an analysis before I present it",
+   "body": "Here is my analysis and the data description. Look for: confounders, survivorship bias, small samples, p-hacking risk, wrong denominators, misleading charts. For each, say whether it applies and how I'd check. Be specific to my case.\n<analysis>[paste]</analysis>",
+   "model": "claude"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Project kickoff brief in one page",
+   "body": "Write a one-page kickoff brief for [project]: goal in one sentence, non-goals, success metrics, stakeholders and their stake, milestones, top three risks with mitigations, and the first week's tasks. Ask me up to five questions first if something essential is missing.",
+   "model": "claude"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Explain a financial product's fine print",
+   "body": "Explain this offer in plain language: total cost over the full term, every fee and when it applies, what happens if I'm late or leave early, and what a cheaper alternative would look like. Show an example with numbers. Offer text:\n\"\"\"\n[paste]\n\"\"\"",
+   "model": "claude"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Translate with notes, not just words",
+   "body": "Translate the text into [language]. Then add a table of the five hardest phrases: literal meaning, natural meaning, register (formal/informal), and one alternative. Keep the translation natural, not word for word. Text: [paste]",
+   "model": "claude"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Plan a trip around a constraint",
+   "body": "Plan [number] days in [region] where the constraint is [no car / traveling with toddler / under €[x] per day / limited mobility]. Be honest about trade-offs and say where the constraint makes something unrealistic. Give one backup plan per day.",
+   "model": "claude"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Explain a lab report in plain language",
+   "body": "Explain each value in the lab results below: what it measures, whether it's inside the reference range shown, and what questions I could ask my clinician. Don't diagnose or suggest treatment. Say clearly when something needs prompt medical attention.\n<results>\n[paste]\n</results>",
+   "model": "claude"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Ask a question about a very long document",
+   "body": "I'm uploading a long document ([pages] pages). Answer only from it. For each answer, give the section or page and a one-line quote that supports it. If the document does not answer the question, say so instead of guessing. Question: [question].",
+   "model": "gemini"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Turn a lecture video into study notes",
+   "body": "Watch the video at [link or upload]. Produce: a timestamped outline, the five key ideas in one sentence each, a glossary of terms introduced, and ten flashcards (question → answer). Flag anything the speaker said that is likely outdated or disputed.",
+   "model": "gemini"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Draft a reply from the email thread in Gmail",
+   "body": "Summarize the thread in two sentences, list what each person is asking for, then draft a reply in a friendly but concise tone that answers every open question. Offer a shorter version of three lines. Thread: [use @Gmail or paste].",
+   "model": "gemini"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Turn a spreadsheet of numbers into a briefing",
+   "body": "Using the attached sheet, write a one-page briefing for leadership: three headline findings with the numbers, two anomalies worth checking, one recommendation and the data that supports it. State your assumptions and what you couldn't tell from the data.",
+   "model": "gemini"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Describe a chart and critique it",
+   "body": "I'm sharing an image of a chart. Describe what it shows in two sentences, read off the key values, then critique it: misleading axes, missing labels, wrong chart type, unclear takeaway. Suggest a better version and say how you'd build it.",
+   "model": "gemini"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Plan from a photo",
+   "body": "Here is a photo of a place I want to visit. Guess where it might be and say how confident you are. List what to check to confirm, the best season to go, and a three-day plan nearby for a [budget] budget. Don't present guesses as certain facts.",
+   "model": "gemini"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Identify what's in my fridge from a photo",
+   "body": "Look at the photo of my fridge. List everything you can identify and mark what you're unsure about. Suggest three meals using mostly those items and tell me which foods look like they should be used first. Ask me before assuming anything you can't see.",
+   "model": "gemini"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Practice reading signs from photos",
+   "body": "I'll upload photos of menus, signs or packaging in [language]. For each one: transcribe it, translate it, explain any idioms or abbreviations, and tell me one new word worth memorizing. Mention if the photo is too blurry to read a part.",
+   "model": "gemini"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Prepare for a presentation using my slides",
+   "body": "Review my uploaded slide deck as if you're a skeptical senior audience. For each slide: what's the one message, is the evidence enough, and what question would you ask? Then list the three questions I'm most likely to be asked and draft honest answers.",
+   "model": "gemini"
+  },
+  {
+   "community": "Fitness_Training",
+   "title": "Check my exercise form from a short video",
+   "body": "I'm uploading a short video of my [exercise]. Describe what you see in each phase of the movement, point out common form issues that may apply, and give two cues I could try. You can't see everything, so say what a coach should check in person. Not medical advice.",
+   "model": "gemini"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Rewrite for different audiences",
+   "body": "Rewrite the paragraph below three ways: for a technical expert, for a smart friend outside the field, and for a ten-year-old. Keep the facts identical. After each version, note what you removed or simplified.\n\"\"\"\n[paragraph]\n\"\"\"",
+   "model": "gemini"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Explain an unfamiliar codebase from the repo",
+   "body": "Read the files I attached. Explain the architecture in one page: entry points, main modules and what each does, data flow for the most common request, and where I should start to add [feature]. Mention anything that looks risky or undocumented. Don't invent files you haven't seen.",
+   "model": "gemini"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Landing page copy from a product doc",
+   "body": "From the attached product document, write landing page copy: a headline of at most 10 words, a subhead, three benefit blocks (benefit first, feature second), one objection-handling FAQ, and a call to action. Use only claims the document supports.",
+   "model": "gemini"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Compare options with a weighted matrix",
+   "body": "Help me choose between [options]. Ask me for the 5–7 criteria that matter and weights that sum to 100. Score each option 1–5 per criterion with a one-line reason, show the weighted totals in a table, then tell me what would flip the ranking.",
+   "model": "gemini"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Summarize a terms-of-service update",
+   "body": "Compare the old and new terms I'm attaching. List what changed in plain language, focusing on privacy, payments, arbitration, data sharing and my right to cancel. Rank changes by how much they matter to an ordinary user. This is a summary, not legal advice.",
+   "model": "gemini"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Plan a big purchase over twelve months",
+   "body": "I want to buy [item, cost] in 12 months. My monthly surplus is about [amount]. Build a saving schedule, propose where to find [x] extra per month, suggest how to time the purchase (sales, seasons), and tell me the signs I should delay. Keep a small emergency buffer.",
+   "model": "gemini"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Explain a health topic at three levels",
+   "body": "Explain [condition or topic] at three levels: a 5-line summary, a detailed explanation for a patient, and a list of terms a clinician would use. Cite the kind of source each claim comes from (guideline, trial, expert opinion). Say what is still uncertain. This is education, not medical advice.",
+   "model": "gemini"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Ask Grok what people are actually saying about a topic",
+   "body": "Search recent posts on X about [topic] from the last [days] days. Summarize the three main viewpoints, name the types of accounts pushing each (researchers, companies, hobbyists, bots), and show one representative post per viewpoint. Separate verified facts from rumor and tell me which claims lack a source.",
+   "model": "grok"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Quick pulse check on a brand",
+   "body": "What is the current sentiment about [brand] on X? Give me: what people praise, what they complain about, any ongoing controversy, and whether the conversation is growing or fading. Be honest if the sample is small or dominated by a few loud accounts.",
+   "model": "grok"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Draft a witty post without crossing into cringe",
+   "body": "Write five posts for [brand/person] announcing [news]. Tone: dry, self-aware, a little irreverent. Max 240 characters each. No hashtags, no emojis, no \"game-changer\". Give one that is straightforward in case the jokes don't suit the audience.",
+   "model": "grok"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Roast my draft, then fix it",
+   "body": "Give me a brutally honest, funny critique of this draft in five bullet points. Then rewrite it so those problems are gone. Keep the critique about the writing, never about me. Draft:\n\"\"\"\n[paste]\n\"\"\"",
+   "model": "grok"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Play devil's advocate with attitude",
+   "body": "I'm about to [decision]. Take the opposite side and argue it like a sharp friend who has seen this go wrong: three reasons it might fail, one thing I'm in denial about, and one honest question I'd rather not answer. No hedging, but no cruelty.",
+   "model": "grok"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Write dialogue with a distinctive voice",
+   "body": "Write a 12-line argument between [character A: description] and [character B: description] about [subject]. Each should sound clearly different without tags. Use subtext: neither says what they really want. End mid-conflict.",
+   "model": "grok"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Get unfiltered salary-negotiation coaching",
+   "body": "I got an offer: [role, company, pay, benefits]. Market for this role in [location] as far as you know: [your info]. Tell me bluntly whether to negotiate, what number to ask for and why, and give me a short script for the call and one for email. List the risks.",
+   "model": "grok"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Daily news brief on my topics",
+   "body": "Each morning, give me a brief on [topics]: five items maximum, each in two sentences, with why it matters to someone who works in [field]. Mark anything that is still developing and may change. Skip celebrity gossip and anything older than 48 hours.",
+   "model": "grok"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Debate me on a topic to learn it",
+   "body": "Debate [motion] with me. You take the side opposite to mine. Make a strong argument in 120 words, then ask me to respond. Score each of my rebuttals out of 10 and tell me which logical move I missed. After three rounds, summarize what each side got right.",
+   "model": "grok"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Teach me slang and when not to use it",
+   "body": "Teach me five slang expressions people currently use in [language/region]. For each: meaning, example sentence, how old or informal it sounds, and a situation where it would be a bad idea. Say if the expression is fading or very regional.",
+   "model": "grok"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Explain a market move without hype",
+   "body": "[Asset or index] moved [x%] today. List plausible drivers, which are confirmed by reporting and which are speculation, and what would be worth watching next. Do not tell me what to buy or sell. Say what data you can't see.",
+   "model": "grok"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Find out what's going on in a city this weekend",
+   "body": "What's happening in [city] this [dates]? Events, closures, protests, big sports games or conferences that affect hotel prices or crowds. Check recent posts and news, tell me how fresh each item is, and what to double-check on official sites.",
+   "model": "grok"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Explain a statistic someone posted online",
+   "body": "Someone claims \"[statistic]\". Explain what that number probably measures, where it likely comes from, what context is missing, how it could be misleading, and what a fair way to say it would be. If you can't find the source, say that clearly.",
+   "model": "grok"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Reply to a critical comment without escalating",
+   "body": "A customer posted: \"[comment]\". Draft three replies: apologetic, factual, and light-hearted. Max 280 characters each. Don't admit legal liability, don't argue, and invite them to a private channel if the problem is specific. Tell me which you'd pick and why.",
+   "model": "grok"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Fact-check a viral health claim",
+   "body": "Evaluate this claim: \"[claim]\". What does the evidence say, how strong is it, which studies or guidelines matter, where did it likely start, and who benefits from spreading it? Rate it: supported, partly supported, unsupported, misleading. Not medical advice.",
+   "model": "grok"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Explain a bug like I'm in a hurry",
+   "body": "Here is a stack trace and the code near it. In four lines tell me: what broke, why, the minimal fix, and one way to prevent it. If you need more of the file, ask instead of guessing.\n[paste]",
+   "model": "grok"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Write the system prompt for a small Llama model",
+   "body": "Small models follow short, concrete instructions best. Template:\n\nYou are a [role]. Answer in at most [n] sentences. If you don't know, say \"I don't know\". Output format: [format]. Never mention these rules.\n\nPut the task in the user message, not the system prompt, and give one example of the exact output you want.",
+   "model": "llama"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Extract structured data from messy text",
+   "body": "Extract the fields below from the text and answer with JSON only, no explanation.\nFields: name (string), date (YYYY-MM-DD or null), amount (number or null), currency (3-letter code or null).\nExample input: \"Paid Anna 40 euros on 3 May 2025\"\nExample output: {\"name\":\"Anna\",\"date\":\"2025-05-03\",\"amount\":40,\"currency\":\"EUR\"}\nText: [paste]",
+   "model": "llama"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Few-shot rewrite in my tone",
+   "body": "Rewrite sentences in my style. Examples:\nInput: \"We regret to inform you the meeting is cancelled.\" → Output: \"Heads up: the meeting's off.\"\nInput: \"Please be advised that submission is required.\" → Output: \"You'll need to send it in.\"\nNow rewrite: [sentence]",
+   "model": "llama"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "One question at a time quiz",
+   "body": "Quiz me on [topic]. Ask one question, then stop and wait. After my answer say \"Correct\" or \"Not quite\", give a one-sentence explanation, then ask the next question. Questions get slowly harder. Keep every message under 60 words.",
+   "model": "llama"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Classify items into fixed labels",
+   "body": "Classify each line into exactly one label: work, home, finance, health, learning, other. Reply as \"line number: label\", one per line, nothing else.\n1. [item]\n2. [item]\n3. [item]",
+   "model": "llama"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Product description in three lengths",
+   "body": "Write a description for [product] in three lengths: 15 words, 40 words, 90 words. Label each. Use plain words, include one concrete detail, and don't use \"revolutionary\", \"cutting-edge\" or \"seamless\".",
+   "model": "llama"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Interactive story with fixed rules",
+   "body": "You are the narrator of a text adventure set in [setting]. Rules: describe in at most 80 words, end every turn with three numbered choices, track inventory and health in a one-line status at the end, never decide for me, and keep the tone [tone]. Begin.",
+   "model": "llama"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Vocabulary cards in a fixed format",
+   "body": "Give me 10 words about [topic] in [language]. Format each as: word | translation | example sentence | translation of the sentence. One line per word. No extra comments.",
+   "model": "llama"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Cover letter from three bullet points",
+   "body": "Write a cover letter of 180 words for [role] at [company]. Facts to use: 1) [fact] 2) [fact] 3) [fact]. Tone: warm but professional. Do not invent experience. Don't open with \"I am writing to apply\".",
+   "model": "llama"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Scale a recipe correctly",
+   "body": "Scale this recipe from [n] servings to [m]. Show a table: ingredient, original amount, new amount. Round to practical kitchen measures and mention anything that does not scale linearly (spices, baking time, pan size).\n[recipe]",
+   "model": "llama"
+  },
+  {
+   "community": "Fitness_Training",
+   "title": "Convert a workout into a table",
+   "body": "Convert the workout below into a markdown table with columns: exercise, sets, reps, rest, notes. Keep the original order. If any info is missing write \"?\" instead of making it up.\n[paste]",
+   "model": "llama"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Categorize my transactions",
+   "body": "Assign one category to each transaction from this list only: housing, food, transport, health, fun, subscriptions, income, other. Output CSV with columns date, description, category. Do not change the description.\n[paste]",
+   "model": "llama"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Write a bash one-liner and explain it",
+   "body": "Task: [describe]. Give me the command first in a code block, then a line-by-line explanation of each flag, then one thing that could go wrong on macOS vs Linux. Keep it POSIX-compatible if possible.",
+   "model": "llama"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Summarize a policy in five bullets",
+   "body": "Summarize this privacy policy in five bullets a teenager would understand: what data is collected, why, who gets it, how long it's kept, and how to delete it. If something isn't stated, write \"not stated\".\n[paste]",
+   "model": "llama"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Pros and cons with weights",
+   "body": "Decision: [decision]. List up to five pros and five cons. Give each a weight 1–5 for how much it matters. Add up both sides and show the totals. Then name one factor missing from my list.",
+   "model": "llama"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Summarize a medicine leaflet",
+   "body": "From the leaflet, list in plain words: what it's for, usual way to take it, the common side effects, the signs that need urgent care, and what not to mix it with. If the leaflet doesn't say, write \"not in the leaflet\". This is not medical advice.\n[paste]",
+   "model": "llama"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Packing list from the weather and plan",
+   "body": "I'm going to [place] for [days] days. Weather: [forecast]. Activities: [list]. Make a packing list in categories (clothes, documents, tech, toiletries, extras). Mark what I can wear twice. Keep it carry-on friendly.",
+   "model": "llama"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Concise summary with a hard length limit",
+   "body": "Summarize the text in exactly 3 sentences, maximum 60 words in total. First sentence: the main point. Second: the most important detail. Third: why it matters. No lists, no quotes.\n[text]",
+   "model": "mistral"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Practise French at my level",
+   "body": "Parlons en français, niveau [A2/B1/B2]. Utilise des phrases courtes. Après chacune de mes réponses, corrige au plus deux erreurs avec une courte explication en français, puis pose-moi une nouvelle question sur [sujet].",
+   "model": "mistral"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Translate between French and English with register",
+   "body": "Traduis le texte ci-dessous en anglais. Indique le registre (formel, courant, familier) et propose une alternative pour les trois expressions les plus idiomatiques. Texte : [texte]",
+   "model": "mistral"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Ask for function calling style output",
+   "body": "Return only valid JSON that matches this schema: {\"action\": \"search\" | \"answer\", \"query\": string | null, \"answer\": string | null}. If you need more information, use action \"search\" with a short query. Otherwise use \"answer\". No extra text.\nUser question: [question]",
+   "model": "mistral"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Generate unit tests from a function",
+   "body": "Write unit tests for this function using [framework]. Cover: normal inputs, edge cases, invalid inputs, and one property that should always hold. Name tests descriptively. Don't change the function; if you find a bug, say so after the tests.\n[paste]",
+   "model": "mistral"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Write a SQL query from a description",
+   "body": "Schema: [tables and columns]. Write a SQL query for [question]. Dialect: [Postgres/MySQL/…]. Show the query, then explain in two sentences what it does and what indexes would help.",
+   "model": "mistral"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "One-page decision memo",
+   "body": "Write a one-page memo for [decision]. Sections: context (3 lines), options (max 3), recommendation, risks, next steps with owners. Neutral tone, no buzzwords. Facts to use: [facts].",
+   "model": "mistral"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Rewrite in a friendly European tone",
+   "body": "Rewrite this announcement for a European audience: friendly, understated, clear, no hype, no exclamation marks. Keep it under 100 words and keep all facts.\n[text]",
+   "model": "mistral"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Weekly review template",
+   "body": "Guide me through a weekly review in six questions, one at a time: what went well, what didn't, what's unfinished, what's coming, what can I drop, what's my one priority. After my answers, produce a plan of at most 5 items.",
+   "model": "mistral"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Summary then quiz",
+   "body": "Summarize [text] in 6 bullets. Then write 5 multiple-choice questions with 4 options each, and put the answers at the end under \"Answers\". Questions must test understanding, not memory of wording.",
+   "model": "mistral"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Compare two methods in a table",
+   "body": "Compare [method A] and [method B] in a table with rows: how it works, strengths, weaknesses, typical use, cost, common mistakes. Keep each cell under 15 words. Say where experts disagree.",
+   "model": "mistral"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "A weekly meal plan with a shared shopping list",
+   "body": "Plan 5 dinners for [people], vegetarian, under [minutes] minutes each, reusing ingredients to limit waste. Then give one grocery list grouped by aisle. Avoid: [allergies or dislikes].",
+   "model": "mistral"
+  },
+  {
+   "community": "Fitness_Training",
+   "title": "Warm-up and mobility routine",
+   "body": "Create a 10-minute warm-up before [sport/exercise]. Use bodyweight only, 6–8 moves, with durations. Add one alternative for each if I have [limit]. Keep instructions to one line per move.",
+   "model": "mistral"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Answer \"tell me about yourself\"",
+   "body": "Write three versions of an answer to \"Tell me about yourself\" for a [role] interview: 30 seconds, 60 seconds, 90 seconds. Use present, past, future. Base it on: [facts]. Don't exaggerate.",
+   "model": "mistral"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Compare two loan offers",
+   "body": "Offer A: [amount, rate, term, fees]. Offer B: [amount, rate, term, fees]. Show total cost, monthly payment and APR-like comparison in a table, then say which is cheaper under early repayment. List what else I should check.",
+   "model": "mistral"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Generate a short story in a strict form",
+   "body": "Write a 300-word story that starts with the sentence \"[sentence]\". Constraints: one location, two characters, no dialogue tags other than \"said\", and the last line must reverse the meaning of the first.",
+   "model": "mistral"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Give the reasoning model a clear goal, not a script",
+   "body": "Reasoning models do best when you state the goal and constraints and let them plan. Don't tell them how to think step by step. Example:\n\nGoal: refactor this function so it handles empty input and runs in O(n).\nConstraints: no new dependencies, keep the public signature.\nReturn the code and a two-line explanation of the changes.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Prove a function is correct",
+   "body": "Here is a function and its specification. Find an input that breaks it or argue why none exists. If you find one, show the input, the expected output and the actual output. Then provide the fix and re-check your own fix against the same input.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Find the flaw in a statistical argument",
+   "body": "Read the argument below. Identify every logical or statistical flaw: confounders, base-rate neglect, cherry-picked windows, correlation vs causation. For each: quote, why it's a problem, and what data would settle it.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Work through a hard math problem carefully",
+   "body": "Solve the following problem. After you reach an answer, verify it by a second, different method (or by substituting back). If the two disagree, find the error. Give only the final answer and the verification summary, not every step.\nProblem: [problem]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Explain a proof so I can reproduce it",
+   "body": "Explain the proof of [theorem] so that I can reproduce it from memory. Give: the idea in one sentence, the key lemma, the three steps, and the place where students usually get stuck. End with a similar problem to try.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Expected value of a risky choice",
+   "body": "Option A: [outcome and probability]. Option B: [outcome and probability]. Compute the expected value for each, then show how the ranking changes if my probability estimates are off by 10 points. State what the expected value ignores (risk tolerance, ruin).",
+   "model": "deepseek"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Unit economics sanity check",
+   "body": "Given: price [x], variable cost [y], fixed cost [z], customer acquisition cost [c], churn [p% per month]. Calculate contribution margin, payback period, lifetime value and break-even customers. Show formulas and flag assumptions that look unrealistic.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Debug by finding the invariant that broke",
+   "body": "This program fails on [input]. Identify the invariant the code assumes, find where it's violated, and give the minimal patch. Then list two other inputs likely to fail for the same reason.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Convert code between languages idiomatically",
+   "body": "Port this [language A] code to idiomatic [language B]. Don't translate line by line; use the target language's standard library and conventions. List behaviors that differ (integer overflow, null handling, ordering) that I should test.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Rewrite an argument to be airtight",
+   "body": "Here is my argument. Rewrite it so each premise is explicit, remove unsupported leaps, and mark where I'm relying on an unstated assumption. Then give the strongest objection and a reply.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Plan a plot with no holes",
+   "body": "I'm writing a [genre] story with this setup: [setup]. List the plot's key events in order and check for causality: does each event follow from the previous? Identify any hole or coincidence that does too much work, and suggest repairs.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Critique an experimental design",
+   "body": "Here is my experiment design. List threats to internal and external validity, missing controls, the likely sample size needed for [effect size], and what I should preregister. Be specific to this design.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Choose the right statistical test",
+   "body": "I have [describe data: variables, types, sample sizes, whether paired]. Which test is appropriate and why? State the assumptions, how to check them, and what to use if they fail. Give code for [R/Python].",
+   "model": "deepseek"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Compare rent vs buy honestly",
+   "body": "Home price [x], down payment [y], mortgage rate [r], rent [z], expected stay [years], expected appreciation [g], maintenance [m%]. Build a year-by-year comparison and find the break-even year. List the assumptions the result is most sensitive to.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Estimate a project with uncertainty",
+   "body": "Estimate [project]. Break it into tasks, give each a best, likely and worst-case time, compute the totals, and explain where the biggest uncertainty sits. Suggest the one experiment that would shrink the uncertainty most.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Explain why a grammar rule exists",
+   "body": "Explain the rule behind [grammar point] in [language]. Give the historical or logical reason if there is one, three examples, the most common exception, and a trick to remember it. Don't just list the rule.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Optimize a multi-city route",
+   "body": "Cities: [list]. Constraints: [days, budget, no backtracking, must be at X on date]. Find a route that minimizes travel time. Show the order, the transport between stops with rough durations, and what you traded off.",
+   "model": "deepseek"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Evaluate a study's strength",
+   "body": "Read the study summary below. Say what type of study it is, what it can and cannot show, the sample and who's missing, the effect size in absolute terms, and how confident I should be. Not medical advice.\n[paste]",
+   "model": "deepseek"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Chinese conversation partner with pinyin on request",
+   "body": "我们用中文聊天,话题是[话题],我的水平是 HSK [级别]。请用短句回复。每次在我的句子后面指出最多两个错误并解释。只有当我输入 \"pinyin\" 时才给拼音。",
+   "model": "qwen"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Translate Chinese to English with context notes",
+   "body": "Translate the Chinese text below into natural English. Then add notes for each idiom or cultural reference (chengyu, internet slang, politeness levels): literal meaning, actual meaning, and when it's used.\n[text]",
+   "model": "qwen"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Compare how a concept is expressed in three languages",
+   "body": "Show how \"[concept]\" is said in English, Mandarin and Spanish. For each: the usual word, a more formal or informal alternative, a typical example sentence, and any nuance that doesn't translate. Put it in a table.",
+   "model": "qwen"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Write a bilingual customer notice",
+   "body": "Write an announcement about [change] in both English and Simplified Chinese. Keep the same structure and level of politeness in each. Flag anything where a literal translation would sound odd and give the localized phrasing instead.",
+   "model": "qwen"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Adapt product copy for a Chinese-speaking audience",
+   "body": "Adapt this English product copy for customers in [mainland China / Taiwan / Singapore]. Don't translate word for word. Adjust idioms, units, tone and calls to action to local norms and say what you changed and why.\n[copy]",
+   "model": "qwen"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Generate code with tests in one pass",
+   "body": "Write a [language] function that [task]. Then write at least six tests covering normal cases, edge cases and invalid input. Output: code block 1 for the function, code block 2 for the tests, and a two-line note on any assumptions.",
+   "model": "qwen"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Explain code in two languages",
+   "body": "Explain what this code does in English and in [Chinese/Spanish/other]. Keep both explanations to five lines. Then list any bug or unclear part and propose a fix. Keep identifier names and code in English.\n[code]",
+   "model": "qwen"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Turn a table into a chart specification",
+   "body": "From the table below, suggest the clearest chart type for showing [question]. Write the chart as Python (matplotlib) code with labeled axes, a title, and colorblind-safe colors. Explain in one line why you chose that chart.\n[table]",
+   "model": "qwen"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Long document Q&A with sections cited",
+   "body": "Read the document and answer the question. Cite each claim as (Section X, Paragraph Y). If a claim has no support, mark it as \"not in document\". Question: [question].\n[document]",
+   "model": "qwen"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Create a flashcard deck with spaced-repetition tags",
+   "body": "From the notes below create 20 flashcards. Format as CSV: front, back, tag. Tags: easy, medium, hard. Each card tests one fact or one idea. No card should be answerable from the question text alone.\n[notes]",
+   "model": "qwen"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Rewrite for tone across cultures",
+   "body": "Rewrite this email to a [country] business partner. Keep it respectful and direct enough to be clear, avoid idioms that don't travel, and keep the same request. Tell me what you softened or sharpened.\n[email]",
+   "model": "qwen"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Structured meeting notes in JSON",
+   "body": "Convert the meeting transcript into JSON with keys: date, attendees, decisions (array), action_items (array of {owner, task, due}), open_questions (array). Use null for missing information. Output JSON only.\n[transcript]",
+   "model": "qwen"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Prepare for an interview in a second language",
+   "body": "I have an interview in [language] for [role]. Give me: ten likely questions, a model answer to each at B2 level, vocabulary I should know, and three phrases to buy time politely when I need to think.",
+   "model": "qwen"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Convert and compare prices across currencies",
+   "body": "I'm comparing [item] priced at [price A, currency, store] and [price B, currency, store]. Convert to [my currency] using rates I give: [rates], include shipping and tax [x%], and tell me which is cheaper. Explain the assumptions.",
+   "model": "qwen"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Survival phrases for a trip",
+   "body": "I'm visiting [country] for [days]. Give me 25 phrases I'll actually use: greetings, ordering food, directions, transport, emergencies, bargaining. Show the local script, romanization and meaning. Add three cultural mistakes to avoid.",
+   "model": "qwen"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Explain terminology in two languages",
+   "body": "Explain the medical term \"[term]\" in plain English and in [language]. Include what it means, common causes, why it matters and when to seek care. Mention if the term has different names in the two languages. This is not medical advice.",
+   "model": "qwen"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Excel: ask for a formula by describing the data",
+   "body": "In Excel Copilot: \"In column D, calculate the percentage change between column B (last year) and column C (this year). Show it as a percentage with one decimal, and highlight rows where it drops more than 10%.\" Then ask it to explain the formula it used.",
+   "model": "copilot"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Excel: clean messy text columns",
+   "body": "My data in column A has inconsistent names (extra spaces, mixed capitals, some \"Last, First\"). Create a new column with \"First Last\" in proper case and flag rows you were not sure about. Explain each formula you used.",
+   "model": "copilot"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Excel: summarize with a PivotTable",
+   "body": "Create a PivotTable from the data: rows = [category], columns = [month], values = sum of [amount]. Add a chart and write three observations a manager would care about. Point out anything unusual.",
+   "model": "copilot"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "PowerPoint: build a deck from a Word document",
+   "body": "Create a 10-slide presentation from the document [file]. Audience: [who]. One message per slide, a short title that states the takeaway, at most 4 bullets, and suggested visuals. End with a decision slide that says what I want the audience to do.",
+   "model": "copilot"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "PowerPoint: tighten an existing deck",
+   "body": "Review this presentation and suggest changes: which slides to merge or cut, which slide titles are vague, where the story jumps, and which charts need a clearer takeaway. Then rewrite the three weakest titles.",
+   "model": "copilot"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Word: rewrite a paragraph in a different tone",
+   "body": "Rewrite the selected text to be more [direct/formal/friendly] and 20% shorter. Keep every number and name. Give me two options and say how they differ.",
+   "model": "copilot"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Outlook: triage my inbox",
+   "body": "Summarize unread emails from the last [days] days. Group them as: need a reply from me, FYI, waiting on someone, can be ignored. For each reply-needed email give the sender, the ask and the deadline if any.",
+   "model": "copilot"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Outlook: draft a polite decline",
+   "body": "Draft a reply declining [request] from [person]. Tone: warm and firm. Offer one alternative (a later date, a smaller version or a colleague). Max 100 words. Don't over-apologize.",
+   "model": "copilot"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Teams: recap a meeting for people who missed it",
+   "body": "Recap the meeting in under 150 words: purpose, decisions, action items with owners, and open questions. List who has to do something by when. Put the most important thing first.",
+   "model": "copilot"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Teams: prepare me for the next meeting",
+   "body": "Based on my calendar, recent emails and files about [project], prepare a briefing for tomorrow's meeting: what happened since last time, what decisions are expected, what I should ask, and any risk worth raising.",
+   "model": "copilot"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Draft a performance review self-assessment",
+   "body": "Using my notes below, write a self-assessment: three accomplishments with measurable impact, two growth areas with what I'm doing about them, and goals for the next period. First person, honest, no inflated claims.\n[notes]",
+   "model": "copilot"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Word: turn a product brief into a one-pager",
+   "body": "Create a one-page summary from the brief: headline, problem, solution, three benefits, proof points (use only facts from the document) and a call to action. Format with clear headings and short paragraphs.",
+   "model": "copilot"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Excel: explain a complicated workbook",
+   "body": "Explain how this workbook works: which sheets feed which, what the main formulas do, where manual input is required, and where errors are most likely. Then list any hard-coded numbers that should be inputs.",
+   "model": "copilot"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Ask Copilot to explain selected code",
+   "body": "Explain the selected code: purpose, inputs and outputs, side effects, and any edge cases it doesn't handle. Then suggest a minimal refactor that keeps behavior the same, and tests to prove it.",
+   "model": "copilot"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Write tests for existing code",
+   "body": "/tests Write unit tests for the selected function in [framework]. Include happy path, boundary values, error handling and one test that documents a surprising behavior. Mock external calls.",
+   "model": "copilot"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Generate a GitHub Actions workflow",
+   "body": "Create a GitHub Actions workflow that on every pull request: installs dependencies with caching, runs lint and tests, and uploads the coverage report. Node version [x]. Fail the job if coverage falls below [y]%. Explain each step briefly.",
+   "model": "copilot"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Excel: build a simple budget tracker",
+   "body": "Create a monthly budget workbook: an inputs sheet (income, fixed costs), a transactions sheet, a summary sheet with spent vs. planned by category, and a chart. Add data validation for categories and conditional formatting for overspending.",
+   "model": "copilot"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Word: compare two contract versions",
+   "body": "Compare the current document with [file]. List changes in a table: clause, old wording, new wording, practical effect. Highlight anything that shifts risk, payment or deadlines. Don't assume legal conclusions.",
+   "model": "copilot"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Ask a question that forces cited, recent answers",
+   "body": "Use a question shape that rewards sources: \"What did [2–3 named sources or institutions] publish about [topic] since [date]? Summarize each source's main finding with a link and note where they disagree.\" Then check the links yourself.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Compare studies on a contested question",
+   "body": "What does the research say about [question]? List the strongest studies on each side with sample size and year, say which kind of evidence each is (RCT, cohort, review), and explain why they may disagree. Link every claim.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Find primary sources for a claim",
+   "body": "I saw the claim \"[claim]\". Find the original source (paper, dataset, filing, speech) rather than articles about it. Give the link, the exact wording there, and any part the claim exaggerates or leaves out.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Competitive landscape in a table",
+   "body": "Build a table of the main competitors for [product category] in [region]: company, product, pricing model, target customer, recent news in the last 12 months, source. Mark anything you couldn't verify.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Market size sanity check",
+   "body": "Estimate the market size for [product] using two methods: top-down from published reports and bottom-up from customers × price. Show the sources and assumptions. Tell me where the numbers differ and which I should trust more.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "What are customers complaining about?",
+   "body": "Search for reviews, forums and social posts about [product/competitor]. Summarize the top 5 recurring complaints and top 5 praises with example quotes (paraphrased) and sources. Say how many sources each theme appears in.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Research a company before an interview",
+   "body": "Research [company]: what it does, recent funding or layoffs, leadership changes, product launches, public criticism, and what employees say (note the bias of review sites). Give me five questions to ask that show I've done my homework. Link sources.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Find the current rules for something",
+   "body": "What are the current rules in [country/state] for [tax deduction / account type / benefit] for [year]? Link to the official source first, then list recent changes. Mention anything that depends on my situation and may need a professional.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Check entry requirements and recent changes",
+   "body": "What are the current entry requirements for a [nationality] citizen visiting [country] for [days]? Visa, passport validity, health requirements, customs limits, and any recent changes. Link to the official government source and give the date of each source.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "What do guidelines say about this?",
+   "body": "What do major guidelines (e.g. [organizations]) currently recommend about [topic]? Show where they agree and disagree, the evidence level cited, and the date of each guideline. Link them. This is for understanding, not for treatment decisions.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Find the actual text of a law",
+   "body": "Find the official text of [law/regulation] and summarize section [x]. Quote the key sentence, link the source and explain it in plain English. List any amendments or court decisions that changed it, and say if you can't confirm the current version.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Build a reading list on a topic",
+   "body": "Build a reading list on [topic] for a [beginner/intermediate] learner: three introductory books or courses, three key papers or articles, and two critical perspectives. For each: why it's included, how long it takes, and where to access it.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Find datasets for a question",
+   "body": "Find public datasets I can use to study [question]. For each: source, size, years and region covered, license, known limitations, and a link. Rank them by usefulness for my question and say what's missing.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Find the current best practice for a library",
+   "body": "What's the recommended way today to do [task] with [library/framework version]? Link to the official docs and a recent changelog. Warn me about deprecated patterns that older tutorials still show.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Gather evidence on both sides",
+   "body": "I'm deciding whether to [decision]. Gather the best evidence for and against from credible sources, including real-world case studies and data. For each point give a source and how strong it is. Finish with what I'd need to know about my own situation.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Research for historical accuracy",
+   "body": "I'm writing a scene set in [place, year]. What would [character type] have eaten, worn, earned, feared and said? Give details with sources, mark common myths in popular fiction about that period, and list what is uncertain.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Fitness_Training",
+   "title": "Check a training claim against evidence",
+   "body": "Is it true that \"[claim]\"? Find the best studies or position stands, summarize what they found in practical terms (not just p-values), and say how confident to be. Note who funded the studies if relevant.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Food safety question with sources",
+   "body": "What is the safe [temperature/time/storage] for [food]? Link to official sources (e.g. food safety agencies), note differences between countries, and list the risks if I get it wrong. Say if guidance has changed recently.",
+   "model": "perplexity"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Aspect ratio and stylize: the two switches that change most",
+   "body": "Start every prompt with the subject, then add parameters at the end:\n\na lighthouse on a cliff at dusk, storm clouds, long exposure --ar 3:2 --stylize 150\n\n--ar sets the shape (16:9 wide, 2:3 portrait, 1:1 square). Lower --stylize (0–100) follows your words more literally; higher (500+) gives Midjourney more freedom and a more \"artistic\" result.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Use --chaos to explore, then lock the winner with --seed",
+   "body": "Run an exploratory batch with variety:\n\nan abandoned greenhouse overgrown with ferns, soft morning light --chaos 40 --ar 4:5\n\nPick the best image, note its seed, then iterate with small wording changes and the same --seed to compare changes fairly.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Remove what you don't want with --no",
+   "body": "Negative words in the prompt can backfire (\"no people\" may add people). Use the parameter instead:\n\na quiet street café in Lisbon, golden hour, 35mm photo --no people, cars, text, watermark --ar 3:2",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Describe light, lens and time of day instead of \"beautiful\"",
+   "body": "Weak: \"a beautiful portrait of an old fisherman\". Stronger:\n\nportrait of an elderly fisherman mending nets, overcast light, shallow depth of field, 85mm lens, textured skin, muted colors, film grain --ar 4:5\n\nLight + lens + materials + mood do more than adjectives like \"stunning\" or \"epic\".",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Consistent character across a series",
+   "body": "Describe the character once in fixed words and reuse it verbatim:\n\n\"a woman in her thirties, short silver hair, round tortoiseshell glasses, olive green wool coat\" + [new scene] --ar 3:2\n\nUse the same wording and style parameters each time. Keep changes to the scene only, and expect small variations.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Product photography on a seamless background",
+   "body": "[product], centered, studio lighting with a soft key light and subtle shadow, seamless [color] backdrop, high detail, commercial product photo, no text --ar 1:1 --stylize 80\n\nTry swapping the light: \"hard side light\", \"top-down softbox\", \"rim light\" to see which fits the brand.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Social media image set with a shared visual style",
+   "body": "Create four images for [campaign] that look like a series. Shared style line to append: \"flat illustration, limited palette of [3 colors], thick outlines, grainy paper texture --ar 4:5 --stylize 200\". Scenes: [scene 1], [scene 2], [scene 3], [scene 4].",
+   "model": "midjourney"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Logo exploration without text",
+   "body": "Minimal vector logo mark for [type of business], simple geometric shape, one or two colors, white background, no text, no gradients, flat design --ar 1:1 --stylize 100\n\nGenerate many, then redo the typography yourself. Image models still handle text poorly.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Concept art for a story setting",
+   "body": "Establishing shot of [setting], [time of day], [weather], [architectural or natural features], cinematic composition, atmospheric perspective, painterly concept art, muted palette with one accent color of [color] --ar 21:9",
+   "model": "midjourney"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Character sheet in one image",
+   "body": "Character design sheet of [description], front view, side view and back view, neutral pose, plain background, consistent proportions, clean line art with flat colors --ar 16:9\n\nThen crop the views and reuse the description in later prompts.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Moodboard for a trip",
+   "body": "Create four images that capture the feeling of [destination] in [season]: a street scene, a landscape, a food close-up and an interior. Shared style: \"candid travel photography, natural light, slight film grain, warm tones\" --ar 3:2. Use them to choose what to book.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Food photography that doesn't look plastic",
+   "body": "[dish] on a rustic ceramic plate, side light from a window, shallow depth of field, steam rising, visible texture, imperfect plating, a linen napkin, 50mm photo --ar 4:5 --stylize 100\n\nReal food has crumbs, sheen and uneven edges. Add them.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Interior design variations",
+   "body": "a [style] living room, [color palette], [key furniture pieces], natural light from large windows, wide-angle architectural photo, realistic materials --ar 3:2\n\nChange one variable at a time (floor, sofa color, lighting) to compare.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Use an image as a reference with a weight",
+   "body": "Attach a reference image URL at the start of the prompt, then add words:\n\n[image URL] a cozy cabin in winter, same color palette, similar composition --iw 1.5\n\n--iw raises or lowers how strongly the reference shapes the result. Start around 1 and move in 0.5 steps.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Pattern and texture for design work",
+   "body": "seamless pattern of [motif], hand-drawn, [color palette], flat background, repeating tile, no shadows --tile --ar 1:1\n\nCheck the edges after upscaling. Small visible seams often need a quick fix in an editor.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Retro poster style without copying anyone",
+   "body": "[subject], vintage travel poster style, bold flat shapes, limited four-color palette, strong silhouettes, textured print grain, large empty area at the top for a title --ar 2:3\n\nDescribing the techniques is enough. No need to name a living artist.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Macro and miniature scenes",
+   "body": "macro photo of a tiny [object] world, tilt-shift effect, shallow depth of field, real scale cues like coins or fingers, soft daylight --ar 3:2\n\nWords like \"macro\", \"tilt-shift\" and \"scale cues\" help it commit to a convincing tiny scale.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Iterate with variation, not from scratch",
+   "body": "When one image is almost right: use Vary (Subtle) to keep composition, Vary (Strong) to change more, and edit the prompt only for the part you dislike. Write down which phrase caused which change so you build your own prompt vocabulary.",
+   "model": "midjourney"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Token weighting in Automatic1111-style UIs",
+   "body": "Raise or lower the importance of a phrase with parentheses and a number:\n\nportrait of a knight, (intricate armor:1.3), (soft rim light:1.1), (blurry background:0.8)\n\nValues above 1.5 often distort the image. Keep changes small and test one at a time.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Negative prompt starter set for SD 1.5 / SDXL models",
+   "body": "Negative prompt: lowres, blurry, jpeg artifacts, extra fingers, malformed hands, cropped, watermark, text, signature, oversaturated\n\nAdjust per model: some checkpoints respond to short negative prompts better than long lists. Remove items that don't change anything.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Flux prompts: write full sentences, skip negative prompts",
+   "body": "Flux-style models respond well to natural language and generally don't use negative prompts. Describe what you want:\n\nA candid photo of a street musician playing violin at night under a warm streetlamp, wet pavement reflecting the light, shallow depth of field, grainy 35mm film look.\n\nPut the most important details first.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Pick sampler, steps and CFG sensibly",
+   "body": "A solid starting point: 25–30 steps, CFG 5–7 for SD 1.5/SDXL. Higher CFG makes the model follow the prompt more strictly but can fry colors. If an image looks overcooked, lower CFG before touching anything else. Change one setting per test and fix the seed to compare.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Fix faces and hands with inpainting",
+   "body": "Generate the whole scene first. Then mask only the face (or hand), set denoising strength around 0.3–0.5 so identity is kept, and use a short prompt about just that area: \"detailed face, natural skin, sharp eyes\". Increase the mask padding if the result looks pasted on.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Use img2img to turn a rough sketch into a finished image",
+   "body": "Upload your sketch, write a prompt describing the final look, and start with denoising strength 0.6. Lower keeps your composition; higher gives the model more freedom. Use a ControlNet (scribble or lineart) if you need the layout locked exactly.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "LoRA basics: trigger words and weights",
+   "body": "Load a LoRA by adding its tag to the prompt, e.g. <lora:name:0.8>, plus its trigger word if the model page lists one. Start at weight 0.6–0.8; above 1.0 often burns the style into everything. Stack LoRAs one at a time so you know which does what.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Upscale without inventing new details",
+   "body": "Generate at a normal size (e.g. 1024 px for SDXL), then use an upscaler model for 2×. For \"hires fix\" keep denoising at 0.3–0.45 to avoid changing faces or objects. If details turn mushy, try a different upscaler before increasing steps.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Build consistent style with a fixed prefix",
+   "body": "Keep a prompt prefix that defines your style, and only change the subject:\n\n\"[STYLE] watercolor illustration, soft edges, pastel palette, visible paper grain, [SUBJECT]\"\n\nSave the prefix, seed range and settings with each image so you can rebuild the look later.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Character portraits with consistent features",
+   "body": "Use a fixed character description in every prompt: age, hair, eyes, clothing, one distinctive detail. Add the same LoRA or embedding if you have one. Change pose and background only. Review a batch of 8 and keep the closest 2 as references.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Social media graphics with space for text",
+   "body": "Compose a [style] image of [subject] positioned in the lower right, with a large clean empty area on the left for headline text, soft gradient background, high contrast. Generate without text and add typography in an editor for sharper results.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Mockup scenes for a product",
+   "body": "[product] on a [surface], in a [type of room], natural window light, soft shadows, shallow depth of field, lifestyle product photo, neutral palette. Generate a few settings, then composite your actual product image so branding stays accurate.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Travel_Planning",
+   "title": "Illustrated map-style postcards",
+   "body": "Illustrated postcard of [city], hand-painted gouache style, key landmarks arranged like a map, warm palette, decorative border, no text. Make several and pick one to print, adding labels yourself.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Recipe card images",
+   "body": "Top-down photo of [dish] on a [surface], ingredients scattered around it, natural daylight, crisp focus, muted colors, food magazine look. Keep the background simple so you can add the recipe text later.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Architectural visualization from a plan",
+   "body": "Use a ControlNet with a simple line drawing or depth map of the building, and prompt: \"modern [style] house, [materials], golden hour, landscaped garden, architectural photography, wide angle\". Lock the geometry with ControlNet strength around 0.8.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Troubleshoot \"muddy\" results",
+   "body": "Checklist when images look muddy: lower CFG a notch, remove contradictory style words, try a different VAE, shorten the prompt, raise steps a little, and change the sampler. Fix the seed while testing so you can see which change actually helped.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Run a model locally with Ollama in three commands",
+   "body": "Install Ollama, then:\n\nollama pull [model]\nollama run [model]\nollama list\n\nPick a model that fits your RAM: a 7–8B parameter model in 4-bit quantization usually needs about 5–6 GB. Start small and move up only if answers are too weak.",
+   "model": "local"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Quantization in plain words",
+   "body": "Quantization stores a model's weights in fewer bits to save memory. 4-bit versions (like Q4_K_M) are the usual sweet spot: much smaller with a modest quality loss. 8-bit is closer to the original but needs about twice the memory of 4-bit. If answers get noticeably worse, try the next size up.",
+   "model": "local"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Set a system prompt and parameters with a Modelfile",
+   "body": "FROM [base model]\nPARAMETER temperature 0.3\nPARAMETER num_ctx 8192\nSYSTEM \"\"\"You are a concise assistant. Answer in at most 5 sentences.\"\"\"\n\nSave as Modelfile, then run: ollama create my-assistant -f Modelfile. Lower temperature gives steadier answers; raise it for brainstorming.",
+   "model": "local"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Serve a local model through an OpenAI-style API",
+   "body": "Many local servers (llama.cpp server, Ollama, LM Studio) expose an OpenAI-compatible endpoint, so existing tools can point at it:\n\nbase_url = http://localhost:[port]/v1\napi_key = anything (not checked locally)\n\nBind to 127.0.0.1 unless you really mean to expose it, and add authentication before opening it to a network.",
+   "model": "local"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Prompt a small local model for code",
+   "body": "Small models do better with narrow tasks. Give the language, the function signature, one example of input and output, and ask for only the function. Then ask for tests in a second message. Avoid asking for a whole project in one go.",
+   "model": "local"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Use a local model as a private code reviewer",
+   "body": "Review this code for bugs and security issues. Respond with a numbered list: line number, issue, suggested fix. If you aren't sure, say \"uncertain\". Don't rewrite the whole file.\n[paste]\n\nRunning it locally means the code never leaves your machine.",
+   "model": "local"
+  },
+  {
+   "community": "Plain_English_Legal",
+   "title": "Summarize sensitive documents without sending them anywhere",
+   "body": "For contracts or personal records you don't want to upload, run a local model. Prompt: \"Summarize this document in 8 bullets and list every deadline, amount and party named. If something is unclear, say so.\" Expect to double-check the output, since small models can miss clauses.",
+   "model": "local"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Chunk long documents for a small context window",
+   "body": "If the model's context is 8k tokens, split a long text into ~1,500-word chunks. Summarize each chunk with the same prompt, then summarize the summaries. Ask for \"key claims with page references\" at each stage so nothing important is lost.",
+   "model": "local"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Local embeddings for a private search",
+   "body": "Use a small embedding model to turn your notes into vectors, store them in a local index, and retrieve the top 5 matches for a question. Then ask the chat model: \"Answer using only these excerpts. Say 'not found' if they don't contain the answer.\"",
+   "model": "local"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Private journal reflection prompt",
+   "body": "Here is my journal entry. Don't give advice yet. Reflect back the main feelings and themes in three lines, then ask me two questions that might help me see it differently. Keep it gentle and short.\n\"\"\"\n[entry]\n\"\"\"",
+   "model": "local"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Lower temperature for editing, raise it for brainstorming",
+   "body": "For proofreading or consistent formatting use temperature 0.1–0.3. For ideas, names or story drafts use 0.8–1.0. If outputs ramble, lower temperature and add a length limit. If they feel dull, raise temperature a little or change the prompt before changing the model.",
+   "model": "local"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Estimate whether a model fits your hardware",
+   "body": "Rough rule: memory ≈ parameters × bits ÷ 8, plus overhead for context. A 7B model at 4-bit is about 3.5 GB of weights plus a GB or two for context. If you run out of VRAM, offload some layers to CPU, lower the context size or choose a smaller quantization.",
+   "model": "local"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Benchmark your own setup",
+   "body": "Run the same 5 prompts on each model and write down: tokens per second, memory used, and whether the answer was usable. Use prompts from your real work, not leaderboard questions. Re-run after changing quantization or context size.",
+   "model": "local"
+  },
+  {
+   "community": "Language_Learning",
+   "title": "Offline language tutor",
+   "body": "You are a patient tutor teaching [language] to an A2 learner. Use short sentences, give a translation in brackets after new words, and correct only one mistake per message. Ask a question to keep the conversation going. This works without an internet connection when run locally.",
+   "model": "local"
+  },
+  {
+   "community": "Fiction_Workshop",
+   "title": "Long role-play with a memory file",
+   "body": "Keep a short \"story so far\" note (under 300 words) and paste it at the start of each session, along with the character sheet. Small models forget fast. Ask the model to update the note at the end of each scene and save it yourself.",
+   "model": "local"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Make flashcards from your own notes privately",
+   "body": "Create 15 flashcards from these notes. One idea per card, format: Q: ... / A: ... Don't add facts that aren't in the notes. Mark any card you're not sure the notes support with \"(check)\".\n[notes]",
+   "model": "local"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Keep personal health notes private while organizing them",
+   "body": "Organize these notes into a timeline of symptoms, medications and questions for my doctor. Don't interpret or diagnose. Only reorder and clarify what I wrote, and mark anything ambiguous. Running this locally keeps personal notes off third-party servers.\n[notes]",
+   "model": "local"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "The five-part prompt that works on almost any model",
+   "body": "Role, task, context, format, constraints:\n\nRole: [who the model should be]\nTask: [one clear job]\nContext: [what it needs to know]\nFormat: [length, structure]\nConstraints: [what to avoid, tone, sources]\n\nIf a prompt fails, find which of the five parts is missing or vague.",
+   "model": "general"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Ask for questions before the answer",
+   "body": "Before you answer, ask me up to three clarifying questions that would change your answer. If I reply \"skip\", state your assumptions in one line and continue. Task: [task].",
+   "model": "general"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Give examples of good and bad output",
+   "body": "Write [thing]. Here is an example I like: \"[good example]\". Here is one I don't: \"[bad example]\" (too long and too formal). Match the first style and avoid the problems of the second. Tell me which traits you copied.",
+   "model": "general"
+  },
+  {
+   "community": "Writing_Craft",
+   "title": "Edit in layers, not all at once",
+   "body": "Edit this text in three separate passes and show me each: 1) structure (order, missing points), 2) clarity (sentences, jargon), 3) polish (word choice, rhythm). Don't move to the next pass until you've listed the changes of the current one.\n[text]",
+   "model": "general"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Ask the model to critique its own answer",
+   "body": "Answer the question. Then review your answer as a skeptical expert: list the three weakest claims, what evidence would verify each, and revise the answer accordingly. Mark anything you couldn't check.\nQuestion: [question]",
+   "model": "general"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Make the model separate fact from inference",
+   "body": "Answer in two sections: \"What the source says\" (direct statements only, with locations) and \"What I'm inferring\" (conclusions that go beyond the text). Mark confidence as high, medium or low for each inference.\n[source]",
+   "model": "general"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Inversion: how would this fail?",
+   "body": "Instead of asking how to succeed at [goal], tell me how to guarantee failure. List the ten most reliable ways. Then flip each into a rule I should follow and mark the three that I'm currently most at risk of breaking.",
+   "model": "general"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Second-order effects",
+   "body": "I'm considering [decision]. List the likely first-order effects, then second-order and third-order effects, in 6, 12 and 36 months. Mark which are certain, likely or speculative, and which would be hard to reverse.",
+   "model": "general"
+  },
+  {
+   "community": "Decision_Making",
+   "title": "Regret minimization check",
+   "body": "Imagine I'm 80 looking back. For [decision], describe what I'd likely regret about doing it, and what I'd regret about not doing it. Then ask me three questions to clarify which regret is bigger.",
+   "model": "general"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "A study plan that fits my calendar",
+   "body": "I have an exam on [date] covering [topics]. I can study [hours] per week on [days]. My weakest areas: [areas]. Make a week-by-week plan with spaced review, practice tests and one buffer week. Include what to do if I fall behind.",
+   "model": "general"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Turn notes into active recall questions",
+   "body": "From these notes write 15 questions that require recall rather than recognition, mixed with 5 that require applying the idea to a new example. Don't include answers; I'll ask for them after I try.\n[notes]",
+   "model": "general"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Turn experience into achievement bullets",
+   "body": "Convert each task below into a resume bullet: strong verb, what I did, measurable result. If a result isn't given, write \"[add number]\" instead of inventing one. Keep each under 22 words.\n[tasks]",
+   "model": "general"
+  },
+  {
+   "community": "Career_Growth",
+   "title": "Rehearse a difficult conversation",
+   "body": "Role-play [person, e.g. my manager] who is [defensive/busy/sceptical]. I need to [say what]. Respond realistically and push back. After 6 exchanges, give me feedback on clarity, tone and what I could say differently.",
+   "model": "general"
+  },
+  {
+   "community": "Business_Strategy",
+   "title": "Explain a business to a skeptic",
+   "body": "Here's my business idea: [idea]. You are a skeptical investor. Ask your five toughest questions, in order of how likely they would sink the idea, and after each of my answers say whether it satisfied you and why.",
+   "model": "general"
+  },
+  {
+   "community": "Marketing_Copy",
+   "title": "Rewrite one message for five channels",
+   "body": "Take this message: \"[message]\". Rewrite it for: email (subject + 80 words), LinkedIn post (120 words), SMS (160 characters), a headline (8 words) and a spoken 15-second radio line. Keep the same core promise and facts.",
+   "model": "general"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Plan an analysis before touching data",
+   "body": "I want to find out [question] using [data]. Write an analysis plan: the exact question, variables needed, how to clean them, the method, what result would convince me, and how I'd check for mistakes. No code yet.",
+   "model": "general"
+  },
+  {
+   "community": "Coding_Help",
+   "title": "Explain an error message step by step",
+   "body": "Explain this error in plain language: what it means, the three most likely causes in order of probability, how to check each cause, and the fix. Language/tool: [x]. Error:\n[paste]",
+   "model": "general"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Daily plan with energy in mind",
+   "body": "Here are my tasks for today: [list]. My energy is highest at [time] and lowest at [time]. Fixed commitments: [list]. Make a schedule that puts demanding work in high-energy slots, leaves 20% buffer, and tells me which tasks to drop first if the day goes wrong.",
+   "model": "general"
+  },
+  {
+   "community": "Personal_Finance",
+   "title": "Explain a financial concept with an example",
+   "body": "Explain [concept, e.g. compound interest, index funds, APR] using a small numeric example. Then show how the result changes if one variable doubles. Finish with the two most common misunderstandings.",
+   "model": "general"
+  },
+  {
+   "community": "Cooking_Kitchen",
+   "title": "Substitute an ingredient and predict the result",
+   "body": "I'm missing [ingredient] for [recipe]. Suggest three substitutes, say how each will change texture, taste and cooking time, and which one is the closest. Include amounts.",
+   "model": "general"
+  },
+  {
+   "community": "Health_Literacy",
+   "title": "Build a list of questions for a specialist",
+   "body": "I'm seeing a [specialist] about [issue]. Write 12 questions grouped as: understanding the problem, tests, treatment options, risks and costs, and what to expect next. Put the most important three first. This is only to prepare for the visit.",
+   "model": "general"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Set up a ChatGPT Project once for a recurring job",
+   "body": "For work you repeat (weekly report, client emails, a course), create a Project and add: a short instruction (\"You help me write the weekly status report: bullets, no fluff, max 200 words\"), the template file, and two past examples. Then each week you only paste the new facts.",
+   "model": "chatgpt"
+  },
+  {
+   "community": "Research_Science",
+   "title": "Put the long document first, the question last",
+   "body": "With long inputs, place the material at the top and your question at the end:\n\n<document>[paste long text]</document>\n\nBased on the document above, [question]. Quote the passages you relied on.\n\nEnding with the question tends to produce more focused answers than burying the document under instructions.",
+   "model": "claude"
+  },
+  {
+   "community": "Data_Analysis",
+   "title": "Ask Claude to label its confidence",
+   "body": "For each claim in your answer add a label: [high], [medium] or [low] confidence, and one phrase explaining why. List what additional data would raise a [low] to a [high]. Question: [question].",
+   "model": "claude"
+  },
+  {
+   "community": "Study_Smarter",
+   "title": "Turn photos of handwritten notes into clean study notes",
+   "body": "I'm uploading photos of my handwritten notes. Transcribe them, mark any word you're unsure of with [?], fix obvious spelling mistakes, then organize the content under headings and add a five-question self-test at the end. Keep my wording where it's clear.",
+   "model": "gemini"
+  },
+  {
+   "community": "Image_Prompts",
+   "title": "Compare prompt changes fairly with an X/Y plot",
+   "body": "Use the X/Y/Z plot script to vary one thing across a grid, for example CFG 4, 6, 8 on one axis and sampler on the other, with the seed fixed. A grid lets you see which setting actually causes a difference instead of guessing from separate images.",
+   "model": "stable-diffusion"
+  },
+  {
+   "community": "DevOps_Automation",
+   "title": "Run a model on a laptop with no GPU",
+   "body": "A modern CPU can run a 3–8B model in 4-bit quantization at readable speeds. Close other heavy apps, choose a small context size (4k is plenty to start), and expect a few tokens per second. If it's too slow, switch to a smaller model before buying hardware.",
+   "model": "local"
+  },
+  {
+   "community": "Productivity_Systems",
+   "title": "Build a personal prompt library that you actually reuse",
+   "body": "Keep each prompt as: name, when to use it, the prompt text with [placeholders], and one example output. Store them in a notes app or a single document and sort by task (write, analyze, decide, learn). Retire any prompt you haven't used in three months.",
+   "model": "general"
+  }
+ ]
+}

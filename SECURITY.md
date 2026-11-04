@@ -62,3 +62,7 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 - Templates are logic-less and escape by default; only server-generated HTML (vote widget, logo, CSRF field) is un-escaped; prototype names are rejected; depth/size/output limits; a template that fails at render time falls back to the built-in one.
 - Edits go to a draft. Visitors see it only after Publish. Preview needs both the `pv` cookie and a valid admin session (and the IP allowlist), pages are `no-store` + `noindex`. All changes are audited; every publish is a version that can be rolled back.
 - Risk to know: published custom JS runs on every public page, so a compromised admin session means site-wide script. The dashboard itself never loads custom CSS/JS, so a broken design cannot lock the admin out.
+
+## CSV export / import
+- Export is admin-only (404 otherwise), `no-store`, audited. Only registry tables and their registry columns are exported (never password hashes, email fingerprints, tokens, the mail queue or admin account); cells starting with = + - @ are prefixed with ' to stop spreadsheet formula injection.
+- Import reads CSV/JSON as text only (the browser reads the chosen file; no multipart upload), caps size and rows, validates every field as before, and never treats cell content as HTML (Markdown is rendered by the safe renderer).
