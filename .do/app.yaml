@@ -21,6 +21,8 @@ envs:
   - { key: DATA_KEY, type: SECRET }
   - { key: TURNSTILE_SITE_KEY, value: "0x4AAAAAAFynCvbae2XX5uhV" }   # public by design
   - { key: TURNSTILE_SECRET, type: SECRET }
+  - { key: ADMIN_PATH, type: SECRET }               # hidden dashboard URL path, e.g. /x-<24 random chars>
+  - { key: ADMIN_BOOTSTRAP_HASH, type: SECRET }     # node scripts/make-admin-hash.js (peppered Argon2id hash)
   - { key: MAIL_TRANSPORT, value: console }         # switch to "gmail" (+ GMAIL_* secrets) once the sender is set up
   - { key: MAIL_FROM, value: "prompts360 <REPLACE_ME@gmail.com>" }
   - { key: CLIENT_IP_HEADER, value: do-connecting-ip }  # set by App Platform's edge; can't be spoofed through it

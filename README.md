@@ -8,7 +8,7 @@ A fast, minimal, Reddit-style community for AI/LLM prompts and discussion. It's 
 - **Comments** are threaded and collapsible, with replies, editing and deleting.
 - **Votes** on posts and comments update without a page reload, and voting also works with JavaScript off.
 - **Accounts**: sign up with an optional username, email, the password twice and a captcha. The email link must be clicked before the first login. Logging in takes username, password and captcha. Forgot-password, change password and delete account are all there.
-- **Moderation**: anyone can report; the site admin removes content, bans users and manages AI tags.
+- **Moderation**: anyone can report; the superadmin dashboard (hidden URL, separate login) removes content, bans users and edits everything on the site: texts and slogan, pages, menus, AI models, communities, posts, with live visitor metrics, response times and logs.
 
 ## Stack
 
@@ -30,7 +30,7 @@ docker compose up --build          # http://localhost:8080 — emails (verify li
 ```
 
 Without Docker you need Node.js 24.7 or newer, PostgreSQL and Valkey. Set `DATABASE_URL` and `VALKEY_URL`, then run `npm ci && npm start`.
-Make yourself admin with `node scripts/make-admin.js <username>`.
+Superadmin: set `ADMIN_PATH` (e.g. `/x-<24 random chars>`) and `ADMIN_BOOTSTRAP_HASH` (from `APP_SECRET=… node scripts/make-admin-hash.js`), then open that path. Optional `ADMIN_IP_ALLOW` (comma-separated IPs).
 
 ## Tests
 
@@ -72,10 +72,14 @@ src/ratelimit.js     shared rate limits + per-IP flood guard
 src/mail.js          encrypted outbox + Gmail/Resend transports + templates
 src/markdown.js      safe Markdown renderer
 src/views.js         all HTML (escape-by-default templates)
-src/routes/*.js      auth, forum, admin
+src/routes/*.js      auth, forum (+ CMS pages)
+src/admin/           superadmin dashboard: auth, CRUD engine, metrics views, import, texts
+src/site.js          editable texts / menus / pages (DB overrides over code defaults)
+src/metrics.js       aggregate request metrics (no IPs), event log
+src/seo.js           robots.txt, sitemap.xml, JSON-LD
 migrations/          SQL schema
 public/              app.css, app.js, favicon.svg, logo-*.svg (generated)
-scripts/             migrate, make-admin, gen-keys, gmail-auth, build-logo (regenerates the animated logo)
+scripts/             migrate, make-admin-hash, gen-keys, gmail-auth, build-logo (regenerates the animated logo)
 ```
 
 See **DEPLOY.md** to go live, **SECURITY.md** for the threat model and test results, and **CODE_MAP.md** for a guide to every file, function, variable and setting.

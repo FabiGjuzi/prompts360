@@ -8,17 +8,21 @@ import { config } from './config.js';
 import { migrate, closeDb, q } from './db.js';
 import { connectKv, closeKv } from './kv.js';
 import { loadSession, readCookie } from './session.js';
+import { begin, count, logEvent, startMetrics } from './metrics.js';
+import { ensureSite, refreshSite, t } from './site.js';
+import { robotsTxt, sitemapXml } from './seo.js';
+import { loadAdmin } from './admin/auth.js';
 import { ipThrottle } from './ratelimit.js';
 import { assetFiles } from './assets.js';
 import { securityHeaders, send, readBody, checkCsrf, renderError, redirect, serveMicro, HttpError } from './http.js';
 import { safeEqual } from './crypto.js';
 import { drainOutbox } from './mail.js';
 import { authRoutes } from './routes/auth.js';
-import { forumRoutes } from './routes/forum.js';
-import { adminRoutes } from './routes/admin.js';
+import { forumRoutes, cmsRoutes } from './routes/forum.js';
+import { adminRoutes } from './admin/index.js';
 
 // Flat route table built from the three route files: {method, re (URL regex), handler, opts: {auth, form, bodyLimit}}.
-const routes = [...authRoutes, ...forumRoutes, ...adminRoutes].map(([method, re, handler, opts = {}]) => ({ method, re, handler, opts }));
+const routes = [...adminRoutes, ...authRoutes, ...forumRoutes, ...cmsRoutes].map(([method, re, handler, opts = {}]) => ({ method, re, handler, opts }));
 
 /** The visitor's IP: the proxy header (e.g. do-connecting-ip) only when the request is verified, otherwise the socket address. */
 function clientIp(req) {
@@ -30,9 +34,6 @@ function clientIp(req) {
   return req.socket.remoteAddress || '0.0.0.0';
 }
 
-// robots.txt: keep crawlers out of account, search and admin pages (everything else is indexable).
-const ROBOTS = 'User-agent: *\nDisallow: /login\nDisallow: /signup\nDisallow: /forgot\nDisallow: /reset\nDisallow: /verify\nDisallow: /search\nDisallow: /admin\nDisallow: /settings\n';
-
 /** The request pipeline: security headers -> health check -> origin lock -> static assets -> flood throttle -> micro-cache -> routing -> session -> auth checks -> body + CSRF check -> handler. */
 export async function handle(req, res) {
   securityHeaders(res);
@@ -41,6 +42,7 @@ export async function handle(req, res) {
   req.query = url.searchParams;
 
   if (req.path === '/healthz') { res.setHeader('Cache-Control', 'no-store'); return send(req, res, 200, 'ok', 'text/plain'); }
+  begin(req, res);   // metrics: timing + counters for everything below
 
   // Origin lock: when ORIGIN_SECRET is set, only requests carrying Cloudflare's secret header are served,
   // so attackers can't bypass Cloudflare (and its DDoS protection) by hitting the origin directly.
@@ -55,8 +57,9 @@ export async function handle(req, res) {
 
   const asset = assetFiles.get(req.path);
   if (asset && req.method !== 'POST') {
+    req.routeLabel = 'asset';
     const ae = req.headers['accept-encoding'] || '';
-    const [buf, enc] = /\bbr\b/.test(ae) ? [asset.br, 'br'] : /\bgzip\b/.test(ae) ? [asset.gz, 'gzip'] : [asset.raw, null];
+    const [buf, enc] = asset.br && /\bbr\b/.test(ae) ? [asset.br, 'br'] : asset.gz && /\bgzip\b/.test(ae) ? [asset.gz, 'gzip'] : [asset.raw, null];
     res.setHeader('Content-Type', asset.type);
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('Vary', 'Accept-Encoding');
@@ -64,13 +67,16 @@ export async function handle(req, res) {
     res.setHeader('Content-Length', buf.length);
     return res.end(req.method === 'HEAD' ? undefined : buf);
   }
-  if (req.path === '/robots.txt') { res.setHeader('Cache-Control', 'public, max-age=86400'); return send(req, res, 200, ROBOTS, 'text/plain'); }
-  if (req.path === '/favicon.ico') return redirect(res, [...assetFiles.keys()].find(k => k.endsWith('.svg')), 301);
+  if (req.path === '/favicon.ico') { req.routeLabel = 'asset'; return redirect(res, [...assetFiles.keys()].find(k => k.endsWith('.svg')), 301); }
 
-  if (!ipThrottle(req.ip, config.ipBurst, config.ipRate)) { res.setHeader('Retry-After', '30'); return renderError(req, res, 429, 'Slow down — too many requests.'); }
+  if (!ipThrottle(req.ip, config.ipBurst, config.ipRate)) { count('limited'); res.setHeader('Retry-After', '30'); return renderError(req, res, 429, t('err.429')); }
+  await ensureSite();   // editable texts, links and pages (cached in memory, refreshed in the background)
+
+  if (req.path === '/robots.txt') { req.routeLabel = 'GET robots'; res.setHeader('Cache-Control', 'public, max-age=3600'); return send(req, res, 200, robotsTxt(), 'text/plain; charset=utf-8'); }
+  if (req.path === '/sitemap.xml') { req.routeLabel = 'GET sitemap'; res.setHeader('Cache-Control', 'public, max-age=600'); return send(req, res, 200, await sitemapXml(), 'application/xml; charset=utf-8'); }
 
   const method = req.method === 'HEAD' ? 'GET' : req.method;
-  if (method === 'GET' && !req.headers.cookie && serveMicro(req, res)) return;
+  if (method === 'GET' && !req.headers.cookie) { req.routeLabel = 'GET cached'; if (serveMicro(req, res)) return; req.routeLabel = undefined; }
 
   let route, params;
   for (const r of routes) {
@@ -78,17 +84,25 @@ export async function handle(req, res) {
     const m = req.path.match(r.re);
     if (m) { route = r; params = m.slice(1); break; }
   }
-  if (!route) return renderError(req, res, 404, 'Page not found.');
+  if (!route) return renderError(req, res, 404, t('err.404'));
 
-  req.cookieToken = readCookie(req);
-  req.user = req.cookieToken ? await loadSession(req.cookieToken) : null;
-
-  const { auth, form, bodyLimit = 16_384 } = route.opts;
-  if (auth && !req.user) {
-    if (method === 'GET') return redirect(res, `/login?back=${encodeURIComponent(req.path + url.search)}`);
-    return renderError(req, res, 401, 'Please log in first.');
+  const { auth, form, bodyLimit = 16_384, admin } = route.opts;
+  if (admin) {
+    // Dashboard: secret path, optional IP allow-list, its own session. Anything not allowed looks like a plain 404.
+    req.routeLabel = 'admin';
+    if (config.adminIpAllow.length && !config.adminIpAllow.includes(req.ip)) return renderError(req, res, 404, t('err.404'));
+    req.admin = await loadAdmin(req);
+    if (admin === 'required' && !req.admin) return renderError(req, res, 404, t('err.404'));
+    req.user = null;
+  } else {
+    req.routeLabel = `${method} ${route.handler.name || 'handler'}`;
+    req.cookieToken = readCookie(req);
+    req.user = req.cookieToken ? await loadSession(req.cookieToken) : null;
+    if (auth && !req.user) {
+      if (method === 'GET') return redirect(res, `/login?back=${encodeURIComponent(req.path + url.search)}`);
+      return renderError(req, res, 401, 'Please log in first.');
+    }
   }
-  if (auth === 'admin' && !req.user.is_admin) return renderError(req, res, 404, 'Page not found.');
 
   if (method === 'POST') {
     req.body = await readBody(req, bodyLimit);
@@ -103,7 +117,10 @@ async function onRequest(req, res) {
     await handle(req, res);
   } catch (e) {
     const status = e instanceof HttpError || (e.status >= 400 && e.status < 600) ? e.status : 500;
-    if (status === 500) console.error('[http]', req.method, req.url?.slice(0, 200), e.stack || e);
+    if (status === 500) {
+      console.error('[http]', req.method, req.url?.slice(0, 200), e.stack || e);
+      logEvent('error', 'http', `${req.method} ${(req.path || '').slice(0, 120)}: ${String(e.message).slice(0, 300)}`, { route: req.routeLabel, stack: String(e.stack || '').split('\n').slice(0, 4).join(' | ').slice(0, 800) });
+    }
     // Never leak internals (stack traces, SQL errors) to the client.
     renderError(req, res, status, status === 500 ? 'Something went wrong on our side.' : status === 503 ? 'Server is busy, try again in a moment.' : e.message);
   }
@@ -128,6 +145,9 @@ export function createServer() {
 /** Connect Valkey, start listening, start the background jobs (email queue, cleanup) and wire graceful shutdown. */
 async function startWorker() {
   await connectKv();
+  await refreshSite();
+  const stopMetrics = startMetrics();
+  logEvent('info', 'boot', `Server started (pid ${process.pid}, ${process.version})`);
   const server = createServer();
   server.listen(config.port, config.host, () => console.log(`[http] pid ${process.pid} listening on :${config.port}`));
   const timers = [
@@ -136,7 +156,7 @@ async function startWorker() {
   ];
   const stop = () => {
     timers.forEach(clearInterval);
-    server.close(async () => { await closeKv().catch(() => {}); await closeDb().catch(() => {}); process.exit(0); });
+    server.close(async () => { await stopMetrics().catch(() => {}); await closeKv().catch(() => {}); await closeDb().catch(() => {}); process.exit(0); });
     setTimeout(() => process.exit(0), 10_000).unref();
   };
   process.on('SIGTERM', stop);

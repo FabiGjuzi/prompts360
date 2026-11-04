@@ -3,12 +3,13 @@ import pg from 'pg';
 
 export const PORT = 18080;
 export const BASE = `http://localhost:${PORT}`;
+export const ADMIN = '/hidden-admin-path-for-tests';
 const DB = process.env.TEST_DATABASE_URL || 'postgres://postgres:devpass@127.0.0.1:54329/prompts360_test';
 const KV = process.env.TEST_VALKEY_URL || 'redis://127.0.0.1:6380/1';
 
 Object.assign(process.env, {
   NODE_ENV: 'test', BASE_URL: BASE, DATABASE_URL: DB, VALKEY_URL: KV, MAIL_TRANSPORT: 'memory',
-  CLIENT_IP_HEADER: 'x-test-ip', ARGON_MEMORY_KIB: '8192', ARGON_TIME: '1', MICROCACHE_SEC: '0',
+  CLIENT_IP_HEADER: 'x-test-ip', ADMIN_PATH: '/hidden-admin-path-for-tests', ARGON_MEMORY_KIB: '8192', ARGON_TIME: '1', MICROCACHE_SEC: '0',
 });
 
 export async function boot() {
@@ -66,6 +67,8 @@ export function client(ip = `10.0.0.${ipSeq++}`) {
       return { status: res.status, headers: res.headers, text, location: res.headers.get('location') };
     },
     get: (p, o) => c.req('GET', p, o),
+    /** GET and follow up to 3 redirects. */
+    async getf(p, o) { let r = await c.req('GET', p, o); for (let i = 0; i < 3 && [301, 302, 303].includes(r.status); i++) r = await c.req('GET', r.location, o); return r; },
     post: (p, form, o = {}) => c.req('POST', p, { ...o, form }),
   };
   return c;
@@ -108,4 +111,21 @@ export async function login(c, username, password = PW) {
 export async function csrf(c) {
   const r = await c.get('/settings');
   return field(r.text, '_csrf');
+}
+
+export const ADMIN_PW = 'Tr0ub4dor-Admin-Test-9';
+/** Signed-in superadmin client. Creates the admin account row directly (the real flow uses ADMIN_BOOTSTRAP_HASH). */
+export async function adminClient(app, password = ADMIN_PW) {
+  const { hashPassword } = await import('../src/crypto.js');
+  await app.db.q('INSERT INTO admin_account (id, pass_hash) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET pass_hash = EXCLUDED.pass_hash', [await hashPassword(password)]);
+  const c = client();
+  const page = await c.get(ADMIN);
+  const r = await c.post(`${ADMIN}/login`, { _ft: field(page.text, '_ft'), password });
+  if (r.status !== 303) throw new Error(`admin login failed: ${r.status}`);
+  const dash = await c.get(ADMIN);
+  c.csrf = dash.text.match(/data-csrf="([^"]+)"/)?.[1];
+  if (!c.csrf) throw new Error('no admin csrf token on the dashboard');
+  /** POST a form with the admin CSRF token. */
+  c.apost = (path, form, o) => c.post(`${ADMIN}${path}`, { _csrf: c.csrf, ...form }, o);
+  return c;
 }

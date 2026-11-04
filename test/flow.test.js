@@ -2,7 +2,7 @@
 // signup/verify/login, communities, posts, comments, votes, moderation, recovery, account deletion.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { boot, client, field, makeUser, login, csrf, PW } from './_helpers.js';
+import { boot, client, field, makeUser, login, csrf, PW, adminClient, ADMIN } from './_helpers.js';
 
 let app, alice, bob;
 before(async () => { app = await boot(); });
@@ -109,15 +109,15 @@ test('communities, posts, comments, replies, votes', async () => {
   const cv = JSON.parse((await alice.post('/vote', { _csrf: t, type: 'c', id: String(cid), dir: '1' }, { headers: { 'x-requested-with': 'fetch' } })).text);
   assert.deepEqual(cv, { score: 2, vote: 1 });
 
-  const post = await client().get(`/p/${postId}`);
+  const post = await client().getf(`/p/${postId}`);
   assert.match(post.text, /2 comments/);
   assert.match(post.text, /Great prompt!/);
   assert.match(post.text, /Thanks!/);
   const comm = await client().get('/c/claude_prompts');
   assert.match(comm.text, /My best system prompt/);
-  const tagged = await client().get('/?tag=claude');
+  const tagged = await client().getf('/?tag=claude');
   assert.match(tagged.text, /My best system prompt/);
-  const other = await client().get('/?tag=gemini');
+  const other = await client().getf('/?tag=gemini');
   assert.doesNotMatch(other.text, /My best system prompt/);
 });
 
@@ -130,7 +130,7 @@ test('only authors can edit/delete; IDOR blocked', async () => {
   const t = await csrf(alice);
   r = await alice.post(`/p/${postId}/edit`, { _csrf: t, body: 'Edited body' });
   assert.equal(r.status, 303);
-  assert.match((await client().get(`/p/${postId}`)).text, /Edited body/);
+  assert.match((await client().getf(`/p/${postId}`)).text, /Edited body/);
 });
 
 test('feeds paginate with keyset cursors and no duplicates', async () => {
@@ -160,32 +160,33 @@ test('search uses full-text index', async () => {
   assert.match(r.text, /My best system prompt/);
 });
 
-test('reports and admin moderation', async () => {
+test('reports and admin moderation (superadmin dashboard)', async () => {
   const tb = await csrf(bob);
   let r = await bob.post('/report', { _csrf: tb, type: 'p', id: String(postId), reason: 'spam' });
   assert.equal(r.status, 303);
-  assert.equal((await bob.get('/admin')).status, 404, 'non-admins must not see admin');
-  await app.db.q("UPDATE users SET is_admin = true WHERE username = 'alice_ai'");
-  await login(alice, 'alice_ai');                    // new session picks up the admin flag
-  r = await alice.get('/admin');
+  assert.equal((await bob.get('/admin')).status, 404, 'the old /admin path does not exist');
+  assert.equal((await bob.get(`${ADMIN}/reports`)).status, 404, 'forum users cannot open the dashboard');
+  const adm = await adminClient(app);
+  r = await adm.get(`${ADMIN}/reports`);
   assert.equal(r.status, 200); assert.match(r.text, /spam/);
-  const t = await csrf(alice);
-  r = await alice.post('/admin/remove', { _csrf: t, type: 'p', id: String(postId), back: '/admin' });
+  const rid = r.text.match(/reports\/(\d+)\/remove/)[1];
+  r = await adm.apost(`/reports/${rid}/remove`, {});
   assert.equal(r.status, 303);
   assert.doesNotMatch((await client().get('/?sort=new')).text, /My best system prompt/);
-  assert.match((await client().get(`/p/${postId}`)).text, /\[removed\]/);
-  assert.doesNotMatch((await alice.get('/admin')).text, /spam/);
+  assert.match((await client().getf(`/p/${postId}`)).text, /\[removed\]/);
+  assert.doesNotMatch((await adm.get(`${ADMIN}/reports`)).text, /spam/);
 });
 
 test('ban signs the user out everywhere', async () => {
-  const { rows: [b] } = await app.db.q("SELECT id FROM users WHERE username = 'bob-prompts'");
-  const t = await csrf(alice);
-  await alice.post('/admin/ban', { _csrf: t, id: String(b.id) });
-  const r = await bob.get('/settings');
+  const { rows: [b] } = await app.db.q("SELECT id, username FROM users WHERE username = 'bob-prompts'");
+  const adm = await adminClient(app);
+  let r = await adm.apost(`/t/users/${b.id}`, { username: b.username, verified_at: '2026-01-01T00:00', banned_at: '2026-01-02T00:00', deleted_at: '' });
+  assert.equal(r.status, 303);
+  r = await bob.get('/settings');
   assert.equal(r.status, 303, 'banned user session must be gone');
   const again = await login(client(), 'bob-prompts');
   assert.equal(again.status, 403);
-  await alice.post('/admin/unban', { _csrf: t, id: String(b.id) });
+  await adm.apost(`/t/users/${b.id}`, { username: b.username, verified_at: '2026-01-01T00:00', banned_at: '', deleted_at: '' });
   await login(bob, 'bob-prompts');
 });
 

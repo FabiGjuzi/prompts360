@@ -1,7 +1,7 @@
 /* ===== prompts360 stylesheet — hand-written, no framework. Sections: variables, base, header, buttons, layout, cards, posts, votes, tabs, forms, comments, footer, responsive ===== */
 /* Colour variables (light). --bg page, --card panels, --tx text, --mu muted text, --bd borders, --btn/--btnh buttons,
    --ac links/accent, --up/--dn upvote/downvote colours, --er errors, --hl subtle highlight/input background. */
-:root{--btn:#4f46e5;--btnh:#4338ca;--bg:#eceff3;--card:#fff;--tx:#1c1e21;--mu:#68707c;--bd:#dde1e7;--ac:#4f46e5;--ach:#4338ca;--up:#f0640c;--dn:#6366f1;--er:#c62828;--hl:#f6f7f9}
+:root{--btn:#4f46e5;--btnh:#4338ca;--bg:#eceff3;--card:#fff;--tx:#1c1e21;--mu:#565e6a;--bd:#dde1e7;--ac:#4f46e5;--ach:#4338ca;--up:#f0640c;--dn:#6366f1;--er:#c62828;--hl:#f6f7f9}
 /* Dark theme: same variable names, new values, applied automatically from the visitor's system setting. */
 @media(prefers-color-scheme:dark){:root{--bg:#0e1013;--card:#171a1f;--tx:#e4e6eb;--mu:#949ba6;--bd:#2a2e36;--ac:#818cf8;--ach:#a5b4fc;--up:#fb8a3c;--dn:#a5b4fc;--er:#ef7a7a;--hl:#1e2229}}
 /* Base elements */
@@ -81,7 +81,7 @@ aside .card p{margin:.2rem 0 .4rem;color:var(--mu)}
 /* Messages: .error (red), .notice (flash), .muted, .empty (no-results text) */
 .error{background:color-mix(in srgb,var(--er) 12%,transparent);color:var(--er);padding:8px 12px;border-radius:8px}
 .notice{background:color-mix(in srgb,var(--ac) 12%,var(--card));border:1px solid var(--bd);padding:8px 12px;border-radius:8px}
-.muted{color:var(--mu)}.pad{padding:8px 4px}.empty{text-align:center;color:var(--mu)}
+.muted{color:var(--mu)}.muted a,.empty a,.pad a{text-decoration:underline}.pad{padding:8px 4px}.empty{text-align:center;color:var(--mu)}
 .next{margin:4px 0 16px}
 /* Inline <details> controls: edit / delete / reply / report open in place */
 .inline{display:inline}details.inline>summary{display:inline;cursor:pointer;color:var(--mu);font-weight:600;list-style:none}
@@ -100,11 +100,16 @@ details.inline[open]{display:block;width:100%}details.inline[open]>form{margin:6
 .ch{font-size:13px}.ch a{font-weight:600;color:var(--tx)}
 .tog{background:none;border:0;color:var(--mu);cursor:pointer;font:12px ui-monospace,monospace;padding:0 4px 0 0}
 .cm.shut>.cb{display:none}
-.clist{list-style:none;margin:0;padding:0}.clist .card>a{color:var(--tx)}
+.clist{list-style:none;margin:0;padding:0}.clist .card>a{color:var(--tx);display:block;padding:6px 0;min-height:24px}
 /* Footer and captcha spacing */
-footer{text-align:center;color:var(--mu);font-size:13px;padding:24px 12px}footer a{color:var(--mu)}
+footer{text-align:center;color:var(--mu);font-size:13px;padding:16px 12px 24px}footer p{margin:4px 0}
+footer nav{justify-content:center;flex-wrap:wrap;gap:0 6px}footer a{color:var(--mu);display:inline-block;padding:12px 10px}
+/* Skip link (keyboard users), hero block on home and model pages, header links */
+.skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--tx);padding:10px 14px;z-index:10;border-radius:0 0 8px 0}.skip:focus{left:0}
+.hero{padding:14px 16px}.hero h1{font-size:1.5rem;margin:0 0 .3rem}.hero p{margin:0;color:var(--mu)}
+.links{gap:2px}.links a{padding:10px 10px;border-radius:8px;color:var(--tx);font-weight:600;font-size:14px}.links a:hover{background:var(--hl);text-decoration:none}
 .cf-turnstile{min-height:65px}
 /* Responsive: stack the sidebar under the feed on narrow screens, tighten buttons on phones */
-@media(max-width:860px){.grid{grid-template-columns:1fr}aside{order:2}.search{display:none}.bar{gap:8px}}
+@media(max-width:860px){.grid{grid-template-columns:1fr}aside{order:2}.search{display:none}.bar{gap:8px}.links{display:none}}
 @media(max-width:520px){.slogan{white-space:normal;max-width:150px;line-height:1.25}}
 @media(max-width:420px){.btn{padding:8px 12px}.post{gap:6px}}

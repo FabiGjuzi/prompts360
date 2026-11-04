@@ -1,0 +1,230 @@
+{
+ "communities": [
+  {
+   "name": "ChatGPT_Prompts",
+   "title": "ChatGPT prompts",
+   "description": "Everyday and power-user prompts for ChatGPT.",
+   "model": "chatgpt"
+  },
+  {
+   "name": "Claude_Prompts",
+   "title": "Claude prompts",
+   "description": "Prompts that work well with Claude.",
+   "model": "claude"
+  },
+  {
+   "name": "Gemini_Prompts",
+   "title": "Gemini prompts",
+   "description": "Prompts for Google Gemini, including multimodal tasks.",
+   "model": "gemini"
+  },
+  {
+   "name": "Grok_Prompts",
+   "title": "Grok prompts",
+   "description": "Prompts for Grok.",
+   "model": "grok"
+  },
+  {
+   "name": "Llama_Prompts",
+   "title": "Llama prompts",
+   "description": "Prompts for Llama and Meta AI.",
+   "model": "llama"
+  },
+  {
+   "name": "Mistral_Prompts",
+   "title": "Mistral prompts",
+   "description": "Prompts for Mistral models.",
+   "model": "mistral"
+  },
+  {
+   "name": "DeepSeek_Prompts",
+   "title": "DeepSeek prompts",
+   "description": "Reasoning and coding prompts for DeepSeek.",
+   "model": "deepseek"
+  },
+  {
+   "name": "Qwen_Prompts",
+   "title": "Qwen prompts",
+   "description": "Prompts for Qwen models.",
+   "model": "qwen"
+  },
+  {
+   "name": "Copilot_Prompts",
+   "title": "Copilot prompts",
+   "description": "Prompts for Microsoft Copilot in Office and the web.",
+   "model": "copilot"
+  },
+  {
+   "name": "Perplexity_Prompts",
+   "title": "Perplexity prompts",
+   "description": "Research prompts for Perplexity.",
+   "model": "perplexity"
+  },
+  {
+   "name": "Midjourney_Prompts",
+   "title": "Midjourney prompts",
+   "description": "Image prompts for Midjourney.",
+   "model": "midjourney"
+  },
+  {
+   "name": "SD_Flux_Prompts",
+   "title": "Stable Diffusion and Flux prompts",
+   "description": "Prompts and settings for Stable Diffusion and Flux.",
+   "model": "stable-diffusion"
+  },
+  {
+   "name": "Local_LLM_Prompts",
+   "title": "Open-source and local LLM prompts",
+   "description": "Prompts that work well on small local models.",
+   "model": "local"
+  },
+  {
+   "name": "General_Prompts",
+   "title": "Multi-model prompts",
+   "description": "Prompts that work across most assistants.",
+   "model": "general"
+  }
+ ],
+ "posts": [
+  {
+   "community": "ChatGPT_Prompts",
+   "title": "Rewrite my text in a clear, friendly tone",
+   "body": "Rewrite the text below so it is clear, friendly and under 150 words. Keep every fact. Do not add new claims.\n\nText:\n\"\"\"\n[paste text]\n\"\"\""
+  },
+  {
+   "community": "ChatGPT_Prompts",
+   "title": "Turn rough notes into a meeting summary",
+   "body": "Turn these notes into a summary with three sections: Decisions, Action items (owner + due date), Open questions. If an owner or date is missing, write \"unassigned\".\n\nNotes:\n\"\"\"\n[paste notes]\n\"\"\""
+  },
+  {
+   "community": "Claude_Prompts",
+   "title": "Review a document and list what is unclear",
+   "body": "Read the document below as a first-time reader. List every passage that is ambiguous, unsupported or contradictory. Quote the passage, explain the problem in one sentence, and suggest a fix.\n\n<document>\n[paste]\n</document>"
+  },
+  {
+   "community": "Claude_Prompts",
+   "title": "Explain a concept at three levels",
+   "body": "Explain [concept] three times: to a ten-year-old, to a college student, and to a practitioner. Keep each under 120 words and use a different example each time."
+  },
+  {
+   "community": "Gemini_Prompts",
+   "title": "Describe an image for alt text",
+   "body": "Look at the attached image and write alt text of at most 125 characters. Describe what matters for someone who cannot see it. Do not start with \"image of\"."
+  },
+  {
+   "community": "Gemini_Prompts",
+   "title": "Compare two documents",
+   "body": "Compare the two attached documents. Give a table of differences (topic, document A, document B) and a three-sentence summary of which is stronger and why."
+  },
+  {
+   "community": "Grok_Prompts",
+   "title": "Summarise a topic with pros, cons and open questions",
+   "body": "Give me a balanced briefing on [topic]: the strongest argument for, the strongest argument against, and the three questions experts still disagree on. Keep it under 250 words."
+  },
+  {
+   "community": "Grok_Prompts",
+   "title": "Draft a short, punchy post",
+   "body": "Write five versions of a post (max 240 characters) announcing [thing]. Vary the tone: plain, witty, urgent, curious, understated."
+  },
+  {
+   "community": "Llama_Prompts",
+   "title": "Step-by-step plan from a goal",
+   "body": "My goal: [goal]. I have [time] per week. Create a 4-week plan with weekly milestones and a daily 20-minute task list. End with the one thing most likely to derail it."
+  },
+  {
+   "community": "Llama_Prompts",
+   "title": "Rewrite code comments",
+   "body": "Improve the comments in this code. Explain why, not what. Do not change the code itself.\n\n```\n[paste code]\n```"
+  },
+  {
+   "community": "Mistral_Prompts",
+   "title": "Translate and keep the register",
+   "body": "Translate the text into [language]. Keep the same level of formality, keep idioms natural rather than literal, and list any phrase you were unsure about at the end."
+  },
+  {
+   "community": "Mistral_Prompts",
+   "title": "Extract structured data from text",
+   "body": "Extract the following fields from the text as JSON: name, date (ISO 8601), amount, currency. Use null when a field is missing. Return only JSON.\n\nText:\n\"\"\"\n[paste]\n\"\"\""
+  },
+  {
+   "community": "DeepSeek_Prompts",
+   "title": "Solve a problem and check the answer",
+   "body": "Solve the problem below. Show the reasoning step by step, then verify the result by a different method. If the two disagree, find the error.\n\nProblem: [problem]"
+  },
+  {
+   "community": "DeepSeek_Prompts",
+   "title": "Debug with a minimal reproduction",
+   "body": "Here is a bug and the code around it. Propose three likely causes ranked by probability, then give the smallest test that would confirm or rule out each.\n\n```\n[paste]\n```"
+  },
+  {
+   "community": "Qwen_Prompts",
+   "title": "Bilingual glossary",
+   "body": "Create a glossary of the 15 most important terms in [field], with the English term, the [language] term, and a one-line definition in both languages."
+  },
+  {
+   "community": "Qwen_Prompts",
+   "title": "Turn a spec into test cases",
+   "body": "From the specification below, write test cases as a table: id, input, expected result, edge case (yes/no). Include at least five edge cases.\n\n[paste spec]"
+  },
+  {
+   "community": "Copilot_Prompts",
+   "title": "Turn a document into slide outline",
+   "body": "Create a slide outline from the document: one title slide, five content slides with three bullets each, one summary slide. Suggest a speaker note for each slide."
+  },
+  {
+   "community": "Copilot_Prompts",
+   "title": "Clean up a spreadsheet column",
+   "body": "I have a column of messy names in Excel. Give me a formula or steps to trim spaces, fix capitalisation and remove duplicates without losing the original column."
+  },
+  {
+   "community": "Perplexity_Prompts",
+   "title": "Source-checked briefing",
+   "body": "Give me a briefing on [topic] using only sources from the last 12 months. For every claim, add the source. Flag any claim supported by only one source."
+  },
+  {
+   "community": "Perplexity_Prompts",
+   "title": "Compare options with citations",
+   "body": "Compare [option A] and [option B] for [use case]. Use a table with price, main strengths, main weaknesses. Cite a source for each cell."
+  },
+  {
+   "community": "Midjourney_Prompts",
+   "title": "Cinematic product shot",
+   "body": "Minimalist ceramic coffee mug on a walnut table, soft morning window light, shallow depth of field, 85mm lens, muted warm palette --ar 4:5 --style raw"
+  },
+  {
+   "community": "Midjourney_Prompts",
+   "title": "Flat illustration for a blog header",
+   "body": "Flat vector illustration of a person organising floating notes into a glowing grid, limited palette of indigo, cream and coral, generous negative space --ar 16:9"
+  },
+  {
+   "community": "SD_Flux_Prompts",
+   "title": "Photoreal portrait lighting recipe",
+   "body": "Portrait of an elderly fisherman, weathered skin, natural overcast light, 50mm, shallow depth of field, film grain. Negative: blurry, extra fingers, watermark, text. Steps 30, CFG 6."
+  },
+  {
+   "community": "SD_Flux_Prompts",
+   "title": "Isometric room illustration",
+   "body": "Isometric cutaway of a cosy reading room, warm lamp light, plants, clean linework, soft pastel colours, high detail. Negative: lowres, clutter, text."
+  },
+  {
+   "community": "Local_LLM_Prompts",
+   "title": "Short, strict instruction for small models",
+   "body": "You are a careful assistant. Answer in at most three sentences. If you do not know, say \"I don't know\". Question: [question]"
+  },
+  {
+   "community": "Local_LLM_Prompts",
+   "title": "Classify text with a fixed label set",
+   "body": "Classify the text into exactly one label: billing, bug, feature_request, other. Reply with the label only.\n\nText: [paste]"
+  },
+  {
+   "community": "General_Prompts",
+   "title": "Ask for clarifying questions first",
+   "body": "Before you answer, ask me up to five questions that would most improve your answer. Wait for my replies. Task: [task]"
+  },
+  {
+   "community": "General_Prompts",
+   "title": "Critique then improve",
+   "body": "Here is my draft. First list the three biggest weaknesses. Then rewrite it fixing only those three things.\n\n\"\"\"\n[paste draft]\n\"\"\""
+  }
+ ]
+}

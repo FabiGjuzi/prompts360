@@ -17,7 +17,7 @@
 2. Open `https://render.com/deploy?repo=https://github.com/FabiGjuzi/prompts360`, sign in with GitHub, and click **Apply**.
 3. When it shows **Live**, your link is `https://prompts360.onrender.com` (Render adds a suffix if that name is taken).
 4. Sign up. Then open **Dashboard → prompts360 → Logs**, find the `verify?t=…` link and open it.
-5. To make yourself admin, open **Shell** and run `node scripts/make-admin.js <username>`.
+5. Superadmin: add the encrypted env vars `ADMIN_PATH` and `ADMIN_BOOTSTRAP_HASH` (see `scripts/make-admin-hash.js`). Without `ADMIN_PATH` the dashboard does not exist.
 
 ---
 
@@ -77,7 +77,7 @@ Autoscaling containers with no servers to patch. DigitalOcean's built-in Cloudfl
 7. Sign up on the site, then make yourself admin:
    ```bash
    doctl apps console <app-id> web      # or the Console tab in the control panel
-   node scripts/make-admin.js <your-username>
+   # (no longer needed: use the superadmin dashboard, see ADMIN_PATH)
    ```
 
 **Settings already in the spec for this path:** `CLIENT_IP_HEADER=do-connecting-ip` (DigitalOcean's edge sets it, so it's safe to trust) and `EDGE_CACHE_SEC=0` (the platform CDN can't skip cache for logged-in users). Logged-out pages are still micro-cached for 5 s inside each instance.
@@ -127,5 +127,5 @@ Use this path when you want Cloudflare to cache logged-out pages at the edge, so
 
 - [ ] Read `/privacy` and `/terms`. They're templates; have a lawyer review them. The `.si` domain and EU visitors make GDPR relevant.
 - [ ] Test signup → email → verify → login on the live domain.
-- [ ] Run `node scripts/make-admin.js <you>`.
+- [ ] Set `ADMIN_PATH` + `ADMIN_BOOTSTRAP_HASH`; log in to the dashboard; change the password under Account.
 - [ ] Optionally submit the domain to <https://hstspreload.org> (the HSTS header is already set).

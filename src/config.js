@@ -66,6 +66,13 @@ export const config = Object.freeze({
     resendApiKey: env.RESEND_API_KEY || '',
   },
 
+  // Superadmin dashboard: lives at a secret URL path (ADMIN_PATH, e.g. /x-3f9a…); with no ADMIN_PATH in production it is switched off.
+  // ADMIN_BOOTSTRAP_HASH is the Argon2id hash of the superadmin password (made by scripts/make-admin-hash.js); it is used once to
+  // create the account. ADMIN_IP_ALLOW is an optional comma-separated list of IPs that may reach the dashboard at all.
+  adminPath: (env.ADMIN_PATH || (isProd ? '' : '/admin')).replace(/\/+$/, ''),
+  adminBootstrapHash: env.ADMIN_BOOTSTRAP_HASH || '',
+  adminIpAllow: (env.ADMIN_IP_ALLOW || '').split(',').map(s => s.trim()).filter(Boolean),
+
   // Per-IP flood guard (token bucket per app process): burst size and sustained requests/second.
   ipBurst: int('IP_BURST', 120),
   ipRate: int('IP_RATE', 4),
@@ -80,6 +87,7 @@ if (isProd) {
     if (config[k].length < 32) throw new Error(`${k} must be at least 32 random characters (node scripts/gen-keys.js)`);
     if (config[k] === DEV_KEY) throw new Error(`${k} is the development key`);
   }
+  if (config.adminPath && !/^\/[A-Za-z0-9_-]{16,80}$/.test(config.adminPath)) throw new Error('ADMIN_PATH must look like /<16-80 letters, digits, - or _>');
   if (!config.baseUrl.startsWith('https://')) throw new Error('BASE_URL must be https:// in production');
   if (!config.turnstileSecret || !config.turnstileSiteKey) throw new Error('Turnstile keys are required in production');
   if (/^[123]x0+[A-Z]{2}$/.test(config.turnstileSecret)) console.warn('[config] WARNING: Cloudflare TEST captcha keys in use — bots are NOT blocked. Replace before launch.');

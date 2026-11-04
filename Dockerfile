@@ -13,6 +13,7 @@ COPY package.json ./
 COPY src ./src
 COPY public ./public
 COPY migrations ./migrations
+COPY seed ./seed
 COPY scripts ./scripts
 USER node
 EXPOSE 8080

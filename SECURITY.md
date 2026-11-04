@@ -28,7 +28,7 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 | Session hijack / fixation | HttpOnly `__Host-` cookie, Secure, a new token at every login, server-side revocation on logout, password change, reset, ban or delete. | ✅ |
 | Clickjacking | `frame-ancestors 'none'` and `X-Frame-Options: DENY` | ✅ |
 | Open redirect | Only same-site relative paths are accepted. | ✅ |
-| IDOR (editing others' content) | Every write checks `author_id`; admin routes check the role. | ✅ |
+| IDOR (editing others' content) | Every write checks `author_id`; dashboard routes need a separate admin session. | ✅ |
 | Prototype / parameter pollution | Null-prototype body objects, dangerous keys dropped, first value wins. | ✅ |
 | Cryptojacking and injected miners | CSP blocks any script not served by the site. The only third-party script is Turnstile, and only on captcha pages. No CDNs or analytics. One third-party library (the `pg` database driver), 0 known vulnerabilities. | ✅ |
 | Layer-7 DDoS / floods | Per-IP token bucket, rate limits on every write action, Argon2 concurrency cap, 16 KB default body limit, 10 s header and 15 s request timeouts, 5 s SQL statement timeout, and logged-out pages served from a micro-cache. | ✅ |
@@ -48,3 +48,11 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 - **Gmail's cap** is about 500 emails a day. Past it, signups queue until the next day. Add a fallback transport before you get big.
 - **Compromise of the running server** would expose its keys, as with any app that must decrypt data to use it. Keep secrets in the platform's secret store, use 2FA on DigitalOcean, Cloudflare, GitHub and Google, and restrict who can deploy.
 - **Content moderation** is admin-only; with growth you'll want more moderators.
+
+## Superadmin dashboard
+- Hidden path (`ADMIN_PATH`, 16-80 chars, required to match in production); every admin URL returns 404 without a valid admin session.
+- Separate account (Argon2id + pepper), Turnstile on login, 8 attempts / 15 min / IP, uniform failure messages, optional `ADMIN_IP_ALLOW`.
+- Cookie `__Host-asid` (HttpOnly, SameSite=Strict, UA-bound), idle 30 min, absolute 8 h; CSRF token derived per admin session; password change signs out all admin sessions.
+- CRUD only on whitelisted tables; password hashes, email indexes, tokens and the mail outbox are never exposed; every write is audited in the event log.
+- Metrics are aggregate only: no IPs, user agents or user IDs are stored.
+- Strict CSP with Trusted Types on the dashboard; no inline scripts or styles.

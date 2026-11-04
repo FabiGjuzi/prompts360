@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { config } from './config.js';
 import { layout, errorPage } from './views.js';
 import { checkFormToken, safeEqual } from './crypto.js';
+import { count } from './metrics.js';
 
 const brotli = promisify(zlib.brotliCompress), gzip = promisify(zlib.gzip);
 /** Error carrying an HTTP status; thrown by handlers and turned into an error page by server.js. */
@@ -17,6 +18,7 @@ export function securityHeaders(res, { turnstile = false } = {}) {
   res.setHeader('Content-Security-Policy',
     `default-src 'none'; script-src 'self'${ts}; style-src 'self'; img-src 'self'; connect-src 'self'; ` +
     `frame-src ${turnstile ? TURNSTILE : "'none'"}; form-action 'self'; frame-ancestors 'none'; base-uri 'none'` +
+    (turnstile ? '' : "; require-trusted-types-for 'script'") +
     (config.isProd ? '; upgrade-insecure-requests' : ''));
   if (config.isProd) res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -60,12 +62,16 @@ const micro = new Map();
 /** Serve a recently rendered logged-out page from the in-process micro-cache if one exists. Returns true when it handled the request. */
 export function serveMicro(req, res) {
   const e = micro.get(req.url);
-  if (!e) return false;
-  if (e.exp < Date.now()) { micro.delete(req.url); return false; }
+  if (!e) { count('microMiss'); return false; }
+  if (e.exp < Date.now()) { micro.delete(req.url); count('microMiss'); return false; }
+  count('microHit');
+  req.isPage = true;
   res.setHeader('Cache-Control', e.cc);
   send(req, res, 200, e.raw, 'text/html; charset=utf-8', e);
   return true;
 }
+/** Forget every cached page (called after the dashboard changes content). */
+export const clearMicro = () => micro.clear();
 /** Remember a rendered logged-out page for MICROCACHE_SEC seconds (bounded to 2000 entries, oldest evicted first). */
 function storeMicro(url, raw, cc) {
   if (micro.size >= 2000) micro.delete(micro.keys().next().value); // oldest first
@@ -78,7 +84,7 @@ function storeMicro(url, raw, cc) {
  * Render a page. Logged-out GET pages without forms are public and cacheable (edge + micro-cache);
  * anything personalised or containing a form token is `private, no-store`.
  */
-export function page(req, res, { status = 200, title, content, sidebar, turnstile, cache = true, desc, noindex, q } = {}) {
+export function page(req, res, { status = 200, title, fullTitle, content, sidebar, turnstile, cache = true, desc, noindex, q, canonical, jsonld, ogType } = {}) {
   const user = req.user;
   if (turnstile) securityHeaders(res, { turnstile: true });
   const notice = req.query.get('n');
@@ -88,7 +94,10 @@ export function page(req, res, { status = 200, title, content, sidebar, turnstil
     ? `public, max-age=0, s-maxage=${config.edgeCacheSec}, stale-while-revalidate=60`
     : 'private, no-store';
   res.setHeader('Cache-Control', cc);
-  const body = Buffer.from(layout({ title, user, content, sidebar, turnstile, notice, desc, noindex, q: q ?? '' }).toString());
+  req.isPage = true;
+  // Canonical URL = this path without query string (sort/page variants point at the main page). Error and noindex pages have none.
+  const canon = canonical === undefined ? (status === 200 ? req.path : undefined) : canonical;
+  const body = Buffer.from(layout({ title, fullTitle, user, content, sidebar, turnstile, notice, desc, noindex, q: q ?? '', canonical: canon, jsonld, ogType }).toString());
   const entry = anonPublic && config.microCacheSec > 0 ? storeMicro(req.url, body, cc) : undefined;
   return send(req, res, status, body, 'text/html; charset=utf-8', entry);
 }
@@ -159,7 +168,15 @@ function sameOrigin(req) {
 }
 /** kind 'user': per-session synchronizer token. kind 'anon': signed, expiring token for logged-out forms. */
 export function checkCsrf(req, body, kind) {
+  if (!checkCsrfInner(req, body, kind)) { count('csrf'); return false; }
+  return true;
+}
+function checkCsrfInner(req, body, kind) {
   if (!sameOrigin(req)) return false;
+  if (kind === 'admin') {
+    const t = body._csrf || req.headers['x-csrf-token'];
+    return Boolean(req.admin) && typeof t === 'string' && safeEqual(t, req.admin.csrf);
+  }
   if (kind === 'user') {
     const t = body._csrf || req.headers['x-csrf-token'];
     return Boolean(req.user) && typeof t === 'string' && safeEqual(t, req.user.csrf);

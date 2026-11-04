@@ -6,6 +6,9 @@ import { cached } from '../kv.js';
 import { hit, LIMITS } from '../ratelimit.js';
 import { ipKey } from '../crypto.js';
 import { page, redirect, json, str, HttpError } from '../http.js';
+import { t } from '../site.js';
+import { pageBySlug } from '../site.js';
+import { ldHome, ldBreadcrumbs, ldPost, ldCollection, ldWebPage } from '../seo.js';
 import { safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
@@ -15,7 +18,7 @@ import { COMMUNITY_RE, intId } from '../validate.js';
 let tagCache = { at: 0, list: [] };
 /** All AI model tags (cached in-process for 60 s). */
 export async function tags() {
-  if (Date.now() - tagCache.at > 60_000) tagCache = { at: Date.now(), list: (await qr('SELECT id, slug, name FROM ai_tags ORDER BY sort, name')).rows };
+  if (Date.now() - tagCache.at > 60_000) tagCache = { at: Date.now(), list: (await qr('SELECT id, slug, name, description, seo_title, seo_desc FROM ai_tags WHERE enabled ORDER BY sort, name')).rows };
   return tagCache.list;
 }
 /** Make the next tags() call reload from the database (after an admin edits tags). */
@@ -140,19 +143,35 @@ function qs(params) {
 }
 
 // ---------- Home ----------
-/** GET / — the front page feed, optionally filtered by AI model (?tag=), sorted Hot/New/Top. */
-async function home(req, res) {
+/** Shared by the home page and the model landing pages: the sorted, paginated feed with the hero block above it. */
+async function feedPage(req, res, tag) {
   const sort = parseSort(req.query.get('sort')), window = parseWindow(req.query.get('t'));
-  const tag = await tagBySlug(req.query.get('tag') || '');
   const { posts, next } = await loadFeed({ tagId: tag?.id, sort, window, after: req.query.get('after') });
   const votes = await postVotes(req.user, posts);
-  const back = `/${qs({ tag: tag?.slug, sort: sort !== 'hot' && sort, t: sort === 'top' && window })}`;
-  const nextUrl = next && `/${qs({ tag: tag?.slug, sort, t: sort === 'top' && window, after: next })}`;
-  return page(req, res, {
-    title: tag ? `${tag.name} prompts & discussion` : '',
-    content: [V.sortTabs(tag ? `/?tag=${tag.slug}` : '/', sort, window), V.postList(posts, votes, req.user, { back, nextUrl })],
-    sidebar: V.sidebar({ tags: await tags(), activeTag: tag?.slug, user: req.user }),
-  });
+  const base = tag ? `/m/${tag.slug}` : '/';
+  const back = `${base}${qs({ sort: sort !== 'hot' && sort, t: sort === 'top' && window })}`;
+  const nextUrl = next && `${base}${qs({ sort, t: sort === 'top' && window, after: next })}`;
+  const list = V.postList(posts, votes, req.user, { back, nextUrl });
+  const tabs = V.sortTabs(base, sort, window);
+  const sidebar = V.sidebar({ tags: await tags(), activeTag: tag?.slug, user: req.user });
+  if (!tag) return page(req, res, { fullTitle: t('seo.home_title'), desc: t('seo.description'), jsonld: ldHome(), content: [V.hero(t('home.heading'), t('home.intro')), tabs, list], sidebar });
+  const title = tag.seo_title || `${tag.name} prompts, tips & discussion`;
+  const desc = tag.seo_desc || tag.description || t('seo.description');
+  return page(req, res, { title, desc, canonical: base, content: [V.hero(`${tag.name} prompts`, tag.description), tabs, list], sidebar,
+    jsonld: [ldCollection(title, desc, base), ldBreadcrumbs([['Home', '/'], [tag.name, base]])] });
+}
+
+/** GET / — the front page feed. The old ?tag= form is redirected (permanently) to the model's own page. */
+async function home(req, res) {
+  const tag = await tagBySlug(req.query.get('tag') || '');
+  if (tag) { const p = new URLSearchParams(req.query); p.delete('tag'); return redirect(res, `/m/${tag.slug}${p.toString() ? `?${p}` : ''}`, 301); }
+  return feedPage(req, res, null);
+}
+/** GET /m/:slug — landing page for one AI model (its own title, description and feed). */
+async function modelPage(req, res, [slug]) {
+  const tag = await tagBySlug(slug);
+  if (!tag) throw new HttpError(404, t('err.404'));
+  return feedPage(req, res, tag);
 }
 
 // ---------- Communities ----------
@@ -173,7 +192,8 @@ async function communityPage(req, res, [name]) {
   const votes = await postVotes(req.user, posts);
   const base = `/c/${c.name}`;
   return page(req, res, {
-    title: `c/${c.name} — ${c.title}`, desc: c.description || c.title,
+    title: `c/${c.name} — ${c.title}`, desc: (c.description || `${c.title} — ${c.tag_name} prompts and discussion.`).slice(0, 300),
+    jsonld: [ldCollection(`c/${c.name} — ${c.title}`, c.description || c.title, base), ldBreadcrumbs([['Home', '/'], [c.tag_name, `/m/${c.tag_slug}`], [`c/${c.name}`, base]])],
     content: [V.communityHeader(c), req.user ? V.reportForm(req.user, 'm', c.id) : '', V.sortTabs(base, sort, window),
       V.postList(posts, votes, req.user, { back: base, showCommunity: false, nextUrl: next && `${base}${qs({ sort, t: sort === 'top' && window, after: next })}` })],
     sidebar: V.sidebar({ tags: await tags(), user: req.user, community: c }),
@@ -197,7 +217,7 @@ async function communitiesList(req, res) {
   const list = rows.slice(0, PAGE), last = list[list.length - 1];
   const next = rows.length > PAGE ? (sort === 'new' ? `n${last.id}` : `p${last.post_count}_${last.id}`) : null;
   return page(req, res, {
-    title: 'Communities',
+    title: t('communities.title'), desc: `Browse communities for ChatGPT, Claude, Gemini and every other AI model.`, canonical: '/communities',
     content: V.communitiesPage({ list, tags: await tags(), tag: tag?.slug, sort, user: req.user, nextUrl: next && `/communities${qs({ sort, tag: tag?.slug, after: next })}` }),
   });
 }
@@ -268,6 +288,10 @@ async function postPage(req, res, [idStr]) {
       CASE WHEN u.deleted_at IS NULL THEN u.username END AS author
     ${POST_FROM} WHERE p.id = $1`, [id]);
   if (!post) throw new HttpError(404, 'That post doesn’t exist.');
+  const gonePost = Boolean(post.removed_at || post.deleted_at);
+  const canon = `/p/${post.id}/${slugify(post.title)}`;
+  // One URL per post: /p/12 and a stale slug are redirected (permanently) to /p/12/<current-title-slug>.
+  if (!gonePost && req.path !== canon) { const qsx = req.query.toString(); return redirect(res, `${canon}${qsx ? `?${qsx}` : ''}`, 301); }
   const sort = req.query.get('sort') === 'new' ? 'new' : 'best';
   // Logged-in readers use the primary so their own fresh comment is never missing due to replica lag.
   const { rows } = await (req.user ? q : qr)(`SELECT cm.id, cm.parent_id, cm.body, cm.score, cm.created_at, cm.edited_at, cm.deleted_at, cm.removed_at,
@@ -285,11 +309,19 @@ async function postPage(req, res, [idStr]) {
   ]);
   return page(req, res, {
     title: post.removed_at ? '[removed]' : post.title,
-    desc: post.removed_at || post.deleted_at ? undefined : (post.body || post.title).slice(0, 160),
-    noindex: Boolean(post.removed_at || post.deleted_at),
+    desc: gonePost ? undefined : descOf(post.body, post.title),
+    noindex: gonePost, canonical: gonePost ? undefined : canon, ogType: 'article',
+    jsonld: gonePost ? undefined : [ldPost({ ...post, path: canon }), ldBreadcrumbs([['Home', '/'], [post.tag_name, `/m/${post.tag_slug}`], [`c/${post.community}`, `/c/${post.community}`], [post.title.slice(0, 80), canon]])],
     content: V.postPage({ post, comments, votes, cvotes, user: req.user, sort }),
     sidebar: V.sidebar({ tags: await tags(), user: req.user, community: await getCommunity(post.community) }),
   });
+}
+
+/** Meta description from a post body: plain text of the first ~155 characters (Markdown symbols removed), else the title. */
+function descOf(body, title) {
+  const plain = (body || '').replace(/```[\s\S]*?(?:```|$)/g, ' ').replace(/\[([^\]\n]*)\]\([^)\n]*\)/g, '$1').replace(/^[ \t]*(?:#{1,6}|>|[-*+]|\d{1,9}[.)])[ \t]+/gm, '').replace(/[*_~`]+/g, '').replace(/\s+/g, ' ').trim();
+  const src = plain.length >= 30 ? plain : `${title}${plain ? ` — ${plain}` : ''}`;
+  return src.length > 155 ? `${src.slice(0, 152).replace(/\s+\S*$/, '')}…` : src;
 }
 
 /** POST /p/:id/edit — the author edits the body. */
@@ -427,11 +459,11 @@ async function profile(req, res, [name]) {
       ${m ? 'AND cm.id < $2' : ''} ORDER BY cm.id DESC LIMIT ${PAGE + 1}`, vals);
     const items = rows.slice(0, PAGE);
     const nextUrl = rows.length > PAGE ? `${base}?tab=comments&after=n${items[items.length - 1].id}` : null;
-    return page(req, res, { title: `u/${prof.username}`, content: V.profilePage({ profile: prof, tab, items, votes: new Map(), user: req.user, nextUrl }) });
+    return page(req, res, { title: `u/${prof.username}`, noindex: true, content: V.profilePage({ profile: prof, tab, items, votes: new Map(), user: req.user, nextUrl }) });
   }
   const { posts, next } = await loadFeed({ authorId: prof.id, after: req.query.get('after') });
   return page(req, res, {
-    title: `u/${prof.username}`,
+    title: `u/${prof.username}`, noindex: true,
     content: V.profilePage({ profile: prof, tab, items: posts, votes: await postVotes(req.user, posts), user: req.user, nextUrl: next && `${base}?after=${next}` }),
   });
 }
@@ -446,16 +478,22 @@ async function search(req, res) {
     ({ posts, next } = await loadFeed({ search: qtext, after: req.query.get('after') }));
   }
   return page(req, res, {
-    title: qtext ? `Search: ${qtext}` : 'Search', q: qtext, noindex: true,
+    title: qtext ? `Search: ${qtext}` : t('search.title'), q: qtext, noindex: true,
     content: V.searchPage({ q: qtext, posts, votes: await postVotes(req.user, posts), user: req.user, nextUrl: next && `/search?q=${encodeURIComponent(qtext)}&after=${next}` }),
   });
 }
 
-/** Handler factory for the Privacy and Terms pages. */
-const legal = kind => (req, res) => page(req, res, { title: kind === 'privacy' ? 'Privacy' : 'Terms', content: V.legalPage(kind) });
+/** GET /<slug> — a free-form page edited in the dashboard (Privacy, Terms, About …). Registered last so built-in routes win. */
+async function cmsPage(req, res, [slug]) {
+  const p = pageBySlug(slug);
+  if (!p) throw new HttpError(404, t('err.404'));
+  const desc = p.meta_description || t('seo.description');
+  return page(req, res, { title: p.title, desc, noindex: p.noindex, canonical: p.noindex ? undefined : `/${slug}`, content: V.cmsPage(p), jsonld: ldWebPage(p.title, desc, `/${slug}`) });
+}
 
 export const forumRoutes = [
   ['GET', /^\/$/, home],
+  ['GET', /^\/m\/([a-z0-9-]{1,30})$/, modelPage],
   ['GET', /^\/c\/([A-Za-z0-9_]{3,21})$/, communityPage],
   ['GET', /^\/communities$/, communitiesList],
   ['GET', /^\/communities\/new$/, communityNewGet, { auth: 'user' }],
@@ -472,6 +510,8 @@ export const forumRoutes = [
   ['POST', /^\/report$/, report, { form: 'user', auth: 'user' }],
   ['GET', /^\/u\/([A-Za-z0-9_-]{3,20})$/, profile],
   ['GET', /^\/search$/, search],
-  ['GET', /^\/privacy$/, legal('privacy')],
-  ['GET', /^\/terms$/, legal('terms')],
+];
+/** Routes that must come after every other route (they match any single-segment path). */
+export const cmsRoutes = [
+  ['GET', /^\/([a-z0-9][a-z0-9-]{0,58}[a-z0-9])$/, cmsPage],
 ];

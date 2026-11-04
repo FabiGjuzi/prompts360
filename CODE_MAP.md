@@ -10,9 +10,9 @@ Every file, function and important variable in prompts360, in one place. Each fu
 
 1. `server.js handle()` sets the security headers, answers `/healthz`, checks the origin lock, serves static files, and applies the per-IP flood limit.
 2. Logged-out `GET`s without cookies are served from the micro-cache if a fresh copy exists (`http.js serveMicro`).
-3. The URL is matched against the route table (built from `routes/auth.js`, `routes/forum.js`, `routes/admin.js`).
+3. The URL is matched against the route table (built from `admin/index.js`, `routes/auth.js`, `routes/forum.js`, with the catch-all CMS page route last).
 4. The session cookie is looked up in Valkey (`session.js loadSession`) to get the logged-in user (or none).
-5. Routes marked `auth` require a user (`admin` also requires `is_admin`).
+5. Routes marked `auth` require a user. Dashboard routes use `admin: 'open'|'required'` (its own session cookie, CSRF and 404-when-not-logged-in).
 6. `POST`s: the body is read with a size limit (`http.js readBody`) and the CSRF check runs (`checkCsrf`).
 7. The route handler runs, queries PostgreSQL through `db.js`, and returns a page built from `views.js` via `http.js page()` (or a redirect).
 
@@ -415,3 +415,8 @@ Rate-limit names (`ratelimit.js LIMITS`): `signup`, `login`, `loginfail`, `forgo
 
 
 > `VALKEY_URL=memory` selects `MemoryClient` in `src/kv.js`: the same API as the Valkey client, kept in this process's memory (single-instance deploys only; data is lost on restart).
+
+
+## Superadmin dashboard (`src/admin/`)
+- `index.js` route table under `ADMIN_PATH`; `auth.js` separate login/session/password; `crud.js` generic table CRUD over a whitelist registry (`TABLES`); `pages.js` dashboard, live data, logs, texts, import, reports, account; `stats.js` metric queries; `ui.js` shell and SVG charts.
+- `src/site.js` (editable texts, menus, pages), `src/metrics.js` (per-minute aggregates, event log), `src/seo.js` (robots, sitemap, JSON-LD).

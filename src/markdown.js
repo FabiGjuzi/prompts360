@@ -43,7 +43,7 @@ function inline(text) {
 }
 
 /** Render a Markdown string to safe HTML (paragraphs, headings, quotes, lists, rules, code blocks). Raw HTML in the input is never passed through. */
-export function markdown(src) {
+export function markdown(src, { min = 3, off = 2 } = {}) {
   const lines = String(src || '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   let para = [];
@@ -62,7 +62,7 @@ export function markdown(src) {
     let m;
     if ((m = line.match(/^(#{1,6})\s+(.{1,300})$/))) {
       flush();
-      const lvl = Math.min(6, m[1].length + 2);        // post title is h1; content headings start at h3
+      const lvl = Math.min(6, Math.max(min, m[1].length + off));   // default: post title is h1, content headings start at h3
       out.push(`<h${lvl}>${inline(m[2])}</h${lvl}>`);
       continue;
     }
