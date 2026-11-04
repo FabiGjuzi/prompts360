@@ -2,7 +2,7 @@
 // produced by html`` itself or explicitly wrapped in raw() — that is the core XSS defence.
 
 /** Wrapper marking a string as already-safe HTML, so html`` won't escape it again. */
-class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }
+export class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }
 /** Mark `s` as trusted HTML. Use only for markup this code generated itself, never for user input. */
 export const raw = s => new Raw(String(s));
 

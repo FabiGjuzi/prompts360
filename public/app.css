@@ -7,12 +7,12 @@
 /* Base elements */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:var(--bg);color:var(--tx);font:var(--fs,15px)/1.5 var(--font,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}
 a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
 h1{font-size:1.35rem;margin:0 0 .4rem}h2{font-size:1.05rem;margin:0 0 .4rem}
 /* Header: sticky bar with brand, search and account buttons */
 .top{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--bd)}
-.bar{max-width:1120px;margin:auto;display:flex;align-items:center;gap:12px;padding:8px 12px}
+.bar{max-width:var(--w,1120px);margin:auto;display:flex;align-items:center;gap:12px;padding:8px 12px}
 /* Brand: animated logo image (see scripts/build-logo.js) + slogan */
 .brand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;color:var(--tx);line-height:1}.brand:hover{text-decoration:none}
 .slogan{font-size:11px;font-weight:500;color:var(--mu);white-space:nowrap}
@@ -24,7 +24,7 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--ac);outline-offs
 .search input{border-radius:999px}
 /* Navigation row + buttons (.btn primary, .ghost outline, .danger red, .sm small, .wide full width) */
 nav{display:flex;align-items:center;gap:8px}.bar nav{margin-left:auto}
-.btn{display:inline-block;border:0;border-radius:999px;background:var(--btn);color:#fff;font-family:inherit;font-weight:600;font-size:14px;line-height:1;padding:9px 16px;cursor:pointer;text-align:center;white-space:nowrap}
+.btn{display:inline-block;border:0;border-radius:var(--rb,999px);background:var(--btn);color:#fff;font-family:inherit;font-weight:600;font-size:14px;line-height:1;padding:9px 16px;cursor:pointer;text-align:center;white-space:nowrap}
 .btn:hover{background:var(--btnh);text-decoration:none}
 .btn.ghost{background:transparent;color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
 .btn.danger{background:var(--er)}.btn.sm{padding:6px 12px;font-size:13px}.btn.wide{display:block;width:100%;margin-top:8px}
@@ -36,11 +36,11 @@ nav{display:flex;align-items:center;gap:8px}.bar nav{margin-left:auto}
 .menu>div a,.menu>div button{padding:8px 10px;border-radius:6px;color:var(--tx);text-align:left;background:none;border:0;font:inherit;cursor:pointer}
 .menu>div a:hover,.menu>div button:hover{background:var(--hl);text-decoration:none}
 /* Page layout: .grid = feed + sidebar, .single = one centred column (forms) */
-main{max-width:1120px;margin:16px auto;padding:0 12px}
+main{max-width:var(--w,1120px);margin:16px auto;padding:0 12px}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 312px;gap:16px;align-items:start}
 .single .col{max-width:760px;margin:auto}
 /* Cards: the basic white panel used everywhere */
-.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r,10px);padding:12px 14px;margin:0 0 10px}
 aside .card p{margin:.2rem 0 .4rem;color:var(--mu)}
 /* AI model chips (.tags in the sidebar, .tag inline) */
 .tags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
@@ -114,3 +114,6 @@ footer nav{justify-content:center;flex-wrap:wrap;gap:0 6px}footer a{color:var(--
 @media(max-width:860px){.grid{grid-template-columns:1fr}aside{order:2}.search{display:none}.bar{gap:8px}.links{display:none}}
 @media(max-width:520px){.slogan{white-space:normal;max-width:150px;line-height:1.25}}
 @media(max-width:420px){.btn{padding:8px 12px}.post{gap:6px}}
+
+/* Dashboard design preview banner */
+.pvbar{position:sticky;top:0;z-index:50;background:#1c1e21;color:#fff;text-align:center;font-size:13px;padding:7px 12px}.pvbar a{color:#c7d2fe;text-decoration:underline;padding:4px 2px}

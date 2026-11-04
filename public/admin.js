@@ -2,6 +2,34 @@
 (() => {
   'use strict';
   const d = document;
+  // Site design editor: live theme preview (CSS custom properties set through the CSSOM) and character counters.
+  const prev = d.querySelectorAll('[data-tprev]');
+  if (prev.length) {
+    const val = (mode, v) => { const el = d.querySelector(`[data-var="${v}"][data-mode="${mode}"]`); return el ? el.value : ''; };
+    const apply = () => {
+      const font = d.querySelector('[data-font] option:checked')?.dataset.stack;
+      const rb = d.querySelector('[data-shape] option:checked')?.dataset.radius;
+      const num = k => d.querySelector(`[data-num="${k}"]`)?.value;
+      for (const p of prev) {
+        const mode = p.dataset.tprev;
+        for (const v of ['bg', 'card', 'hl', 'tx', 'mu', 'bd', 'ac', 'ach', 'up', 'dn', 'er']) { const x = val(mode, v); if (x) p.style.setProperty('--' + v, x); }
+        for (const v of ['btn', 'btnh']) { const x = val('light', v); if (x) p.style.setProperty('--' + v, x); }
+        if (font) p.style.setProperty('--pfont', font);
+        if (rb) p.style.setProperty('--rb', rb);
+        if (num('r')) p.style.setProperty('--r', num('r') + 'px');
+        if (num('fs')) p.style.setProperty('--pfs', num('fs') + 'px');
+      }
+    };
+    d.querySelectorAll('[data-var],[data-font],[data-shape],[data-num]').forEach(el => el.addEventListener('input', apply));
+    apply();
+  }
+  d.querySelectorAll('textarea[data-count]').forEach(t => {
+    const out = t.closest('.fld')?.querySelector('[data-counter]');
+    if (!out) return;
+    const max = Number(t.dataset.count) || 0;
+    const upd = () => { out.textContent = t.value.length.toLocaleString('en-US') + ' characters' + (max ? ' · max ' + max.toLocaleString('en-US') : ''); };
+    t.addEventListener('input', upd); upd();
+  });
   const live = d.querySelector('[data-live]');
   if (!live) return;
   const base = d.body.dataset.base;

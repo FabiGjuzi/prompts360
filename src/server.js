@@ -10,6 +10,7 @@ import { connectKv, closeKv } from './kv.js';
 import { loadSession, readCookie } from './session.js';
 import { begin, count, logEvent, startMetrics } from './metrics.js';
 import { ensureSite, refreshSite, t } from './site.js';
+import { withDesign, ensureDesign, refreshDesign, liveAsset } from './design.js';
 import { robotsTxt, sitemapXml } from './seo.js';
 import { loadAdmin } from './admin/auth.js';
 import { ipThrottle } from './ratelimit.js';
@@ -55,7 +56,8 @@ export async function handle(req, res) {
     return renderError(req, res, 405, 'Method not allowed.');
   }
 
-  const asset = assetFiles.get(req.path);
+  let asset = assetFiles.get(req.path);
+  if (!asset && req.path.startsWith('/x/')) { await ensureDesign(); asset = liveAsset(req.path); }   // dashboard-edited CSS/JS (content-hashed)
   if (asset && req.method !== 'POST') {
     req.routeLabel = 'asset';
     const ae = req.headers['accept-encoding'] || '';
@@ -71,6 +73,7 @@ export async function handle(req, res) {
 
   if (!ipThrottle(req.ip, config.ipBurst, config.ipRate)) { count('limited'); res.setHeader('Retry-After', '30'); return renderError(req, res, 429, t('err.429')); }
   await ensureSite();   // editable texts, links and pages (cached in memory, refreshed in the background)
+  await ensureDesign(); // theme, custom CSS/JS and templates (same idea)
 
   if (req.path === '/robots.txt') { req.routeLabel = 'GET robots'; res.setHeader('Cache-Control', 'public, max-age=3600'); return send(req, res, 200, robotsTxt(), 'text/plain; charset=utf-8'); }
   if (req.path === '/sitemap.xml') { req.routeLabel = 'GET sitemap'; res.setHeader('Cache-Control', 'public, max-age=600'); return send(req, res, 200, await sitemapXml(), 'application/xml; charset=utf-8'); }
@@ -98,6 +101,8 @@ export async function handle(req, res) {
     req.routeLabel = `${method} ${route.handler.name || 'handler'}`;
     req.cookieToken = readCookie(req);
     req.user = req.cookieToken ? await loadSession(req.cookieToken) : null;
+    // Design preview: only a signed-in superadmin holding the preview cookie sees the unpublished draft.
+    if (config.adminPath && /(?:^|;\s*)pv=1/.test(req.headers.cookie || '') && (!config.adminIpAllow.length || config.adminIpAllow.includes(req.ip)) && await loadAdmin(req)) { req.preview = true; req.dstore.preview = true; }
     if (auth && !req.user) {
       if (method === 'GET') return redirect(res, `/login?back=${encodeURIComponent(req.path + url.search)}`);
       return renderError(req, res, 401, 'Please log in first.');
@@ -114,7 +119,7 @@ export async function handle(req, res) {
 /** Wrap handle() so any thrown error becomes a safe error page (no stack traces or SQL ever reach the client). */
 async function onRequest(req, res) {
   try {
-    await handle(req, res);
+    await withDesign(s => { req.dstore = s; return handle(req, res); });
   } catch (e) {
     const status = e instanceof HttpError || (e.status >= 400 && e.status < 600) ? e.status : 500;
     if (status === 500) {
@@ -146,6 +151,7 @@ export function createServer() {
 async function startWorker() {
   await connectKv();
   await refreshSite();
+  await refreshDesign();
   const stopMetrics = startMetrics();
   logEvent('info', 'boot', `Server started (pid ${process.pid}, ${process.version})`);
   const server = createServer();

@@ -3,6 +3,7 @@
 import { html, raw, timeAgo, plural, slugify } from './html.js';
 import { markdown, plain } from './markdown.js';
 import { wys, hasEditor } from './wys.js';
+import { tpl, current as design, isPreview } from './design.js';
 import { config } from './config.js';
 import { assets } from './assets.js';
 import { t, nav, siteName } from './site.js';
@@ -30,9 +31,12 @@ const captcha = action => config.turnstileSiteKey
 /** JSON-LD must not be able to close its own <script>: escape < and the JS line separators. */
 const ldJson = o => JSON.stringify(o).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
+const uiTexts = () => Object.fromEntries(['skip', 'search_placeholder', 'search_label', 'post_button', 'login', 'signup', 'menu_profile', 'menu_new_community', 'menu_settings', 'menu_logout'].map(k => [k, t(`ui.${k}`)]));
+
 /** The full HTML page: head (SEO, social cards, structured data), header (logo + slogan + search + account menu), main column + sidebar, footer. */
 export function layout({ title, fullTitle, user, content, sidebar, q = '', turnstile = false, notice, desc, noindex, canonical, jsonld, ogType = 'website' }) {
   const n = notice && NOTICE_KEYS.has(notice) && t(`n.${notice}`);
+  const D = design(), preview = isPreview();
   const edit = hasEditor([].concat(content, sidebar).join(''));
   const site = siteName(), slogan = t('slogan');
   const docTitle = fullTitle || (title ? `${title} · ${site}` : site);
@@ -46,49 +50,35 @@ export function layout({ title, fullTitle, user, content, sidebar, q = '', turns
 <title>${docTitle}</title>
 <meta name="description" content="${description}">
 <meta name="theme-color" content="${t('seo.theme_color')}">
-${noindex ? raw('<meta name="robots" content="noindex,follow">') : raw('<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">')}
-${url && !noindex ? html`<link rel="canonical" href="${url}">` : ''}
+${noindex || preview ? raw('<meta name="robots" content="noindex,follow">') : raw('<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">')}
+${url && !noindex && !preview ? html`<link rel="canonical" href="${url}">` : ''}
 <meta property="og:site_name" content="${site}"><meta property="og:type" content="${ogType}"><meta property="og:title" content="${docTitle}">
 <meta property="og:description" content="${description}">${url ? html`<meta property="og:url" content="${url}">` : ''}
 <meta property="og:image" content="${config.baseUrl}${assets.og}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${site} — ${slogan}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${docTitle}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${config.baseUrl}${assets.og}">
 ${tw ? html`<meta name="twitter:site" content="${tw}">` : ''}
-<link rel="stylesheet" href="${assets.css}"><link rel="icon" href="${assets.icon}" type="image/svg+xml"><link rel="apple-touch-icon" href="${assets.touch}">
+<link rel="stylesheet" href="${assets.css}">${D.css ? html`<link rel="stylesheet" href="${D.css.url}">` : ''}<link rel="icon" href="${assets.icon}" type="image/svg+xml"><link rel="apple-touch-icon" href="${assets.touch}">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<script src="${assets.js}" defer></script>${edit ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}
+<script src="${assets.js}" defer></script>${D.js ? html`<script src="${D.js.url}" defer></script>` : ''}${edit ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}
 ${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 ${ld.map(o => raw(`<script type="application/ld+json">${ldJson(o)}</script>`))}
 </head><body>
-<a class="skip" href="#main">${t('ui.skip')}</a>
-<header class="top"><div class="bar">
-<a class="brand" href="/" aria-label="${site} — ${slogan}">${logo()}<span class="slogan">${slogan}</span></a>
-<form class="search" action="/search" role="search"><input name="q" type="search" placeholder="${t('ui.search_placeholder')}" maxlength="200" value="${q}" aria-label="${t('ui.search_label')}"></form>
-${links.length ? html`<nav class="links" aria-label="Main">${links.map(l => html`<a href="${l.url}">${l.label}</a>`)}</nav>` : ''}
-<nav aria-label="Account">${user ? html`<a class="btn" href="/submit">${t('ui.post_button')}</a>
-<details class="menu"><summary>${user.username}</summary><div>
-<a href="/u/${user.username}">${t('ui.menu_profile')}</a><a href="/communities/new">${t('ui.menu_new_community')}</a><a href="/settings">${t('ui.menu_settings')}</a>
-<form method="post" action="/logout">${csrfField(user)}<button>${t('ui.menu_logout')}</button></form></div></details>`
-  : html`<a class="btn ghost" href="/login">${t('ui.login')}</a><a class="btn" href="/signup">${t('ui.signup')}</a>`}</nav>
-</div></header>
+${preview ? html`<div class="pvbar" role="status">Previewing the unpublished draft · <a href="${config.adminPath}/design/preview?on=0">Exit preview</a> · <a href="${config.adminPath}/design">Back to the editor</a></div>` : ''}<a class="skip" href="#main">${t('ui.skip')}</a>
+${tpl('header', { site, slogan, logo: logo(), q, links, user: user ? { username: user.username, csrf: csrfField(user) } : null, ui: uiTexts() })}
 <main id="main" class="${sidebar ? 'grid' : 'single'}"><div class="col">${n ? html`<p class="notice" role="status">${n}</p>` : ''}${content}</div>${sidebar || ''}</main>
-<footer><nav aria-label="Footer">${foot.map(l => html`<a href="${l.url}">${l.label}</a>`)}</nav><p>${t('footer.copy', { year: new Date().getFullYear(), site })}</p></footer>
+${tpl('footer', { links: foot, copy: t('footer.copy', { year: new Date().getFullYear(), site }), year: new Date().getFullYear(), site })}
 </body></html>`;
 }
 
 /** Right-hand column: about box (home or community), AI model filter chips, sign-up prompt. */
 export function sidebar({ tags, activeTag, user, community }) {
-  return html`<aside>
-${community ? html`<section class="card about"><h2>c/${community.name}</h2><div class="md">${community.description ? raw(markdown(community.description)) : html`<p>${community.title}</p>`}</div>
-<p class="meta">${plural(community.post_count, 'post')} · <a href="/m/${community.tag_slug}">${community.tag_name}</a> · created ${timeAgo(community.created_at)}</p>
-<a class="btn wide" href="/submit?c=${community.name}">${t('side.create_post')}</a></section>` : html`<section class="card">
-<h2>${t('side.home_title')}</h2><p>${t('side.home_text')}</p>
-<a class="btn wide" href="/submit${activeTag ? `?m=${activeTag}` : ''}">${t('side.create_post')}</a><a class="btn ghost wide" href="/communities/new">${t('side.create_community')}</a></section>`}
-<section class="card"><h2>${t('side.models_title')}</h2><ul class="tags">
-<li><a href="/"${!activeTag ? raw(' class="on" aria-current="page"') : ''}>${t('side.all')}</a></li>
-${tags.map(tg => html`<li><a href="/m/${tg.slug}"${activeTag === tg.slug ? raw(' class="on" aria-current="page"') : ''}>${tg.name}</a></li>`)}
-</ul><a class="more" href="/communities">${t('side.browse')}</a></section>
-${!user ? html`<section class="card"><p>${t('side.join_text')}</p><a class="btn wide" href="/signup">${t('ui.signup')}</a></section>` : ''}
-</aside>`;
+  const side = Object.fromEntries(['home_title', 'home_text', 'create_post', 'create_community', 'models_title', 'all', 'browse', 'join_text'].map(k => [k, t(`side.${k}`)]));
+  return tpl('sidebar', {
+    community: community ? { name: community.name, about: community.description ? raw(markdown(community.description)) : html`<p>${community.title}</p>`, posts: plural(community.post_count, 'post'),
+      tag_slug: community.tag_slug, tag_name: community.tag_name, created: timeAgo(community.created_at), submit_url: `/submit?c=${community.name}` } : null,
+    post_url: `/submit${activeTag ? `?m=${activeTag}` : ''}`, tags: tags.map(tg => ({ slug: tg.slug, name: tg.name, active: activeTag === tg.slug })), all_active: !activeTag,
+    user: user ? { username: user.username } : null, side, ui: uiTexts(),
+  });
 }
 
 /** Link to a user's profile, or '[deleted]'. */
@@ -110,12 +100,11 @@ const excerpt = s => s ? s.replace(/```[\s\S]*?(?:```|$)/g, ' … ')
 /** A list of post cards with vote boxes, plus a 'Next page' link when there are more. */
 export function postList(posts, votes, user, { back, showCommunity = true, nextUrl, empty = t('home.empty') }) {
   if (!posts.length) return html`<p class="card empty">${empty}</p>`;
-  return html`<ol class="posts">${posts.map(p => html`<li class="card post">
-${voteBox('p', p.id, p.score, votes.get(p.id), user, back)}
-<div class="body"><p class="meta">${showCommunity ? html`<a class="c" href="/c/${p.community}">c/${p.community}</a> · ` : ''}<a class="tag" href="/m/${p.tag_slug}">${p.tag_name}</a> · ${author(p.author)} · ${timeAgo(p.created_at)}</p>
-<h2><a href="/p/${p.id}/${slugify(p.title)}">${p.title}</a>${p.url ? html` <a class="dom" href="${p.url}" rel="nofollow ugc noopener noreferrer">(${hostOf(p.url)})</a>` : ''}</h2>
-${p.excerpt ? html`<p class="ex">${excerpt(p.excerpt)}</p>` : ''}
-<p class="acts"><a href="/p/${p.id}/${slugify(p.title)}">${plural(p.comment_count, 'comment')}</a></p></div></li>`)}</ol>
+  return html`<ol class="posts">${posts.map(p => {
+    const url = `/p/${p.id}/${slugify(p.title)}`;
+    return tpl('post_card', { votes: voteBox('p', p.id, p.score, votes.get(p.id), user, back), title: p.title, url, community: p.community, show_community: showCommunity, tag: p.tag_name, tag_slug: p.tag_slug,
+      author: p.author || null, age: timeAgo(p.created_at), link: p.url ? { url: p.url, host: hostOf(p.url) } : null, excerpt: p.excerpt ? excerpt(p.excerpt) : '', comments: plural(p.comment_count, 'comment'), score: p.score, id: p.id });
+  })}</ol>
 ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}" rel="next">${t('feed.next')}</a>` : ''}`;
 }
 
@@ -327,7 +316,7 @@ export function cmsPage(p) {
 
 /** Hero block at the top of the home page and of each model landing page. */
 export function hero(heading, intro) {
-  return html`<section class="card hero"><h1>${heading}</h1>${intro ? html`<p>${intro}</p>` : ''}</section>`;
+  return tpl('hero', { heading, intro: intro || '' });
 }
 
 /** Content of an error page. */

@@ -56,3 +56,9 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 - CRUD only on whitelisted tables; password hashes, email indexes, tokens and the mail outbox are never exposed; every write is audited in the event log.
 - Metrics are aggregate only: no IPs, user agents or user IDs are stored.
 - Strict CSP with Trusted Types on the dashboard; no inline scripts or styles.
+
+## Site design editor
+- Custom CSS/JS are served as separate content-hashed files from our own origin, so the strict CSP (`script-src 'self'`, Trusted Types, no inline) is unchanged; no `<script>`, `<style>`, event attributes, `javascript:`, iframes or `<base>` are accepted in templates. Third-party script hosts are not allowed (would need a CSP allowlist, not built).
+- Templates are logic-less and escape by default; only server-generated HTML (vote widget, logo, CSRF field) is un-escaped; prototype names are rejected; depth/size/output limits; a template that fails at render time falls back to the built-in one.
+- Edits go to a draft. Visitors see it only after Publish. Preview needs both the `pv` cookie and a valid admin session (and the IP allowlist), pages are `no-store` + `noindex`. All changes are audited; every publish is a version that can be rolled back.
+- Risk to know: published custom JS runs on every public page, so a compromised admin session means site-wide script. The dashboard itself never loads custom CSS/JS, so a broken design cannot lock the admin out.

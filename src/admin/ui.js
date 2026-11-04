@@ -11,7 +11,7 @@ export const P = config.adminPath;
 
 const NAV = [
   ['Overview', [['', 'Dashboard'], ['/live', 'Live'], ['/logs', 'Logs & events']]],
-  ['Site', [['/texts', 'Texts & slogan'], ['/t/pages', 'Pages'], ['/t/nav_links', 'Navigation'], ['/t/ai_tags', 'AI models']]],
+  ['Site', [['/design', 'Site design'], ['/texts', 'Texts & slogan'], ['/t/pages', 'Pages'], ['/t/nav_links', 'Navigation'], ['/t/ai_tags', 'AI models']]],
   ['Content', [['/t/communities', 'Communities'], ['/t/posts', 'Posts'], ['/t/comments', 'Comments'], ['/import', 'Import prompts'], ['/reports', 'Reports']]],
   ['People', [['/t/users', 'Users']]],
   ['System', [['/db', 'Database tables'], ['/account', 'Account & security']]],

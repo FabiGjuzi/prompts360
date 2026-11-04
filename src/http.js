@@ -88,7 +88,7 @@ export function page(req, res, { status = 200, title, fullTitle, content, sideba
   const user = req.user;
   if (turnstile) securityHeaders(res, { turnstile: true });
   const notice = req.query.get('n');
-  const anonPublic = cache && !user && !req.cookieToken && req.method === 'GET' && status === 200 && !notice && !turnstile;
+  const anonPublic = cache && !user && !req.cookieToken && !req.preview && req.method === 'GET' && status === 200 && !notice && !turnstile;
   // EDGE_CACHE_SEC=0 turns edge caching off (e.g. on App Platform, whose CDN can't bypass on session cookie).
   const cc = anonPublic && config.edgeCacheSec > 0
     ? `public, max-age=0, s-maxage=${config.edgeCacheSec}, stale-while-revalidate=60`
