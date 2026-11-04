@@ -216,6 +216,7 @@ export async function runImport(text, { dry }) {
     const model = typeof p?.model === 'string' && p.model.trim() ? p.model.trim().toLowerCase() : null;
     if (model && !tags.has(model)) { problems.push(`Post "${title.slice(0, 40)}": unknown model "${model.slice(0, 30)}" (use an AI model slug).`); continue; }
     if (!title || title.length > 300) { problems.push(`Post ${p?._line ? `(line ${p._line})` : `#${i + 1}`}: title is missing or longer than 300 characters.`); continue; }
+    if (!body) { problems.push(`Post ${p?._line ? `(line ${p._line})` : `#${i + 1}`} "${title.slice(0, 40)}": the body is required.`); continue; }
     if (body.length > 40000) { problems.push(`Post "${title.slice(0, 40)}": body is too long.`); continue; }
     if (p.url && !urlv) { problems.push(`Post "${title.slice(0, 40)}": the link must start with http:// or https://.`); continue; }
     P2.push({ cname, key: cname.toLowerCase(), title, body, url: urlv, tag: model ? tags.get(model) : null });

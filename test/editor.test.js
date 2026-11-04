@@ -92,7 +92,7 @@ test('dashboard editors: posts, communities, comments and pages use the rich edi
   assert.equal(r.status, 303, r.text.slice(0, 200));
   assert.equal((await app.db.q("SELECT t.slug FROM posts p JOIN ai_tags t ON t.id = p.ai_tag_id WHERE p.title = 'Dash tagged'")).rows[0].slug, 'perplexity');
   // blank tag → the community's model
-  await adm.apost('/t/posts/new', { community_id: String(c.id), ai_tag_id: '', title: 'Dash default', url: '', body: '', author_id: '', created_at: '', deleted_at: '', removed_at: '' });
+  await adm.apost('/t/posts/new', { community_id: String(c.id), ai_tag_id: '', title: 'Dash default', url: '', body: 'Dashboard body', author_id: '', created_at: '', deleted_at: '', removed_at: '' });
   assert.equal((await app.db.q("SELECT t.slug FROM posts p JOIN ai_tags t ON t.id = p.ai_tag_id WHERE p.title = 'Dash default'")).rows[0].slug, 'grok');
   // the editor's source HTML is the server-rendered markdown (so edit forms open with the existing content)
   const { rows: [p] } = await app.db.q("SELECT id FROM posts WHERE title = 'Dash tagged'");

@@ -250,7 +250,7 @@ export function submitForm({ user, community = '', v = {}, error, tags = [], com
 <label>AI model <small>(shown as the post's tag)</small><select name="tag" required><option value="">Choose…</option>${tags.map(m => html`<option value="${m.slug}"${tag === m.slug ? raw(' selected') : ''}>${m.name}</option>`)}</select></label>
 <label>Title<input name="title" maxlength="300" required value="${v.title || ''}"></label>
 <label>Link <small>(optional)</small><input name="url" type="url" maxlength="2000" placeholder="https://" value="${v.url || ''}"></label>
-<div class="lbl">Text <small>(optional)</small>${wys({ name: 'body', md: v.body || '', rows: 10, max: 40000, label: 'Post text' })}</div>
+<div class="lbl">Body <small>(required)</small>${wys({ name: 'body', md: v.body || '', rows: 10, max: 40000, label: 'Post body', required: true })}</div>
 <button class="btn">${t('submit.button')}</button></form></section>`;
 }
 

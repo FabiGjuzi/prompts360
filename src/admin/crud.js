@@ -85,7 +85,7 @@ export const TABLES = {
     label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => `/p/${r.id}`,
     filters: ['community_id', 'ai_tag_id', 'author_id'],
     cols: [sel('community_id', 'Community', communityOptions, { req: true }), text('title', 'Title', { req: true, max: 300 }), text('url', 'Link (optional)', { max: 2000, check: u => !u || safeUrl(u) }),
-      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body', { rows: 22, max: 40000, md: true }), int('author_id', 'Author user ID (default: the site account)', { def: official }),
+      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body', { rows: 22, max: 40000, md: true, req: true }), int('author_id', 'Author user ID (default: the site account)', { def: official }),
       ts('created_at', 'Created (UTC; leave blank for now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC; set to hide the post)'),
       ro('score', 'Score', 'int'), ro('comment_count', 'Comments', 'int')],
     before: async (db, v, ctx) => {

@@ -279,6 +279,7 @@ async function submitPost(req, res) {
   if (!v.title) return bad('A title is required.');
   let url = null;
   if (v.url && !(url = safeUrl(v.url))) return bad('Links must start with http:// or https://');
+  if (!v.body) return bad('The body is required: write the prompt or the text of your post.');
   const id = await tx(async db => {
     const { rows: [p] } = await db.query(
       `INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot)
@@ -338,6 +339,7 @@ function descOf(body, title) {
 /** POST /p/:id/edit — the author edits the body. */
 async function postEdit(req, res, [idStr]) {
   const id = Number(idStr), body = str(req.body.body, 40000).trim();
+  if (!body) throw new HttpError(400, 'The body cannot be empty.');
   const rl = await hit(`edit:${req.user.id}`, ...LIMITS.edit);
   if (!rl.ok) throw new HttpError(429, 'Too many edits. Slow down a little.');
   const r = await q(`UPDATE posts SET body = $3, edited_at = now() WHERE id = $1 AND author_id = $2

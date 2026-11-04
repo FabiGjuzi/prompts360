@@ -1,6 +1,6 @@
 # prompts360: 20 communities and 250 posts
 
-Each post lists its community (`c/Name`) and its model tag. Bodies are the prompt text, ready to paste. `[brackets]` are placeholders for the reader.
+Same data, same order as `prompts360-250-posts.json`, `posts.csv` and `communities.csv`. Each post shows its community (`c/Name`), its model tag and its body (the prompt text). `[brackets]` are placeholders for the reader.
 
 ## Communities
 
@@ -27,14 +27,15 @@ Each post lists its community (`c/Name`) and its model tag. Bodies are the promp
 | c/Research_Science | Research and science | Multi-model / General |
 | c/Decision_Making | Decision making | Multi-model / General |
 
-
 ## c/Writing_Craft — Writing craft
 
 Editing, rewriting, tone and clarity: prompts that make your writing sharper without losing your voice.
 
 ### 1. Custom instructions that stop ChatGPT from padding answers
 
-**Community:** c/Writing_Craft · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Writing_Craft · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Paste into Custom Instructions → "How would you like ChatGPT to respond?":
@@ -44,7 +45,9 @@ Lead with the answer in the first sentence. No preamble, no restating my questio
 
 ### 2. Use XML tags to keep a long prompt unambiguous
 
-**Community:** c/Writing_Craft · **Model tag:** Claude
+**Community:** c/Writing_Craft · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Structure long prompts with tags so Claude never confuses instructions with material:
@@ -58,7 +61,9 @@ Tag names don't matter as long as they are consistent and you refer to them in t
 
 ### 3. Edit for concision without losing my voice
 
-**Community:** c/Writing_Craft · **Model tag:** Claude
+**Community:** c/Writing_Craft · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Edit the draft below to be about 30% shorter. Keep my tone and any jokes. Cut hedging, repeated points and filler phrases. Show the result first, then a short list of the five biggest cuts and why. Don't add new ideas.
@@ -69,7 +74,9 @@ Edit the draft below to be about 30% shorter. Keep my tone and any jokes. Cut he
 
 ### 4. Rewrite for different audiences
 
-**Community:** c/Writing_Craft · **Model tag:** Gemini
+**Community:** c/Writing_Craft · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Rewrite the paragraph below three ways: for a technical expert, for a smart friend outside the field, and for a ten-year-old. Keep the facts identical. After each version, note what you removed or simplified.
@@ -80,7 +87,9 @@ Rewrite the paragraph below three ways: for a technical expert, for a smart frie
 
 ### 5. Roast my draft, then fix it
 
-**Community:** c/Writing_Craft · **Model tag:** Grok
+**Community:** c/Writing_Craft · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Give me a brutally honest, funny critique of this draft in five bullet points. Then rewrite it so those problems are gone. Keep the critique about the writing, never about me. Draft:
@@ -91,7 +100,9 @@ Give me a brutally honest, funny critique of this draft in five bullet points. T
 
 ### 6. Few-shot rewrite in my tone
 
-**Community:** c/Writing_Craft · **Model tag:** Llama / Meta AI
+**Community:** c/Writing_Craft · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Rewrite sentences in my style. Examples:
@@ -102,7 +113,9 @@ Now rewrite: [sentence]
 
 ### 7. Concise summary with a hard length limit
 
-**Community:** c/Writing_Craft · **Model tag:** Mistral
+**Community:** c/Writing_Craft · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Summarize the text in exactly 3 sentences, maximum 60 words in total. First sentence: the main point. Second: the most important detail. Third: why it matters. No lists, no quotes.
@@ -111,7 +124,9 @@ Summarize the text in exactly 3 sentences, maximum 60 words in total. First sent
 
 ### 8. Rewrite an argument to be airtight
 
-**Community:** c/Writing_Craft · **Model tag:** DeepSeek
+**Community:** c/Writing_Craft · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Here is my argument. Rewrite it so each premise is explicit, remove unsupported leaps, and mark where I'm relying on an unstated assumption. Then give the strongest objection and a reply.
@@ -120,7 +135,9 @@ Here is my argument. Rewrite it so each premise is explicit, remove unsupported 
 
 ### 9. Rewrite for tone across cultures
 
-**Community:** c/Writing_Craft · **Model tag:** Qwen
+**Community:** c/Writing_Craft · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Rewrite this email to a [country] business partner. Keep it respectful and direct enough to be clear, avoid idioms that don't travel, and keep the same request. Tell me what you softened or sharpened.
@@ -129,7 +146,9 @@ Rewrite this email to a [country] business partner. Keep it respectful and direc
 
 ### 10. Word: rewrite a paragraph in a different tone
 
-**Community:** c/Writing_Craft · **Model tag:** Microsoft Copilot
+**Community:** c/Writing_Craft · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Rewrite the selected text to be more [direct/formal/friendly] and 20% shorter. Keep every number and name. Give me two options and say how they differ.
@@ -137,7 +156,9 @@ Rewrite the selected text to be more [direct/formal/friendly] and 20% shorter. K
 
 ### 11. Lower temperature for editing, raise it for brainstorming
 
-**Community:** c/Writing_Craft · **Model tag:** Open-source & local
+**Community:** c/Writing_Craft · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 For proofreading or consistent formatting use temperature 0.1–0.3. For ideas, names or story drafts use 0.8–1.0. If outputs ramble, lower temperature and add a length limit. If they feel dull, raise temperature a little or change the prompt before changing the model.
@@ -145,7 +166,9 @@ For proofreading or consistent formatting use temperature 0.1–0.3. For ideas, 
 
 ### 12. The five-part prompt that works on almost any model
 
-**Community:** c/Writing_Craft · **Model tag:** Multi-model / General
+**Community:** c/Writing_Craft · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Role, task, context, format, constraints:
@@ -161,7 +184,9 @@ If a prompt fails, find which of the five parts is missing or vague.
 
 ### 13. Ask for questions before the answer
 
-**Community:** c/Writing_Craft · **Model tag:** Multi-model / General
+**Community:** c/Writing_Craft · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Before you answer, ask me up to three clarifying questions that would change your answer. If I reply "skip", state your assumptions in one line and continue. Task: [task].
@@ -169,7 +194,9 @@ Before you answer, ask me up to three clarifying questions that would change you
 
 ### 14. Give examples of good and bad output
 
-**Community:** c/Writing_Craft · **Model tag:** Multi-model / General
+**Community:** c/Writing_Craft · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Write [thing]. Here is an example I like: "[good example]". Here is one I don't: "[bad example]" (too long and too formal). Match the first style and avoid the problems of the second. Tell me which traits you copied.
@@ -177,7 +204,9 @@ Write [thing]. Here is an example I like: "[good example]". Here is one I don't:
 
 ### 15. Edit in layers, not all at once
 
-**Community:** c/Writing_Craft · **Model tag:** Multi-model / General
+**Community:** c/Writing_Craft · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Edit this text in three separate passes and show me each: 1) structure (order, missing points), 2) clarity (sentences, jargon), 3) polish (word choice, rhythm). Don't move to the next pass until you've listed the changes of the current one.
@@ -191,7 +220,9 @@ Characters, plots, dialogue, worldbuilding and interactive stories. Share prompt
 
 ### 16. Critique my scene without rewriting it
 
-**Community:** c/Fiction_Workshop · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Fiction_Workshop · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Read my scene and give feedback in three parts: what is working (be specific), where the tension sags (quote the lines), and one question about each major character's motivation. Do not rewrite any sentences. Genre: [genre]. What I'm trying to achieve: [intent].
@@ -202,7 +233,9 @@ Read my scene and give feedback in three parts: what is working (be specific), w
 
 ### 17. Keep a character's voice consistent across a long story
 
-**Community:** c/Fiction_Workshop · **Model tag:** Claude
+**Community:** c/Fiction_Workshop · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 I'll paste three samples of how [character] speaks. Write a one-page voice guide: vocabulary level, sentence rhythm, verbal tics, what they never say, how they speak under stress. Then check the draft I paste next for lines that break the voice and propose replacements.
@@ -210,7 +243,9 @@ I'll paste three samples of how [character] speaks. Write a one-page voice guide
 
 ### 18. Write dialogue with a distinctive voice
 
-**Community:** c/Fiction_Workshop · **Model tag:** Grok
+**Community:** c/Fiction_Workshop · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Write a 12-line argument between [character A: description] and [character B: description] about [subject]. Each should sound clearly different without tags. Use subtext: neither says what they really want. End mid-conflict.
@@ -218,7 +253,9 @@ Write a 12-line argument between [character A: description] and [character B: de
 
 ### 19. Interactive story with fixed rules
 
-**Community:** c/Fiction_Workshop · **Model tag:** Llama / Meta AI
+**Community:** c/Fiction_Workshop · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 You are the narrator of a text adventure set in [setting]. Rules: describe in at most 80 words, end every turn with three numbered choices, track inventory and health in a one-line status at the end, never decide for me, and keep the tone [tone]. Begin.
@@ -226,7 +263,9 @@ You are the narrator of a text adventure set in [setting]. Rules: describe in at
 
 ### 20. Generate a short story in a strict form
 
-**Community:** c/Fiction_Workshop · **Model tag:** Mistral
+**Community:** c/Fiction_Workshop · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Write a 300-word story that starts with the sentence "[sentence]". Constraints: one location, two characters, no dialogue tags other than "said", and the last line must reverse the meaning of the first.
@@ -234,7 +273,9 @@ Write a 300-word story that starts with the sentence "[sentence]". Constraints: 
 
 ### 21. Plan a plot with no holes
 
-**Community:** c/Fiction_Workshop · **Model tag:** DeepSeek
+**Community:** c/Fiction_Workshop · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 I'm writing a [genre] story with this setup: [setup]. List the plot's key events in order and check for causality: does each event follow from the previous? Identify any hole or coincidence that does too much work, and suggest repairs.
@@ -242,7 +283,9 @@ I'm writing a [genre] story with this setup: [setup]. List the plot's key events
 
 ### 22. Research for historical accuracy
 
-**Community:** c/Fiction_Workshop · **Model tag:** Perplexity
+**Community:** c/Fiction_Workshop · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 I'm writing a scene set in [place, year]. What would [character type] have eaten, worn, earned, feared and said? Give details with sources, mark common myths in popular fiction about that period, and list what is uncertain.
@@ -250,7 +293,9 @@ I'm writing a scene set in [place, year]. What would [character type] have eaten
 
 ### 23. Concept art for a story setting
 
-**Community:** c/Fiction_Workshop · **Model tag:** Midjourney
+**Community:** c/Fiction_Workshop · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Establishing shot of [setting], [time of day], [weather], [architectural or natural features], cinematic composition, atmospheric perspective, painterly concept art, muted palette with one accent color of [color] --ar 21:9
@@ -258,7 +303,9 @@ Establishing shot of [setting], [time of day], [weather], [architectural or natu
 
 ### 24. Character sheet in one image
 
-**Community:** c/Fiction_Workshop · **Model tag:** Midjourney
+**Community:** c/Fiction_Workshop · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Character design sheet of [description], front view, side view and back view, neutral pose, plain background, consistent proportions, clean line art with flat colors --ar 16:9
@@ -268,7 +315,9 @@ Then crop the views and reuse the description in later prompts.
 
 ### 25. Character portraits with consistent features
 
-**Community:** c/Fiction_Workshop · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Fiction_Workshop · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Use a fixed character description in every prompt: age, hair, eyes, clothing, one distinctive detail. Add the same LoRA or embedding if you have one. Change pose and background only. Review a batch of 8 and keep the closest 2 as references.
@@ -276,7 +325,9 @@ Use a fixed character description in every prompt: age, hair, eyes, clothing, on
 
 ### 26. Long role-play with a memory file
 
-**Community:** c/Fiction_Workshop · **Model tag:** Open-source & local
+**Community:** c/Fiction_Workshop · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Keep a short "story so far" note (under 300 words) and paste it at the start of each session, along with the character sheet. Small models forget fast. Ask the model to update the note at the end of each scene and save it yourself.
@@ -289,7 +340,9 @@ Everyday programming prompts: debugging, code review, tests, refactoring and lea
 
 ### 27. Rubber-duck a bug without getting a rewrite
 
-**Community:** c/Coding_Help · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Coding_Help · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 I'm going to describe a bug. Do not write any code yet. Ask me up to five questions, one at a time, that would help me find the cause myself. Only after I say "give me a hint" may you point at a suspect. Language: [language]. Symptom: [what happens vs. what should happen].
@@ -297,7 +350,9 @@ I'm going to describe a bug. Do not write any code yet. Ask me up to five questi
 
 ### 28. Review my diff like a careful senior engineer
 
-**Community:** c/Coding_Help · **Model tag:** Claude
+**Community:** c/Coding_Help · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 You are reviewing a pull request. Read the diff and report, in this order: bugs or logic errors, security issues, missing tests, performance problems, naming or readability. Quote the line for each point and suggest a fix. If something is fine, don't mention it. End with a verdict: approve, approve with nits, or request changes.
@@ -308,7 +363,9 @@ You are reviewing a pull request. Read the diff and report, in this order: bugs 
 
 ### 29. Ask for a plan before any code
 
-**Community:** c/Coding_Help · **Model tag:** Claude
+**Community:** c/Coding_Help · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Before writing code for the task below, write a short plan: files you'd change, the approach in 3–5 steps, edge cases, and how you'd test it. Wait for my approval. Task: [task]. Constraints: [stack, versions, style].
@@ -316,7 +373,9 @@ Before writing code for the task below, write a short plan: files you'd change, 
 
 ### 30. Explain an unfamiliar codebase from the repo
 
-**Community:** c/Coding_Help · **Model tag:** Gemini
+**Community:** c/Coding_Help · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Read the files I attached. Explain the architecture in one page: entry points, main modules and what each does, data flow for the most common request, and where I should start to add [feature]. Mention anything that looks risky or undocumented. Don't invent files you haven't seen.
@@ -324,7 +383,9 @@ Read the files I attached. Explain the architecture in one page: entry points, m
 
 ### 31. Explain a bug like I'm in a hurry
 
-**Community:** c/Coding_Help · **Model tag:** Grok
+**Community:** c/Coding_Help · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Here is a stack trace and the code near it. In four lines tell me: what broke, why, the minimal fix, and one way to prevent it. If you need more of the file, ask instead of guessing.
@@ -333,7 +394,9 @@ Here is a stack trace and the code near it. In four lines tell me: what broke, w
 
 ### 32. Write the system prompt for a small Llama model
 
-**Community:** c/Coding_Help · **Model tag:** Llama / Meta AI
+**Community:** c/Coding_Help · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Small models follow short, concrete instructions best. Template:
@@ -345,7 +408,9 @@ Put the task in the user message, not the system prompt, and give one example of
 
 ### 33. Ask for function calling style output
 
-**Community:** c/Coding_Help · **Model tag:** Mistral
+**Community:** c/Coding_Help · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Return only valid JSON that matches this schema: {"action": "search" | "answer", "query": string | null, "answer": string | null}. If you need more information, use action "search" with a short query. Otherwise use "answer". No extra text.
@@ -354,7 +419,9 @@ User question: [question]
 
 ### 34. Generate unit tests from a function
 
-**Community:** c/Coding_Help · **Model tag:** Mistral
+**Community:** c/Coding_Help · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Write unit tests for this function using [framework]. Cover: normal inputs, edge cases, invalid inputs, and one property that should always hold. Name tests descriptively. Don't change the function; if you find a bug, say so after the tests.
@@ -363,7 +430,9 @@ Write unit tests for this function using [framework]. Cover: normal inputs, edge
 
 ### 35. Give the reasoning model a clear goal, not a script
 
-**Community:** c/Coding_Help · **Model tag:** DeepSeek
+**Community:** c/Coding_Help · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Reasoning models do best when you state the goal and constraints and let them plan. Don't tell them how to think step by step. Example:
@@ -375,7 +444,9 @@ Return the code and a two-line explanation of the changes.
 
 ### 36. Prove a function is correct
 
-**Community:** c/Coding_Help · **Model tag:** DeepSeek
+**Community:** c/Coding_Help · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Here is a function and its specification. Find an input that breaks it or argue why none exists. If you find one, show the input, the expected output and the actual output. Then provide the fix and re-check your own fix against the same input.
@@ -384,7 +455,9 @@ Here is a function and its specification. Find an input that breaks it or argue 
 
 ### 37. Debug by finding the invariant that broke
 
-**Community:** c/Coding_Help · **Model tag:** DeepSeek
+**Community:** c/Coding_Help · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 This program fails on [input]. Identify the invariant the code assumes, find where it's violated, and give the minimal patch. Then list two other inputs likely to fail for the same reason.
@@ -393,7 +466,9 @@ This program fails on [input]. Identify the invariant the code assumes, find whe
 
 ### 38. Convert code between languages idiomatically
 
-**Community:** c/Coding_Help · **Model tag:** DeepSeek
+**Community:** c/Coding_Help · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Port this [language A] code to idiomatic [language B]. Don't translate line by line; use the target language's standard library and conventions. List behaviors that differ (integer overflow, null handling, ordering) that I should test.
@@ -402,7 +477,9 @@ Port this [language A] code to idiomatic [language B]. Don't translate line by l
 
 ### 39. Generate code with tests in one pass
 
-**Community:** c/Coding_Help · **Model tag:** Qwen
+**Community:** c/Coding_Help · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Write a [language] function that [task]. Then write at least six tests covering normal cases, edge cases and invalid input. Output: code block 1 for the function, code block 2 for the tests, and a two-line note on any assumptions.
@@ -410,7 +487,9 @@ Write a [language] function that [task]. Then write at least six tests covering 
 
 ### 40. Explain code in two languages
 
-**Community:** c/Coding_Help · **Model tag:** Qwen
+**Community:** c/Coding_Help · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Explain what this code does in English and in [Chinese/Spanish/other]. Keep both explanations to five lines. Then list any bug or unclear part and propose a fix. Keep identifier names and code in English.
@@ -419,7 +498,9 @@ Explain what this code does in English and in [Chinese/Spanish/other]. Keep both
 
 ### 41. Ask Copilot to explain selected code
 
-**Community:** c/Coding_Help · **Model tag:** Microsoft Copilot
+**Community:** c/Coding_Help · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Explain the selected code: purpose, inputs and outputs, side effects, and any edge cases it doesn't handle. Then suggest a minimal refactor that keeps behavior the same, and tests to prove it.
@@ -427,7 +508,9 @@ Explain the selected code: purpose, inputs and outputs, side effects, and any ed
 
 ### 42. Write tests for existing code
 
-**Community:** c/Coding_Help · **Model tag:** Microsoft Copilot
+**Community:** c/Coding_Help · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 /tests Write unit tests for the selected function in [framework]. Include happy path, boundary values, error handling and one test that documents a surprising behavior. Mock external calls.
@@ -435,7 +518,9 @@ Explain the selected code: purpose, inputs and outputs, side effects, and any ed
 
 ### 43. Find the current best practice for a library
 
-**Community:** c/Coding_Help · **Model tag:** Perplexity
+**Community:** c/Coding_Help · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 What's the recommended way today to do [task] with [library/framework version]? Link to the official docs and a recent changelog. Warn me about deprecated patterns that older tutorials still show.
@@ -443,7 +528,9 @@ What's the recommended way today to do [task] with [library/framework version]? 
 
 ### 44. Prompt a small local model for code
 
-**Community:** c/Coding_Help · **Model tag:** Open-source & local
+**Community:** c/Coding_Help · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Small models do better with narrow tasks. Give the language, the function signature, one example of input and output, and ask for only the function. Then ask for tests in a second message. Avoid asking for a whole project in one go.
@@ -451,7 +538,9 @@ Small models do better with narrow tasks. Give the language, the function signat
 
 ### 45. Use a local model as a private code reviewer
 
-**Community:** c/Coding_Help · **Model tag:** Open-source & local
+**Community:** c/Coding_Help · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Review this code for bugs and security issues. Respond with a numbered list: line number, issue, suggested fix. If you aren't sure, say "uncertain". Don't rewrite the whole file.
@@ -462,7 +551,9 @@ Running it locally means the code never leaves your machine.
 
 ### 46. Explain an error message step by step
 
-**Community:** c/Coding_Help · **Model tag:** Multi-model / General
+**Community:** c/Coding_Help · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Explain this error in plain language: what it means, the three most likely causes in order of probability, how to check each cause, and the fix. Language/tool: [x]. Error:
@@ -476,7 +567,9 @@ Scripting, CI/CD, infrastructure and running models locally. Practical prompts f
 
 ### 47. Write a bash one-liner and explain it
 
-**Community:** c/DevOps_Automation · **Model tag:** Llama / Meta AI
+**Community:** c/DevOps_Automation · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Task: [describe]. Give me the command first in a code block, then a line-by-line explanation of each flag, then one thing that could go wrong on macOS vs Linux. Keep it POSIX-compatible if possible.
@@ -484,7 +577,9 @@ Task: [describe]. Give me the command first in a code block, then a line-by-line
 
 ### 48. Generate a GitHub Actions workflow
 
-**Community:** c/DevOps_Automation · **Model tag:** Microsoft Copilot
+**Community:** c/DevOps_Automation · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Create a GitHub Actions workflow that on every pull request: installs dependencies with caching, runs lint and tests, and uploads the coverage report. Node version [x]. Fail the job if coverage falls below [y]%. Explain each step briefly.
@@ -492,7 +587,9 @@ Create a GitHub Actions workflow that on every pull request: installs dependenci
 
 ### 49. Run a model locally with Ollama in three commands
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Install Ollama, then:
@@ -506,7 +603,9 @@ Pick a model that fits your RAM: a 7–8B parameter model in 4-bit quantization 
 
 ### 50. Quantization in plain words
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Quantization stores a model's weights in fewer bits to save memory. 4-bit versions (like Q4_K_M) are the usual sweet spot: much smaller with a modest quality loss. 8-bit is closer to the original but needs about twice the memory of 4-bit. If answers get noticeably worse, try the next size up.
@@ -514,7 +613,9 @@ Quantization stores a model's weights in fewer bits to save memory. 4-bit versio
 
 ### 51. Set a system prompt and parameters with a Modelfile
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 FROM [base model]
@@ -527,7 +628,9 @@ Save as Modelfile, then run: ollama create my-assistant -f Modelfile. Lower temp
 
 ### 52. Serve a local model through an OpenAI-style API
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Many local servers (llama.cpp server, Ollama, LM Studio) expose an OpenAI-compatible endpoint, so existing tools can point at it:
@@ -540,7 +643,9 @@ Bind to 127.0.0.1 unless you really mean to expose it, and add authentication be
 
 ### 53. Estimate whether a model fits your hardware
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Rough rule: memory ≈ parameters × bits ÷ 8, plus overhead for context. A 7B model at 4-bit is about 3.5 GB of weights plus a GB or two for context. If you run out of VRAM, offload some layers to CPU, lower the context size or choose a smaller quantization.
@@ -548,7 +653,9 @@ Rough rule: memory ≈ parameters × bits ÷ 8, plus overhead for context. A 7B 
 
 ### 54. Benchmark your own setup
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Run the same 5 prompts on each model and write down: tokens per second, memory used, and whether the answer was usable. Use prompts from your real work, not leaderboard questions. Re-run after changing quantization or context size.
@@ -556,7 +663,9 @@ Run the same 5 prompts on each model and write down: tokens per second, memory u
 
 ### 55. Run a model on a laptop with no GPU
 
-**Community:** c/DevOps_Automation · **Model tag:** Open-source & local
+**Community:** c/DevOps_Automation · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 A modern CPU can run a 3–8B model in 4-bit quantization at readable speeds. Close other heavy apps, choose a small context size (4k is plenty to start), and expect a few tokens per second. If it's too slow, switch to a smaller model before buying hardware.
@@ -569,7 +678,9 @@ Spreadsheets, SQL, statistics and charts. Prompts for cleaning, analyzing and sa
 
 ### 56. Explain my CSV before I analyze it
 
-**Community:** c/Data_Analysis · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Data_Analysis · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 I'll paste the first 30 rows and the column headers of a dataset. Before any analysis: describe what each column probably means, flag columns with suspicious values or mixed types, list five questions the data could answer, and tell me what extra context you would need. Do not compute anything yet.
@@ -577,7 +688,9 @@ I'll paste the first 30 rows and the column headers of a dataset. Before any ana
 
 ### 57. Sanity-check an analysis before I present it
 
-**Community:** c/Data_Analysis · **Model tag:** Claude
+**Community:** c/Data_Analysis · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Here is my analysis and the data description. Look for: confounders, survivorship bias, small samples, p-hacking risk, wrong denominators, misleading charts. For each, say whether it applies and how I'd check. Be specific to my case.
@@ -586,7 +699,9 @@ Here is my analysis and the data description. Look for: confounders, survivorshi
 
 ### 58. Describe a chart and critique it
 
-**Community:** c/Data_Analysis · **Model tag:** Gemini
+**Community:** c/Data_Analysis · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 I'm sharing an image of a chart. Describe what it shows in two sentences, read off the key values, then critique it: misleading axes, missing labels, wrong chart type, unclear takeaway. Suggest a better version and say how you'd build it.
@@ -594,7 +709,9 @@ I'm sharing an image of a chart. Describe what it shows in two sentences, read o
 
 ### 59. Explain a statistic someone posted online
 
-**Community:** c/Data_Analysis · **Model tag:** Grok
+**Community:** c/Data_Analysis · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Someone claims "[statistic]". Explain what that number probably measures, where it likely comes from, what context is missing, how it could be misleading, and what a fair way to say it would be. If you can't find the source, say that clearly.
@@ -602,7 +719,9 @@ Someone claims "[statistic]". Explain what that number probably measures, where 
 
 ### 60. Extract structured data from messy text
 
-**Community:** c/Data_Analysis · **Model tag:** Llama / Meta AI
+**Community:** c/Data_Analysis · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Extract the fields below from the text and answer with JSON only, no explanation.
@@ -614,7 +733,9 @@ Text: [paste]
 
 ### 61. Write a SQL query from a description
 
-**Community:** c/Data_Analysis · **Model tag:** Mistral
+**Community:** c/Data_Analysis · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Schema: [tables and columns]. Write a SQL query for [question]. Dialect: [Postgres/MySQL/…]. Show the query, then explain in two sentences what it does and what indexes would help.
@@ -622,7 +743,9 @@ Schema: [tables and columns]. Write a SQL query for [question]. Dialect: [Postgr
 
 ### 62. Find the flaw in a statistical argument
 
-**Community:** c/Data_Analysis · **Model tag:** DeepSeek
+**Community:** c/Data_Analysis · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Read the argument below. Identify every logical or statistical flaw: confounders, base-rate neglect, cherry-picked windows, correlation vs causation. For each: quote, why it's a problem, and what data would settle it.
@@ -631,7 +754,9 @@ Read the argument below. Identify every logical or statistical flaw: confounders
 
 ### 63. Choose the right statistical test
 
-**Community:** c/Data_Analysis · **Model tag:** DeepSeek
+**Community:** c/Data_Analysis · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 I have [describe data: variables, types, sample sizes, whether paired]. Which test is appropriate and why? State the assumptions, how to check them, and what to use if they fail. Give code for [R/Python].
@@ -639,7 +764,9 @@ I have [describe data: variables, types, sample sizes, whether paired]. Which te
 
 ### 64. Turn a table into a chart specification
 
-**Community:** c/Data_Analysis · **Model tag:** Qwen
+**Community:** c/Data_Analysis · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 From the table below, suggest the clearest chart type for showing [question]. Write the chart as Python (matplotlib) code with labeled axes, a title, and colorblind-safe colors. Explain in one line why you chose that chart.
@@ -648,7 +775,9 @@ From the table below, suggest the clearest chart type for showing [question]. Wr
 
 ### 65. Excel: ask for a formula by describing the data
 
-**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot
+**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 In Excel Copilot: "In column D, calculate the percentage change between column B (last year) and column C (this year). Show it as a percentage with one decimal, and highlight rows where it drops more than 10%." Then ask it to explain the formula it used.
@@ -656,7 +785,9 @@ In Excel Copilot: "In column D, calculate the percentage change between column B
 
 ### 66. Excel: clean messy text columns
 
-**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot
+**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 My data in column A has inconsistent names (extra spaces, mixed capitals, some "Last, First"). Create a new column with "First Last" in proper case and flag rows you were not sure about. Explain each formula you used.
@@ -664,7 +795,9 @@ My data in column A has inconsistent names (extra spaces, mixed capitals, some "
 
 ### 67. Excel: summarize with a PivotTable
 
-**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot
+**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Create a PivotTable from the data: rows = [category], columns = [month], values = sum of [amount]. Add a chart and write three observations a manager would care about. Point out anything unusual.
@@ -672,7 +805,9 @@ Create a PivotTable from the data: rows = [category], columns = [month], values 
 
 ### 68. Excel: explain a complicated workbook
 
-**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot
+**Community:** c/Data_Analysis · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Explain how this workbook works: which sheets feed which, what the main formulas do, where manual input is required, and where errors are most likely. Then list any hard-coded numbers that should be inputs.
@@ -680,7 +815,9 @@ Explain how this workbook works: which sheets feed which, what the main formulas
 
 ### 69. Find datasets for a question
 
-**Community:** c/Data_Analysis · **Model tag:** Perplexity
+**Community:** c/Data_Analysis · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Find public datasets I can use to study [question]. For each: source, size, years and region covered, license, known limitations, and a link. Rank them by usefulness for my question and say what's missing.
@@ -688,7 +825,9 @@ Find public datasets I can use to study [question]. For each: source, size, year
 
 ### 70. Local embeddings for a private search
 
-**Community:** c/Data_Analysis · **Model tag:** Open-source & local
+**Community:** c/Data_Analysis · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Use a small embedding model to turn your notes into vectors, store them in a local index, and retrieve the top 5 matches for a question. Then ask the chat model: "Answer using only these excerpts. Say 'not found' if they don't contain the answer."
@@ -696,7 +835,9 @@ Use a small embedding model to turn your notes into vectors, store them in a loc
 
 ### 71. Plan an analysis before touching data
 
-**Community:** c/Data_Analysis · **Model tag:** Multi-model / General
+**Community:** c/Data_Analysis · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 I want to find out [question] using [data]. Write an analysis plan: the exact question, variables needed, how to clean them, the method, what result would convince me, and how I'd check for mistakes. No code yet.
@@ -704,7 +845,9 @@ I want to find out [question] using [data]. Write an analysis plan: the exact qu
 
 ### 72. Ask Claude to label its confidence
 
-**Community:** c/Data_Analysis · **Model tag:** Claude
+**Community:** c/Data_Analysis · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 For each claim in your answer add a label: [high], [medium] or [low] confidence, and one phrase explaining why. List what additional data would raise a [low] to a [high]. Question: [question].
@@ -717,7 +860,9 @@ Learning techniques, flashcards, study plans and exam prep with AI as a tutor, n
 
 ### 73. Feynman check on a concept I think I understand
 
-**Community:** c/Study_Smarter · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Study_Smarter · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 I'll explain [concept] in my own words. Don't correct me immediately. First list what I got right, then every place my explanation was vague, wrong or skipped a step. Then ask me two questions that would expose a deeper gap. Here is my explanation:
@@ -728,7 +873,9 @@ I'll explain [concept] in my own words. Don't correct me immediately. First list
 
 ### 74. Teach me through questions, not lectures
 
-**Community:** c/Study_Smarter · **Model tag:** Claude
+**Community:** c/Study_Smarter · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Teach me [topic] using the Socratic method. Start with one question to find what I already know. Each reply: confirm or gently correct my answer in one sentence, then ask the next question, slightly harder. After eight questions, summarize what I now understand and what to review.
@@ -736,7 +883,9 @@ Teach me [topic] using the Socratic method. Start with one question to find what
 
 ### 75. Turn a lecture video into study notes
 
-**Community:** c/Study_Smarter · **Model tag:** Gemini
+**Community:** c/Study_Smarter · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Watch the video at [link or upload]. Produce: a timestamped outline, the five key ideas in one sentence each, a glossary of terms introduced, and ten flashcards (question → answer). Flag anything the speaker said that is likely outdated or disputed.
@@ -744,7 +893,9 @@ Watch the video at [link or upload]. Produce: a timestamped outline, the five ke
 
 ### 76. Debate me on a topic to learn it
 
-**Community:** c/Study_Smarter · **Model tag:** Grok
+**Community:** c/Study_Smarter · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Debate [motion] with me. You take the side opposite to mine. Make a strong argument in 120 words, then ask me to respond. Score each of my rebuttals out of 10 and tell me which logical move I missed. After three rounds, summarize what each side got right.
@@ -752,7 +903,9 @@ Debate [motion] with me. You take the side opposite to mine. Make a strong argum
 
 ### 77. One question at a time quiz
 
-**Community:** c/Study_Smarter · **Model tag:** Llama / Meta AI
+**Community:** c/Study_Smarter · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Quiz me on [topic]. Ask one question, then stop and wait. After my answer say "Correct" or "Not quite", give a one-sentence explanation, then ask the next question. Questions get slowly harder. Keep every message under 60 words.
@@ -760,7 +913,9 @@ Quiz me on [topic]. Ask one question, then stop and wait. After my answer say "C
 
 ### 78. Summary then quiz
 
-**Community:** c/Study_Smarter · **Model tag:** Mistral
+**Community:** c/Study_Smarter · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Summarize [text] in 6 bullets. Then write 5 multiple-choice questions with 4 options each, and put the answers at the end under "Answers". Questions must test understanding, not memory of wording.
@@ -768,7 +923,9 @@ Summarize [text] in 6 bullets. Then write 5 multiple-choice questions with 4 opt
 
 ### 79. Explain a proof so I can reproduce it
 
-**Community:** c/Study_Smarter · **Model tag:** DeepSeek
+**Community:** c/Study_Smarter · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Explain the proof of [theorem] so that I can reproduce it from memory. Give: the idea in one sentence, the key lemma, the three steps, and the place where students usually get stuck. End with a similar problem to try.
@@ -776,7 +933,9 @@ Explain the proof of [theorem] so that I can reproduce it from memory. Give: the
 
 ### 80. Create a flashcard deck with spaced-repetition tags
 
-**Community:** c/Study_Smarter · **Model tag:** Qwen
+**Community:** c/Study_Smarter · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 From the notes below create 20 flashcards. Format as CSV: front, back, tag. Tags: easy, medium, hard. Each card tests one fact or one idea. No card should be answerable from the question text alone.
@@ -785,7 +944,9 @@ From the notes below create 20 flashcards. Format as CSV: front, back, tag. Tags
 
 ### 81. Build a reading list on a topic
 
-**Community:** c/Study_Smarter · **Model tag:** Perplexity
+**Community:** c/Study_Smarter · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Build a reading list on [topic] for a [beginner/intermediate] learner: three introductory books or courses, three key papers or articles, and two critical perspectives. For each: why it's included, how long it takes, and where to access it.
@@ -793,7 +954,9 @@ Build a reading list on [topic] for a [beginner/intermediate] learner: three int
 
 ### 82. Make flashcards from your own notes privately
 
-**Community:** c/Study_Smarter · **Model tag:** Open-source & local
+**Community:** c/Study_Smarter · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Create 15 flashcards from these notes. One idea per card, format: Q: ... / A: ... Don't add facts that aren't in the notes. Mark any card you're not sure the notes support with "(check)".
@@ -802,7 +965,9 @@ Create 15 flashcards from these notes. One idea per card, format: Q: ... / A: ..
 
 ### 83. A study plan that fits my calendar
 
-**Community:** c/Study_Smarter · **Model tag:** Multi-model / General
+**Community:** c/Study_Smarter · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 I have an exam on [date] covering [topics]. I can study [hours] per week on [days]. My weakest areas: [areas]. Make a week-by-week plan with spaced review, practice tests and one buffer week. Include what to do if I fall behind.
@@ -810,7 +975,9 @@ I have an exam on [date] covering [topics]. I can study [hours] per week on [day
 
 ### 84. Turn notes into active recall questions
 
-**Community:** c/Study_Smarter · **Model tag:** Multi-model / General
+**Community:** c/Study_Smarter · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 From these notes write 15 questions that require recall rather than recognition, mixed with 5 that require applying the idea to a new example. Don't include answers; I'll ask for them after I try.
@@ -819,7 +986,9 @@ From these notes write 15 questions that require recall rather than recognition,
 
 ### 85. Turn photos of handwritten notes into clean study notes
 
-**Community:** c/Study_Smarter · **Model tag:** Gemini
+**Community:** c/Study_Smarter · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 I'm uploading photos of my handwritten notes. Transcribe them, mark any word you're unsure of with [?], fix obvious spelling mistakes, then organize the content under headings and add a five-question self-test at the end. Keep my wording where it's clear.
@@ -832,7 +1001,9 @@ Conversation practice, translation with context, grammar and vocabulary prompts 
 
 ### 86. A conversation partner that corrects only what matters
 
-**Community:** c/Language_Learning · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Language_Learning · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Let's chat in [language] at [CEFR level] about [topic]. Keep your replies to 2–3 short sentences. After each message of mine, add a line starting with "Fix:" that corrects at most two mistakes, the ones that most affect meaning. Don't translate unless I ask. Ask me a question every turn.
@@ -840,7 +1011,9 @@ Let's chat in [language] at [CEFR level] about [topic]. Keep your replies to 2�
 
 ### 87. Translate with notes, not just words
 
-**Community:** c/Language_Learning · **Model tag:** Claude
+**Community:** c/Language_Learning · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Translate the text into [language]. Then add a table of the five hardest phrases: literal meaning, natural meaning, register (formal/informal), and one alternative. Keep the translation natural, not word for word. Text: [paste]
@@ -848,7 +1021,9 @@ Translate the text into [language]. Then add a table of the five hardest phrases
 
 ### 88. Practice reading signs from photos
 
-**Community:** c/Language_Learning · **Model tag:** Gemini
+**Community:** c/Language_Learning · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 I'll upload photos of menus, signs or packaging in [language]. For each one: transcribe it, translate it, explain any idioms or abbreviations, and tell me one new word worth memorizing. Mention if the photo is too blurry to read a part.
@@ -856,7 +1031,9 @@ I'll upload photos of menus, signs or packaging in [language]. For each one: tra
 
 ### 89. Teach me slang and when not to use it
 
-**Community:** c/Language_Learning · **Model tag:** Grok
+**Community:** c/Language_Learning · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Teach me five slang expressions people currently use in [language/region]. For each: meaning, example sentence, how old or informal it sounds, and a situation where it would be a bad idea. Say if the expression is fading or very regional.
@@ -864,7 +1041,9 @@ Teach me five slang expressions people currently use in [language/region]. For e
 
 ### 90. Vocabulary cards in a fixed format
 
-**Community:** c/Language_Learning · **Model tag:** Llama / Meta AI
+**Community:** c/Language_Learning · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Give me 10 words about [topic] in [language]. Format each as: word | translation | example sentence | translation of the sentence. One line per word. No extra comments.
@@ -872,7 +1051,9 @@ Give me 10 words about [topic] in [language]. Format each as: word | translation
 
 ### 91. Practise French at my level
 
-**Community:** c/Language_Learning · **Model tag:** Mistral
+**Community:** c/Language_Learning · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Parlons en français, niveau [A2/B1/B2]. Utilise des phrases courtes. Après chacune de mes réponses, corrige au plus deux erreurs avec une courte explication en français, puis pose-moi une nouvelle question sur [sujet].
@@ -880,7 +1061,9 @@ Parlons en français, niveau [A2/B1/B2]. Utilise des phrases courtes. Après cha
 
 ### 92. Translate between French and English with register
 
-**Community:** c/Language_Learning · **Model tag:** Mistral
+**Community:** c/Language_Learning · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Traduis le texte ci-dessous en anglais. Indique le registre (formel, courant, familier) et propose une alternative pour les trois expressions les plus idiomatiques. Texte : [texte]
@@ -888,7 +1071,9 @@ Traduis le texte ci-dessous en anglais. Indique le registre (formel, courant, fa
 
 ### 93. Explain why a grammar rule exists
 
-**Community:** c/Language_Learning · **Model tag:** DeepSeek
+**Community:** c/Language_Learning · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Explain the rule behind [grammar point] in [language]. Give the historical or logical reason if there is one, three examples, the most common exception, and a trick to remember it. Don't just list the rule.
@@ -896,7 +1081,9 @@ Explain the rule behind [grammar point] in [language]. Give the historical or lo
 
 ### 94. Chinese conversation partner with pinyin on request
 
-**Community:** c/Language_Learning · **Model tag:** Qwen
+**Community:** c/Language_Learning · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 我们用中文聊天,话题是[话题],我的水平是 HSK [级别]。请用短句回复。每次在我的句子后面指出最多两个错误并解释。只有当我输入 "pinyin" 时才给拼音。
@@ -904,7 +1091,9 @@ Explain the rule behind [grammar point] in [language]. Give the historical or lo
 
 ### 95. Translate Chinese to English with context notes
 
-**Community:** c/Language_Learning · **Model tag:** Qwen
+**Community:** c/Language_Learning · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Translate the Chinese text below into natural English. Then add notes for each idiom or cultural reference (chengyu, internet slang, politeness levels): literal meaning, actual meaning, and when it's used.
@@ -913,7 +1102,9 @@ Translate the Chinese text below into natural English. Then add notes for each i
 
 ### 96. Compare how a concept is expressed in three languages
 
-**Community:** c/Language_Learning · **Model tag:** Qwen
+**Community:** c/Language_Learning · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Show how "[concept]" is said in English, Mandarin and Spanish. For each: the usual word, a more formal or informal alternative, a typical example sentence, and any nuance that doesn't translate. Put it in a table.
@@ -921,7 +1112,9 @@ Show how "[concept]" is said in English, Mandarin and Spanish. For each: the usu
 
 ### 97. Offline language tutor
 
-**Community:** c/Language_Learning · **Model tag:** Open-source & local
+**Community:** c/Language_Learning · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 You are a patient tutor teaching [language] to an A2 learner. Use short sentences, give a translation in brackets after new words, and correct only one mistake per message. Ask a question to keep the conversation going. This works without an internet connection when run locally.
@@ -934,7 +1127,9 @@ Resumes, interviews, negotiation and difficult conversations. Prompts for gettin
 
 ### 98. Interview me for a role, one question at a time
 
-**Community:** c/Career_Growth · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Career_Growth · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Act as a hiring manager for [job title] at a [company type]. Ask me one interview question at a time and wait. After each of my answers give: a score from 1–5, what a strong answer would have included, and one sentence I could add. Mix behavioral, situational and one technical question. Start now.
@@ -942,7 +1137,9 @@ Act as a hiring manager for [job title] at a [company type]. Ask me one intervie
 
 ### 99. Tailor my resume bullets to a job posting
 
-**Community:** c/Career_Growth · **Model tag:** Claude
+**Community:** c/Career_Growth · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Rewrite each bullet in <resume> to match what <job_posting> emphasizes, using only facts already in the resume. Lead with outcomes and numbers. Mark any bullet where the resume gives no evidence for something the posting asks for, so I can add a true detail myself.
@@ -952,7 +1149,9 @@ Rewrite each bullet in <resume> to match what <job_posting> emphasizes, using on
 
 ### 100. Prepare for a presentation using my slides
 
-**Community:** c/Career_Growth · **Model tag:** Gemini
+**Community:** c/Career_Growth · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Review my uploaded slide deck as if you're a skeptical senior audience. For each slide: what's the one message, is the evidence enough, and what question would you ask? Then list the three questions I'm most likely to be asked and draft honest answers.
@@ -960,7 +1159,9 @@ Review my uploaded slide deck as if you're a skeptical senior audience. For each
 
 ### 101. Get unfiltered salary-negotiation coaching
 
-**Community:** c/Career_Growth · **Model tag:** Grok
+**Community:** c/Career_Growth · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 I got an offer: [role, company, pay, benefits]. Market for this role in [location] as far as you know: [your info]. Tell me bluntly whether to negotiate, what number to ask for and why, and give me a short script for the call and one for email. List the risks.
@@ -968,7 +1169,9 @@ I got an offer: [role, company, pay, benefits]. Market for this role in [locatio
 
 ### 102. Cover letter from three bullet points
 
-**Community:** c/Career_Growth · **Model tag:** Llama / Meta AI
+**Community:** c/Career_Growth · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Write a cover letter of 180 words for [role] at [company]. Facts to use: 1) [fact] 2) [fact] 3) [fact]. Tone: warm but professional. Do not invent experience. Don't open with "I am writing to apply".
@@ -976,7 +1179,9 @@ Write a cover letter of 180 words for [role] at [company]. Facts to use: 1) [fac
 
 ### 103. Answer "tell me about yourself"
 
-**Community:** c/Career_Growth · **Model tag:** Mistral
+**Community:** c/Career_Growth · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Write three versions of an answer to "Tell me about yourself" for a [role] interview: 30 seconds, 60 seconds, 90 seconds. Use present, past, future. Base it on: [facts]. Don't exaggerate.
@@ -984,7 +1189,9 @@ Write three versions of an answer to "Tell me about yourself" for a [role] inter
 
 ### 104. Prepare for an interview in a second language
 
-**Community:** c/Career_Growth · **Model tag:** Qwen
+**Community:** c/Career_Growth · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 I have an interview in [language] for [role]. Give me: ten likely questions, a model answer to each at B2 level, vocabulary I should know, and three phrases to buy time politely when I need to think.
@@ -992,7 +1199,9 @@ I have an interview in [language] for [role]. Give me: ten likely questions, a m
 
 ### 105. Draft a performance review self-assessment
 
-**Community:** c/Career_Growth · **Model tag:** Microsoft Copilot
+**Community:** c/Career_Growth · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Using my notes below, write a self-assessment: three accomplishments with measurable impact, two growth areas with what I'm doing about them, and goals for the next period. First person, honest, no inflated claims.
@@ -1001,7 +1210,9 @@ Using my notes below, write a self-assessment: three accomplishments with measur
 
 ### 106. Research a company before an interview
 
-**Community:** c/Career_Growth · **Model tag:** Perplexity
+**Community:** c/Career_Growth · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Research [company]: what it does, recent funding or layoffs, leadership changes, product launches, public criticism, and what employees say (note the bias of review sites). Give me five questions to ask that show I've done my homework. Link sources.
@@ -1009,7 +1220,9 @@ Research [company]: what it does, recent funding or layoffs, leadership changes,
 
 ### 107. Turn experience into achievement bullets
 
-**Community:** c/Career_Growth · **Model tag:** Multi-model / General
+**Community:** c/Career_Growth · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Convert each task below into a resume bullet: strong verb, what I did, measurable result. If a result isn't given, write "[add number]" instead of inventing one. Keep each under 22 words.
@@ -1018,7 +1231,9 @@ Convert each task below into a resume bullet: strong verb, what I did, measurabl
 
 ### 108. Rehearse a difficult conversation
 
-**Community:** c/Career_Growth · **Model tag:** Multi-model / General
+**Community:** c/Career_Growth · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Role-play [person, e.g. my manager] who is [defensive/busy/sceptical]. I need to [say what]. Respond realistically and push back. After 6 exchanges, give me feedback on clarity, tone and what I could say differently.
@@ -1031,7 +1246,9 @@ Planning, analysis, decision memos and meeting work for founders, managers and c
 
 ### 109. Pre-mortem for a launch
 
-**Community:** c/Business_Strategy · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Business_Strategy · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 We are launching [product] on [date]. Assume it has failed spectacularly six months later. Write 10 plausible reasons for the failure, grouped into product, market, execution and timing. Rate each by likelihood and impact (low/med/high) and propose one cheap action this month that reduces the top three.
@@ -1039,7 +1256,9 @@ We are launching [product] on [date]. Assume it has failed spectacularly six mon
 
 ### 110. Turn a rambling meeting transcript into decisions
 
-**Community:** c/Business_Strategy · **Model tag:** Claude
+**Community:** c/Business_Strategy · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 From the transcript below extract: decisions made (who decided, what), action items (owner, deadline, if stated), open questions, and disagreements that were not resolved. Do not invent owners or dates; write "unassigned" when unclear.
@@ -1050,7 +1269,9 @@ From the transcript below extract: decisions made (who decided, what), action it
 
 ### 111. Turn a spreadsheet of numbers into a briefing
 
-**Community:** c/Business_Strategy · **Model tag:** Gemini
+**Community:** c/Business_Strategy · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Using the attached sheet, write a one-page briefing for leadership: three headline findings with the numbers, two anomalies worth checking, one recommendation and the data that supports it. State your assumptions and what you couldn't tell from the data.
@@ -1058,7 +1279,9 @@ Using the attached sheet, write a one-page briefing for leadership: three headli
 
 ### 112. Quick pulse check on a brand
 
-**Community:** c/Business_Strategy · **Model tag:** Grok
+**Community:** c/Business_Strategy · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 What is the current sentiment about [brand] on X? Give me: what people praise, what they complain about, any ongoing controversy, and whether the conversation is growing or fading. Be honest if the sample is small or dominated by a few loud accounts.
@@ -1066,7 +1289,9 @@ What is the current sentiment about [brand] on X? Give me: what people praise, w
 
 ### 113. One-page decision memo
 
-**Community:** c/Business_Strategy · **Model tag:** Mistral
+**Community:** c/Business_Strategy · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Write a one-page memo for [decision]. Sections: context (3 lines), options (max 3), recommendation, risks, next steps with owners. Neutral tone, no buzzwords. Facts to use: [facts].
@@ -1074,7 +1299,9 @@ Write a one-page memo for [decision]. Sections: context (3 lines), options (max 
 
 ### 114. Unit economics sanity check
 
-**Community:** c/Business_Strategy · **Model tag:** DeepSeek
+**Community:** c/Business_Strategy · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Given: price [x], variable cost [y], fixed cost [z], customer acquisition cost [c], churn [p% per month]. Calculate contribution margin, payback period, lifetime value and break-even customers. Show formulas and flag assumptions that look unrealistic.
@@ -1082,7 +1309,9 @@ Given: price [x], variable cost [y], fixed cost [z], customer acquisition cost [
 
 ### 115. Write a bilingual customer notice
 
-**Community:** c/Business_Strategy · **Model tag:** Qwen
+**Community:** c/Business_Strategy · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Write an announcement about [change] in both English and Simplified Chinese. Keep the same structure and level of politeness in each. Flag anything where a literal translation would sound odd and give the localized phrasing instead.
@@ -1090,7 +1319,9 @@ Write an announcement about [change] in both English and Simplified Chinese. Kee
 
 ### 116. PowerPoint: build a deck from a Word document
 
-**Community:** c/Business_Strategy · **Model tag:** Microsoft Copilot
+**Community:** c/Business_Strategy · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Create a 10-slide presentation from the document [file]. Audience: [who]. One message per slide, a short title that states the takeaway, at most 4 bullets, and suggested visuals. End with a decision slide that says what I want the audience to do.
@@ -1098,7 +1329,9 @@ Create a 10-slide presentation from the document [file]. Audience: [who]. One me
 
 ### 117. PowerPoint: tighten an existing deck
 
-**Community:** c/Business_Strategy · **Model tag:** Microsoft Copilot
+**Community:** c/Business_Strategy · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Review this presentation and suggest changes: which slides to merge or cut, which slide titles are vague, where the story jumps, and which charts need a clearer takeaway. Then rewrite the three weakest titles.
@@ -1106,7 +1339,9 @@ Review this presentation and suggest changes: which slides to merge or cut, whic
 
 ### 118. Teams: prepare me for the next meeting
 
-**Community:** c/Business_Strategy · **Model tag:** Microsoft Copilot
+**Community:** c/Business_Strategy · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Based on my calendar, recent emails and files about [project], prepare a briefing for tomorrow's meeting: what happened since last time, what decisions are expected, what I should ask, and any risk worth raising.
@@ -1114,7 +1349,9 @@ Based on my calendar, recent emails and files about [project], prepare a briefin
 
 ### 119. Competitive landscape in a table
 
-**Community:** c/Business_Strategy · **Model tag:** Perplexity
+**Community:** c/Business_Strategy · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Build a table of the main competitors for [product category] in [region]: company, product, pricing model, target customer, recent news in the last 12 months, source. Mark anything you couldn't verify.
@@ -1122,7 +1359,9 @@ Build a table of the main competitors for [product category] in [region]: compan
 
 ### 120. Market size sanity check
 
-**Community:** c/Business_Strategy · **Model tag:** Perplexity
+**Community:** c/Business_Strategy · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Estimate the market size for [product] using two methods: top-down from published reports and bottom-up from customers × price. Show the sources and assumptions. Tell me where the numbers differ and which I should trust more.
@@ -1130,7 +1369,9 @@ Estimate the market size for [product] using two methods: top-down from publishe
 
 ### 121. Logo exploration without text
 
-**Community:** c/Business_Strategy · **Model tag:** Midjourney
+**Community:** c/Business_Strategy · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Minimal vector logo mark for [type of business], simple geometric shape, one or two colors, white background, no text, no gradients, flat design --ar 1:1 --stylize 100
@@ -1140,7 +1381,9 @@ Generate many, then redo the typography yourself. Image models still handle text
 
 ### 122. Mockup scenes for a product
 
-**Community:** c/Business_Strategy · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Business_Strategy · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 [product] on a [surface], in a [type of room], natural window light, soft shadows, shallow depth of field, lifestyle product photo, neutral palette. Generate a few settings, then composite your actual product image so branding stays accurate.
@@ -1148,7 +1391,9 @@ Generate many, then redo the typography yourself. Image models still handle text
 
 ### 123. Explain a business to a skeptic
 
-**Community:** c/Business_Strategy · **Model tag:** Multi-model / General
+**Community:** c/Business_Strategy · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Here's my business idea: [idea]. You are a skeptical investor. Ask your five toughest questions, in order of how likely they would sink the idea, and after each of my answers say whether it satisfied you and why.
@@ -1161,7 +1406,9 @@ Headlines, emails, product pages and social posts. Prompts for clear, honest, sp
 
 ### 124. Ten subject lines in ten different angles
 
-**Community:** c/Marketing_Copy · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Marketing_Copy · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Write 10 email subject lines for [offer] aimed at [audience]. Use one angle per line and label it: curiosity, benefit, urgency, social proof, question, number, contrarian, story, direct, personal. Max 45 characters each. No emojis, no ALL CAPS, no fake urgency.
@@ -1169,7 +1416,9 @@ Write 10 email subject lines for [offer] aimed at [audience]. Use one angle per 
 
 ### 125. Landing page copy from a product doc
 
-**Community:** c/Marketing_Copy · **Model tag:** Gemini
+**Community:** c/Marketing_Copy · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 From the attached product document, write landing page copy: a headline of at most 10 words, a subhead, three benefit blocks (benefit first, feature second), one objection-handling FAQ, and a call to action. Use only claims the document supports.
@@ -1177,7 +1426,9 @@ From the attached product document, write landing page copy: a headline of at mo
 
 ### 126. Draft a witty post without crossing into cringe
 
-**Community:** c/Marketing_Copy · **Model tag:** Grok
+**Community:** c/Marketing_Copy · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Write five posts for [brand/person] announcing [news]. Tone: dry, self-aware, a little irreverent. Max 240 characters each. No hashtags, no emojis, no "game-changer". Give one that is straightforward in case the jokes don't suit the audience.
@@ -1185,7 +1436,9 @@ Write five posts for [brand/person] announcing [news]. Tone: dry, self-aware, a 
 
 ### 127. Reply to a critical comment without escalating
 
-**Community:** c/Marketing_Copy · **Model tag:** Grok
+**Community:** c/Marketing_Copy · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 A customer posted: "[comment]". Draft three replies: apologetic, factual, and light-hearted. Max 280 characters each. Don't admit legal liability, don't argue, and invite them to a private channel if the problem is specific. Tell me which you'd pick and why.
@@ -1193,7 +1446,9 @@ A customer posted: "[comment]". Draft three replies: apologetic, factual, and li
 
 ### 128. Product description in three lengths
 
-**Community:** c/Marketing_Copy · **Model tag:** Llama / Meta AI
+**Community:** c/Marketing_Copy · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Write a description for [product] in three lengths: 15 words, 40 words, 90 words. Label each. Use plain words, include one concrete detail, and don't use "revolutionary", "cutting-edge" or "seamless".
@@ -1201,7 +1456,9 @@ Write a description for [product] in three lengths: 15 words, 40 words, 90 words
 
 ### 129. Rewrite in a friendly European tone
 
-**Community:** c/Marketing_Copy · **Model tag:** Mistral
+**Community:** c/Marketing_Copy · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Rewrite this announcement for a European audience: friendly, understated, clear, no hype, no exclamation marks. Keep it under 100 words and keep all facts.
@@ -1210,7 +1467,9 @@ Rewrite this announcement for a European audience: friendly, understated, clear,
 
 ### 130. Adapt product copy for a Chinese-speaking audience
 
-**Community:** c/Marketing_Copy · **Model tag:** Qwen
+**Community:** c/Marketing_Copy · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Adapt this English product copy for customers in [mainland China / Taiwan / Singapore]. Don't translate word for word. Adjust idioms, units, tone and calls to action to local norms and say what you changed and why.
@@ -1219,7 +1478,9 @@ Adapt this English product copy for customers in [mainland China / Taiwan / Sing
 
 ### 131. Word: turn a product brief into a one-pager
 
-**Community:** c/Marketing_Copy · **Model tag:** Microsoft Copilot
+**Community:** c/Marketing_Copy · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Create a one-page summary from the brief: headline, problem, solution, three benefits, proof points (use only facts from the document) and a call to action. Format with clear headings and short paragraphs.
@@ -1227,7 +1488,9 @@ Create a one-page summary from the brief: headline, problem, solution, three ben
 
 ### 132. What are customers complaining about?
 
-**Community:** c/Marketing_Copy · **Model tag:** Perplexity
+**Community:** c/Marketing_Copy · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Search for reviews, forums and social posts about [product/competitor]. Summarize the top 5 recurring complaints and top 5 praises with example quotes (paraphrased) and sources. Say how many sources each theme appears in.
@@ -1235,7 +1498,9 @@ Search for reviews, forums and social posts about [product/competitor]. Summariz
 
 ### 133. Social media image set with a shared visual style
 
-**Community:** c/Marketing_Copy · **Model tag:** Midjourney
+**Community:** c/Marketing_Copy · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Create four images for [campaign] that look like a series. Shared style line to append: "flat illustration, limited palette of [3 colors], thick outlines, grainy paper texture --ar 4:5 --stylize 200". Scenes: [scene 1], [scene 2], [scene 3], [scene 4].
@@ -1243,7 +1508,9 @@ Create four images for [campaign] that look like a series. Shared style line to 
 
 ### 134. Social media graphics with space for text
 
-**Community:** c/Marketing_Copy · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Marketing_Copy · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Compose a [style] image of [subject] positioned in the lower right, with a large clean empty area on the left for headline text, soft gradient background, high contrast. Generate without text and add typography in an editor for sharper results.
@@ -1251,7 +1518,9 @@ Compose a [style] image of [subject] positioned in the lower right, with a large
 
 ### 135. Rewrite one message for five channels
 
-**Community:** c/Marketing_Copy · **Model tag:** Multi-model / General
+**Community:** c/Marketing_Copy · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Take this message: "[message]". Rewrite it for: email (subject + 80 words), LinkedIn post (120 words), SMS (160 characters), a headline (8 words) and a spoken 15-second radio line. Keep the same core promise and facts.
@@ -1264,7 +1533,9 @@ Task triage, planning, reviews, templates and personal workflows that survive a 
 
 ### 136. Turn a messy brain dump into a ranked task list
 
-**Community:** c/Productivity_Systems · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Productivity_Systems · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Here is everything on my mind, unsorted:
@@ -1276,7 +1547,9 @@ Group it into: Do today (max 3), This week, Waiting on others, Someday, Delete. 
 
 ### 137. Project kickoff brief in one page
 
-**Community:** c/Productivity_Systems · **Model tag:** Claude
+**Community:** c/Productivity_Systems · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Write a one-page kickoff brief for [project]: goal in one sentence, non-goals, success metrics, stakeholders and their stake, milestones, top three risks with mitigations, and the first week's tasks. Ask me up to five questions first if something essential is missing.
@@ -1284,7 +1557,9 @@ Write a one-page kickoff brief for [project]: goal in one sentence, non-goals, s
 
 ### 138. Draft a reply from the email thread in Gmail
 
-**Community:** c/Productivity_Systems · **Model tag:** Gemini
+**Community:** c/Productivity_Systems · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Summarize the thread in two sentences, list what each person is asking for, then draft a reply in a friendly but concise tone that answers every open question. Offer a shorter version of three lines. Thread: [use @Gmail or paste].
@@ -1292,7 +1567,9 @@ Summarize the thread in two sentences, list what each person is asking for, then
 
 ### 139. Daily news brief on my topics
 
-**Community:** c/Productivity_Systems · **Model tag:** Grok
+**Community:** c/Productivity_Systems · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Each morning, give me a brief on [topics]: five items maximum, each in two sentences, with why it matters to someone who works in [field]. Mark anything that is still developing and may change. Skip celebrity gossip and anything older than 48 hours.
@@ -1300,7 +1577,9 @@ Each morning, give me a brief on [topics]: five items maximum, each in two sente
 
 ### 140. Classify items into fixed labels
 
-**Community:** c/Productivity_Systems · **Model tag:** Llama / Meta AI
+**Community:** c/Productivity_Systems · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Classify each line into exactly one label: work, home, finance, health, learning, other. Reply as "line number: label", one per line, nothing else.
@@ -1311,7 +1590,9 @@ Classify each line into exactly one label: work, home, finance, health, learning
 
 ### 141. Weekly review template
 
-**Community:** c/Productivity_Systems · **Model tag:** Mistral
+**Community:** c/Productivity_Systems · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Guide me through a weekly review in six questions, one at a time: what went well, what didn't, what's unfinished, what's coming, what can I drop, what's my one priority. After my answers, produce a plan of at most 5 items.
@@ -1319,7 +1600,9 @@ Guide me through a weekly review in six questions, one at a time: what went well
 
 ### 142. Estimate a project with uncertainty
 
-**Community:** c/Productivity_Systems · **Model tag:** DeepSeek
+**Community:** c/Productivity_Systems · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Estimate [project]. Break it into tasks, give each a best, likely and worst-case time, compute the totals, and explain where the biggest uncertainty sits. Suggest the one experiment that would shrink the uncertainty most.
@@ -1327,7 +1610,9 @@ Estimate [project]. Break it into tasks, give each a best, likely and worst-case
 
 ### 143. Structured meeting notes in JSON
 
-**Community:** c/Productivity_Systems · **Model tag:** Qwen
+**Community:** c/Productivity_Systems · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Convert the meeting transcript into JSON with keys: date, attendees, decisions (array), action_items (array of {owner, task, due}), open_questions (array). Use null for missing information. Output JSON only.
@@ -1336,7 +1621,9 @@ Convert the meeting transcript into JSON with keys: date, attendees, decisions (
 
 ### 144. Outlook: triage my inbox
 
-**Community:** c/Productivity_Systems · **Model tag:** Microsoft Copilot
+**Community:** c/Productivity_Systems · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Summarize unread emails from the last [days] days. Group them as: need a reply from me, FYI, waiting on someone, can be ignored. For each reply-needed email give the sender, the ask and the deadline if any.
@@ -1344,7 +1631,9 @@ Summarize unread emails from the last [days] days. Group them as: need a reply f
 
 ### 145. Outlook: draft a polite decline
 
-**Community:** c/Productivity_Systems · **Model tag:** Microsoft Copilot
+**Community:** c/Productivity_Systems · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Draft a reply declining [request] from [person]. Tone: warm and firm. Offer one alternative (a later date, a smaller version or a colleague). Max 100 words. Don't over-apologize.
@@ -1352,7 +1641,9 @@ Draft a reply declining [request] from [person]. Tone: warm and firm. Offer one 
 
 ### 146. Teams: recap a meeting for people who missed it
 
-**Community:** c/Productivity_Systems · **Model tag:** Microsoft Copilot
+**Community:** c/Productivity_Systems · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Recap the meeting in under 150 words: purpose, decisions, action items with owners, and open questions. List who has to do something by when. Put the most important thing first.
@@ -1360,7 +1651,9 @@ Recap the meeting in under 150 words: purpose, decisions, action items with owne
 
 ### 147. Private journal reflection prompt
 
-**Community:** c/Productivity_Systems · **Model tag:** Open-source & local
+**Community:** c/Productivity_Systems · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Here is my journal entry. Don't give advice yet. Reflect back the main feelings and themes in three lines, then ask me two questions that might help me see it differently. Keep it gentle and short.
@@ -1371,7 +1664,9 @@ Here is my journal entry. Don't give advice yet. Reflect back the main feelings 
 
 ### 148. Ask the model to critique its own answer
 
-**Community:** c/Productivity_Systems · **Model tag:** Multi-model / General
+**Community:** c/Productivity_Systems · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Answer the question. Then review your answer as a skeptical expert: list the three weakest claims, what evidence would verify each, and revise the answer accordingly. Mark anything you couldn't check.
@@ -1380,7 +1675,9 @@ Question: [question]
 
 ### 149. Daily plan with energy in mind
 
-**Community:** c/Productivity_Systems · **Model tag:** Multi-model / General
+**Community:** c/Productivity_Systems · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Here are my tasks for today: [list]. My energy is highest at [time] and lowest at [time]. Fixed commitments: [list]. Make a schedule that puts demanding work in high-energy slots, leaves 20% buffer, and tells me which tasks to drop first if the day goes wrong.
@@ -1388,7 +1685,9 @@ Here are my tasks for today: [list]. My energy is highest at [time] and lowest a
 
 ### 150. Set up a ChatGPT Project once for a recurring job
 
-**Community:** c/Productivity_Systems · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Productivity_Systems · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 For work you repeat (weekly report, client emails, a course), create a Project and add: a short instruction ("You help me write the weekly status report: bullets, no fluff, max 200 words"), the template file, and two past examples. Then each week you only paste the new facts.
@@ -1396,7 +1695,9 @@ For work you repeat (weekly report, client emails, a course), create a Project a
 
 ### 151. Build a personal prompt library that you actually reuse
 
-**Community:** c/Productivity_Systems · **Model tag:** Multi-model / General
+**Community:** c/Productivity_Systems · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Keep each prompt as: name, when to use it, the prompt text with [placeholders], and one example output. Store them in a notes app or a single document and sort by task (write, analyze, decide, learn). Retire any prompt you haven't used in three months.
@@ -1409,7 +1710,9 @@ Meal plans, substitutions, scaling recipes and food photography. Prompts for hom
 
 ### 152. Cook from what's in my fridge
 
-**Community:** c/Cooking_Kitchen · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Cooking_Kitchen · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 I have: [ingredients]. Pantry staples: [list]. Equipment: [stove, oven, air fryer…]. Time: [minutes]. Suggest three dinners ranked by effort. For the top one give exact quantities for [number] people and numbered steps. Tell me which ingredient to buy if I'm only allowed one extra.
@@ -1417,7 +1720,9 @@ I have: [ingredients]. Pantry staples: [list]. Equipment: [stove, oven, air frye
 
 ### 153. Identify what's in my fridge from a photo
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Gemini
+**Community:** c/Cooking_Kitchen · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Look at the photo of my fridge. List everything you can identify and mark what you're unsure about. Suggest three meals using mostly those items and tell me which foods look like they should be used first. Ask me before assuming anything you can't see.
@@ -1425,7 +1730,9 @@ Look at the photo of my fridge. List everything you can identify and mark what y
 
 ### 154. Scale a recipe correctly
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Llama / Meta AI
+**Community:** c/Cooking_Kitchen · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Scale this recipe from [n] servings to [m]. Show a table: ingredient, original amount, new amount. Round to practical kitchen measures and mention anything that does not scale linearly (spices, baking time, pan size).
@@ -1434,7 +1741,9 @@ Scale this recipe from [n] servings to [m]. Show a table: ingredient, original a
 
 ### 155. A weekly meal plan with a shared shopping list
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Mistral
+**Community:** c/Cooking_Kitchen · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Plan 5 dinners for [people], vegetarian, under [minutes] minutes each, reusing ingredients to limit waste. Then give one grocery list grouped by aisle. Avoid: [allergies or dislikes].
@@ -1442,7 +1751,9 @@ Plan 5 dinners for [people], vegetarian, under [minutes] minutes each, reusing i
 
 ### 156. Food safety question with sources
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Perplexity
+**Community:** c/Cooking_Kitchen · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 What is the safe [temperature/time/storage] for [food]? Link to official sources (e.g. food safety agencies), note differences between countries, and list the risks if I get it wrong. Say if guidance has changed recently.
@@ -1450,7 +1761,9 @@ What is the safe [temperature/time/storage] for [food]? Link to official sources
 
 ### 157. Food photography that doesn't look plastic
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Midjourney
+**Community:** c/Cooking_Kitchen · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 [dish] on a rustic ceramic plate, side light from a window, shallow depth of field, steam rising, visible texture, imperfect plating, a linen napkin, 50mm photo --ar 4:5 --stylize 100
@@ -1460,7 +1773,9 @@ Real food has crumbs, sheen and uneven edges. Add them.
 
 ### 158. Recipe card images
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Cooking_Kitchen · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Top-down photo of [dish] on a [surface], ingredients scattered around it, natural daylight, crisp focus, muted colors, food magazine look. Keep the background simple so you can add the recipe text later.
@@ -1468,7 +1783,9 @@ Top-down photo of [dish] on a [surface], ingredients scattered around it, natura
 
 ### 159. Substitute an ingredient and predict the result
 
-**Community:** c/Cooking_Kitchen · **Model tag:** Multi-model / General
+**Community:** c/Cooking_Kitchen · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 I'm missing [ingredient] for [recipe]. Suggest three substitutes, say how each will change texture, taste and cooking time, and which one is the closest. Include amounts.
@@ -1481,7 +1798,9 @@ Training plans, warm-ups, form checks and tracking. General information, not med
 
 ### 160. Build a four-week plan around my actual schedule
 
-**Community:** c/Fitness_Training · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Fitness_Training · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Make a four-week strength plan. My days available: [days]. Session length: [minutes]. Equipment: [list]. Goal: [goal]. Experience: [level]. Injuries or limits: [limits]. Give a table per week with exercises, sets × reps and an RPE target, plus one rule for when to add weight. Keep it boring and sustainable.
@@ -1489,7 +1808,9 @@ Make a four-week strength plan. My days available: [days]. Session length: [minu
 
 ### 161. Check my exercise form from a short video
 
-**Community:** c/Fitness_Training · **Model tag:** Gemini
+**Community:** c/Fitness_Training · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 I'm uploading a short video of my [exercise]. Describe what you see in each phase of the movement, point out common form issues that may apply, and give two cues I could try. You can't see everything, so say what a coach should check in person. Not medical advice.
@@ -1497,7 +1818,9 @@ I'm uploading a short video of my [exercise]. Describe what you see in each phas
 
 ### 162. Convert a workout into a table
 
-**Community:** c/Fitness_Training · **Model tag:** Llama / Meta AI
+**Community:** c/Fitness_Training · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Convert the workout below into a markdown table with columns: exercise, sets, reps, rest, notes. Keep the original order. If any info is missing write "?" instead of making it up.
@@ -1506,7 +1829,9 @@ Convert the workout below into a markdown table with columns: exercise, sets, re
 
 ### 163. Warm-up and mobility routine
 
-**Community:** c/Fitness_Training · **Model tag:** Mistral
+**Community:** c/Fitness_Training · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Create a 10-minute warm-up before [sport/exercise]. Use bodyweight only, 6–8 moves, with durations. Add one alternative for each if I have [limit]. Keep instructions to one line per move.
@@ -1514,7 +1839,9 @@ Create a 10-minute warm-up before [sport/exercise]. Use bodyweight only, 6–8 m
 
 ### 164. Check a training claim against evidence
 
-**Community:** c/Fitness_Training · **Model tag:** Perplexity
+**Community:** c/Fitness_Training · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Is it true that "[claim]"? Find the best studies or position stands, summarize what they found in practical terms (not just p-values), and say how confident to be. Note who funded the studies if relevant.
@@ -1527,7 +1854,9 @@ Budgets, loans, fine print and financial concepts explained. Educational, not fi
 
 ### 165. Stress-test my monthly budget
 
-**Community:** c/Personal_Finance · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Personal_Finance · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Here are my monthly numbers: income [x], fixed costs [list], variable spending [list], debt payments [list]. Find the three biggest levers to improve my savings rate, and run these scenarios: income drops 20%, an unexpected [amount] bill, interest rates rise 2 points. Show the math in a small table. You are not a financial adviser; list what I should verify with one.
@@ -1535,7 +1864,9 @@ Here are my monthly numbers: income [x], fixed costs [list], variable spending [
 
 ### 166. Explain a financial product's fine print
 
-**Community:** c/Personal_Finance · **Model tag:** Claude
+**Community:** c/Personal_Finance · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Explain this offer in plain language: total cost over the full term, every fee and when it applies, what happens if I'm late or leave early, and what a cheaper alternative would look like. Show an example with numbers. Offer text:
@@ -1546,7 +1877,9 @@ Explain this offer in plain language: total cost over the full term, every fee a
 
 ### 167. Plan a big purchase over twelve months
 
-**Community:** c/Personal_Finance · **Model tag:** Gemini
+**Community:** c/Personal_Finance · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 I want to buy [item, cost] in 12 months. My monthly surplus is about [amount]. Build a saving schedule, propose where to find [x] extra per month, suggest how to time the purchase (sales, seasons), and tell me the signs I should delay. Keep a small emergency buffer.
@@ -1554,7 +1887,9 @@ I want to buy [item, cost] in 12 months. My monthly surplus is about [amount]. B
 
 ### 168. Explain a market move without hype
 
-**Community:** c/Personal_Finance · **Model tag:** Grok
+**Community:** c/Personal_Finance · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 [Asset or index] moved [x%] today. List plausible drivers, which are confirmed by reporting and which are speculation, and what would be worth watching next. Do not tell me what to buy or sell. Say what data you can't see.
@@ -1562,7 +1897,9 @@ I want to buy [item, cost] in 12 months. My monthly surplus is about [amount]. B
 
 ### 169. Categorize my transactions
 
-**Community:** c/Personal_Finance · **Model tag:** Llama / Meta AI
+**Community:** c/Personal_Finance · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Assign one category to each transaction from this list only: housing, food, transport, health, fun, subscriptions, income, other. Output CSV with columns date, description, category. Do not change the description.
@@ -1571,7 +1908,9 @@ Assign one category to each transaction from this list only: housing, food, tran
 
 ### 170. Compare two loan offers
 
-**Community:** c/Personal_Finance · **Model tag:** Mistral
+**Community:** c/Personal_Finance · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Offer A: [amount, rate, term, fees]. Offer B: [amount, rate, term, fees]. Show total cost, monthly payment and APR-like comparison in a table, then say which is cheaper under early repayment. List what else I should check.
@@ -1579,7 +1918,9 @@ Offer A: [amount, rate, term, fees]. Offer B: [amount, rate, term, fees]. Show t
 
 ### 171. Compare rent vs buy honestly
 
-**Community:** c/Personal_Finance · **Model tag:** DeepSeek
+**Community:** c/Personal_Finance · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Home price [x], down payment [y], mortgage rate [r], rent [z], expected stay [years], expected appreciation [g], maintenance [m%]. Build a year-by-year comparison and find the break-even year. List the assumptions the result is most sensitive to.
@@ -1587,7 +1928,9 @@ Home price [x], down payment [y], mortgage rate [r], rent [z], expected stay [ye
 
 ### 172. Convert and compare prices across currencies
 
-**Community:** c/Personal_Finance · **Model tag:** Qwen
+**Community:** c/Personal_Finance · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 I'm comparing [item] priced at [price A, currency, store] and [price B, currency, store]. Convert to [my currency] using rates I give: [rates], include shipping and tax [x%], and tell me which is cheaper. Explain the assumptions.
@@ -1595,7 +1938,9 @@ I'm comparing [item] priced at [price A, currency, store] and [price B, currency
 
 ### 173. Excel: build a simple budget tracker
 
-**Community:** c/Personal_Finance · **Model tag:** Microsoft Copilot
+**Community:** c/Personal_Finance · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Create a monthly budget workbook: an inputs sheet (income, fixed costs), a transactions sheet, a summary sheet with spent vs. planned by category, and a chart. Add data validation for categories and conditional formatting for overspending.
@@ -1603,7 +1948,9 @@ Create a monthly budget workbook: an inputs sheet (income, fixed costs), a trans
 
 ### 174. Find the current rules for something
 
-**Community:** c/Personal_Finance · **Model tag:** Perplexity
+**Community:** c/Personal_Finance · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 What are the current rules in [country/state] for [tax deduction / account type / benefit] for [year]? Link to the official source first, then list recent changes. Mention anything that depends on my situation and may need a professional.
@@ -1611,7 +1958,9 @@ What are the current rules in [country/state] for [tax deduction / account type 
 
 ### 175. Explain a financial concept with an example
 
-**Community:** c/Personal_Finance · **Model tag:** Multi-model / General
+**Community:** c/Personal_Finance · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Explain [concept, e.g. compound interest, index funds, APR] using a small numeric example. Then show how the result changes if one variable doubles. Finish with the two most common misunderstandings.
@@ -1624,7 +1973,9 @@ Reading contracts, policies and terms in plain language. Educational, not legal 
 
 ### 176. Read a contract clause like a skeptical friend
 
-**Community:** c/Plain_English_Legal · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Plain_English_Legal · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Rewrite the clause below in plain English, then list: what it obliges me to do, what it lets the other side do, any open-ended or one-sided terms, and three questions I should ask before signing. Remind me where a lawyer would be worth paying for. Clause:
@@ -1635,7 +1986,9 @@ Rewrite the clause below in plain English, then list: what it obliges me to do, 
 
 ### 177. Compare two versions of a document
 
-**Community:** c/Plain_English_Legal · **Model tag:** Claude
+**Community:** c/Plain_English_Legal · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Compare <old> and <new>. List every substantive change as: section, what it said before, what it says now, and who benefits. Ignore formatting and typo fixes. Then list anything that was removed silently. Mark changes you are unsure about.
@@ -1645,7 +1998,9 @@ Compare <old> and <new>. List every substantive change as: section, what it said
 
 ### 178. Summarize a terms-of-service update
 
-**Community:** c/Plain_English_Legal · **Model tag:** Gemini
+**Community:** c/Plain_English_Legal · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Compare the old and new terms I'm attaching. List what changed in plain language, focusing on privacy, payments, arbitration, data sharing and my right to cancel. Rank changes by how much they matter to an ordinary user. This is a summary, not legal advice.
@@ -1653,7 +2008,9 @@ Compare the old and new terms I'm attaching. List what changed in plain language
 
 ### 179. Summarize a policy in five bullets
 
-**Community:** c/Plain_English_Legal · **Model tag:** Llama / Meta AI
+**Community:** c/Plain_English_Legal · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Summarize this privacy policy in five bullets a teenager would understand: what data is collected, why, who gets it, how long it's kept, and how to delete it. If something isn't stated, write "not stated".
@@ -1662,7 +2019,9 @@ Summarize this privacy policy in five bullets a teenager would understand: what 
 
 ### 180. Word: compare two contract versions
 
-**Community:** c/Plain_English_Legal · **Model tag:** Microsoft Copilot
+**Community:** c/Plain_English_Legal · **Model tag:** Microsoft Copilot · **Model slug:** `copilot`
+
+**Body:**
 
 ~~~~
 Compare the current document with [file]. List changes in a table: clause, old wording, new wording, practical effect. Highlight anything that shifts risk, payment or deadlines. Don't assume legal conclusions.
@@ -1670,7 +2029,9 @@ Compare the current document with [file]. List changes in a table: clause, old w
 
 ### 181. Find the actual text of a law
 
-**Community:** c/Plain_English_Legal · **Model tag:** Perplexity
+**Community:** c/Plain_English_Legal · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Find the official text of [law/regulation] and summarize section [x]. Quote the key sentence, link the source and explain it in plain English. List any amendments or court decisions that changed it, and say if you can't confirm the current version.
@@ -1678,7 +2039,9 @@ Find the official text of [law/regulation] and summarize section [x]. Quote the 
 
 ### 182. Summarize sensitive documents without sending them anywhere
 
-**Community:** c/Plain_English_Legal · **Model tag:** Open-source & local
+**Community:** c/Plain_English_Legal · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 For contracts or personal records you don't want to upload, run a local model. Prompt: "Summarize this document in 8 bullets and list every deadline, amount and party named. If something is unclear, say so." Expect to double-check the output, since small models can miss clauses.
@@ -1691,7 +2054,9 @@ Understanding terms, studies and appointments. Educational prompts, not medical 
 
 ### 183. Prepare for a doctor's appointment
 
-**Community:** c/Health_Literacy · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Health_Literacy · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 I have an appointment about [topic]. Help me prepare: a one-paragraph timeline of my symptoms from the notes below, a list of questions to ask, what tests or information the doctor might want, and what to write down during the visit. Do not diagnose. Notes:
@@ -1700,7 +2065,9 @@ I have an appointment about [topic]. Help me prepare: a one-paragraph timeline o
 
 ### 184. Explain a lab report in plain language
 
-**Community:** c/Health_Literacy · **Model tag:** Claude
+**Community:** c/Health_Literacy · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Explain each value in the lab results below: what it measures, whether it's inside the reference range shown, and what questions I could ask my clinician. Don't diagnose or suggest treatment. Say clearly when something needs prompt medical attention.
@@ -1711,7 +2078,9 @@ Explain each value in the lab results below: what it measures, whether it's insi
 
 ### 185. Explain a health topic at three levels
 
-**Community:** c/Health_Literacy · **Model tag:** Gemini
+**Community:** c/Health_Literacy · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Explain [condition or topic] at three levels: a 5-line summary, a detailed explanation for a patient, and a list of terms a clinician would use. Cite the kind of source each claim comes from (guideline, trial, expert opinion). Say what is still uncertain. This is education, not medical advice.
@@ -1719,7 +2088,9 @@ Explain [condition or topic] at three levels: a 5-line summary, a detailed expla
 
 ### 186. Fact-check a viral health claim
 
-**Community:** c/Health_Literacy · **Model tag:** Grok
+**Community:** c/Health_Literacy · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Evaluate this claim: "[claim]". What does the evidence say, how strong is it, which studies or guidelines matter, where did it likely start, and who benefits from spreading it? Rate it: supported, partly supported, unsupported, misleading. Not medical advice.
@@ -1727,7 +2098,9 @@ Evaluate this claim: "[claim]". What does the evidence say, how strong is it, wh
 
 ### 187. Summarize a medicine leaflet
 
-**Community:** c/Health_Literacy · **Model tag:** Llama / Meta AI
+**Community:** c/Health_Literacy · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 From the leaflet, list in plain words: what it's for, usual way to take it, the common side effects, the signs that need urgent care, and what not to mix it with. If the leaflet doesn't say, write "not in the leaflet". This is not medical advice.
@@ -1736,7 +2109,9 @@ From the leaflet, list in plain words: what it's for, usual way to take it, the 
 
 ### 188. Evaluate a study's strength
 
-**Community:** c/Health_Literacy · **Model tag:** DeepSeek
+**Community:** c/Health_Literacy · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Read the study summary below. Say what type of study it is, what it can and cannot show, the sample and who's missing, the effect size in absolute terms, and how confident I should be. Not medical advice.
@@ -1745,7 +2120,9 @@ Read the study summary below. Say what type of study it is, what it can and cann
 
 ### 189. Explain terminology in two languages
 
-**Community:** c/Health_Literacy · **Model tag:** Qwen
+**Community:** c/Health_Literacy · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Explain the medical term "[term]" in plain English and in [language]. Include what it means, common causes, why it matters and when to seek care. Mention if the term has different names in the two languages. This is not medical advice.
@@ -1753,7 +2130,9 @@ Explain the medical term "[term]" in plain English and in [language]. Include wh
 
 ### 190. What do guidelines say about this?
 
-**Community:** c/Health_Literacy · **Model tag:** Perplexity
+**Community:** c/Health_Literacy · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 What do major guidelines (e.g. [organizations]) currently recommend about [topic]? Show where they agree and disagree, the evidence level cited, and the date of each guideline. Link them. This is for understanding, not for treatment decisions.
@@ -1761,7 +2140,9 @@ What do major guidelines (e.g. [organizations]) currently recommend about [topic
 
 ### 191. Keep personal health notes private while organizing them
 
-**Community:** c/Health_Literacy · **Model tag:** Open-source & local
+**Community:** c/Health_Literacy · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 Organize these notes into a timeline of symptoms, medications and questions for my doctor. Don't interpret or diagnose. Only reorder and clarify what I wrote, and mark anything ambiguous. Running this locally keeps personal notes off third-party servers.
@@ -1770,7 +2151,9 @@ Organize these notes into a timeline of symptoms, medications and questions for 
 
 ### 192. Build a list of questions for a specialist
 
-**Community:** c/Health_Literacy · **Model tag:** Multi-model / General
+**Community:** c/Health_Literacy · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 I'm seeing a [specialist] about [issue]. Write 12 questions grouped as: understanding the problem, tests, treatment options, risks and costs, and what to expect next. Put the most important three first. This is only to prepare for the visit.
@@ -1783,7 +2166,9 @@ Itineraries, entry rules, packing and phrases for the road.
 
 ### 193. Build a day-by-day itinerary with realistic travel time
 
-**Community:** c/Travel_Planning · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Travel_Planning · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Plan [number] days in [city] for [travelers]. Interests: [list]. Pace: [slow/medium/fast]. Budget per day: [amount]. Group stops by neighbourhood to avoid backtracking, include rough walking or transit time between stops, a lunch spot per day, and one rainy-day swap. Mark anything that needs a booking in advance.
@@ -1791,7 +2176,9 @@ Plan [number] days in [city] for [travelers]. Interests: [list]. Pace: [slow/med
 
 ### 194. Plan a trip around a constraint
 
-**Community:** c/Travel_Planning · **Model tag:** Claude
+**Community:** c/Travel_Planning · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Plan [number] days in [region] where the constraint is [no car / traveling with toddler / under €[x] per day / limited mobility]. Be honest about trade-offs and say where the constraint makes something unrealistic. Give one backup plan per day.
@@ -1799,7 +2186,9 @@ Plan [number] days in [region] where the constraint is [no car / traveling with 
 
 ### 195. Plan from a photo
 
-**Community:** c/Travel_Planning · **Model tag:** Gemini
+**Community:** c/Travel_Planning · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Here is a photo of a place I want to visit. Guess where it might be and say how confident you are. List what to check to confirm, the best season to go, and a three-day plan nearby for a [budget] budget. Don't present guesses as certain facts.
@@ -1807,7 +2196,9 @@ Here is a photo of a place I want to visit. Guess where it might be and say how 
 
 ### 196. Find out what's going on in a city this weekend
 
-**Community:** c/Travel_Planning · **Model tag:** Grok
+**Community:** c/Travel_Planning · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 What's happening in [city] this [dates]? Events, closures, protests, big sports games or conferences that affect hotel prices or crowds. Check recent posts and news, tell me how fresh each item is, and what to double-check on official sites.
@@ -1815,7 +2206,9 @@ What's happening in [city] this [dates]? Events, closures, protests, big sports 
 
 ### 197. Packing list from the weather and plan
 
-**Community:** c/Travel_Planning · **Model tag:** Llama / Meta AI
+**Community:** c/Travel_Planning · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 I'm going to [place] for [days] days. Weather: [forecast]. Activities: [list]. Make a packing list in categories (clothes, documents, tech, toiletries, extras). Mark what I can wear twice. Keep it carry-on friendly.
@@ -1823,7 +2216,9 @@ I'm going to [place] for [days] days. Weather: [forecast]. Activities: [list]. M
 
 ### 198. Optimize a multi-city route
 
-**Community:** c/Travel_Planning · **Model tag:** DeepSeek
+**Community:** c/Travel_Planning · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Cities: [list]. Constraints: [days, budget, no backtracking, must be at X on date]. Find a route that minimizes travel time. Show the order, the transport between stops with rough durations, and what you traded off.
@@ -1831,7 +2226,9 @@ Cities: [list]. Constraints: [days, budget, no backtracking, must be at X on dat
 
 ### 199. Survival phrases for a trip
 
-**Community:** c/Travel_Planning · **Model tag:** Qwen
+**Community:** c/Travel_Planning · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 I'm visiting [country] for [days]. Give me 25 phrases I'll actually use: greetings, ordering food, directions, transport, emergencies, bargaining. Show the local script, romanization and meaning. Add three cultural mistakes to avoid.
@@ -1839,7 +2236,9 @@ I'm visiting [country] for [days]. Give me 25 phrases I'll actually use: greetin
 
 ### 200. Check entry requirements and recent changes
 
-**Community:** c/Travel_Planning · **Model tag:** Perplexity
+**Community:** c/Travel_Planning · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 What are the current entry requirements for a [nationality] citizen visiting [country] for [days]? Visa, passport validity, health requirements, customs limits, and any recent changes. Link to the official government source and give the date of each source.
@@ -1847,7 +2246,9 @@ What are the current entry requirements for a [nationality] citizen visiting [co
 
 ### 201. Moodboard for a trip
 
-**Community:** c/Travel_Planning · **Model tag:** Midjourney
+**Community:** c/Travel_Planning · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Create four images that capture the feeling of [destination] in [season]: a street scene, a landscape, a food close-up and an interior. Shared style: "candid travel photography, natural light, slight film grain, warm tones" --ar 3:2. Use them to choose what to book.
@@ -1855,7 +2256,9 @@ Create four images that capture the feeling of [destination] in [season]: a stre
 
 ### 202. Illustrated map-style postcards
 
-**Community:** c/Travel_Planning · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Travel_Planning · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Illustrated postcard of [city], hand-painted gouache style, key landmarks arranged like a map, warm palette, decorative border, no text. Make several and pick one to print, adding labels yourself.
@@ -1868,7 +2271,9 @@ Midjourney, Stable Diffusion and Flux prompts, parameters and workflows for gene
 
 ### 203. Aspect ratio and stylize: the two switches that change most
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Start every prompt with the subject, then add parameters at the end:
@@ -1880,7 +2285,9 @@ a lighthouse on a cliff at dusk, storm clouds, long exposure --ar 3:2 --stylize 
 
 ### 204. Use --chaos to explore, then lock the winner with --seed
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Run an exploratory batch with variety:
@@ -1892,7 +2299,9 @@ Pick the best image, note its seed, then iterate with small wording changes and 
 
 ### 205. Remove what you don't want with --no
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Negative words in the prompt can backfire ("no people" may add people). Use the parameter instead:
@@ -1902,7 +2311,9 @@ a quiet street café in Lisbon, golden hour, 35mm photo --no people, cars, text,
 
 ### 206. Describe light, lens and time of day instead of "beautiful"
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Weak: "a beautiful portrait of an old fisherman". Stronger:
@@ -1914,7 +2325,9 @@ Light + lens + materials + mood do more than adjectives like "stunning" or "epic
 
 ### 207. Consistent character across a series
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Describe the character once in fixed words and reuse it verbatim:
@@ -1926,7 +2339,9 @@ Use the same wording and style parameters each time. Keep changes to the scene o
 
 ### 208. Product photography on a seamless background
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 [product], centered, studio lighting with a soft key light and subtle shadow, seamless [color] backdrop, high detail, commercial product photo, no text --ar 1:1 --stylize 80
@@ -1936,7 +2351,9 @@ Try swapping the light: "hard side light", "top-down softbox", "rim light" to se
 
 ### 209. Interior design variations
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 a [style] living room, [color palette], [key furniture pieces], natural light from large windows, wide-angle architectural photo, realistic materials --ar 3:2
@@ -1946,7 +2363,9 @@ Change one variable at a time (floor, sofa color, lighting) to compare.
 
 ### 210. Use an image as a reference with a weight
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 Attach a reference image URL at the start of the prompt, then add words:
@@ -1958,7 +2377,9 @@ Attach a reference image URL at the start of the prompt, then add words:
 
 ### 211. Pattern and texture for design work
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 seamless pattern of [motif], hand-drawn, [color palette], flat background, repeating tile, no shadows --tile --ar 1:1
@@ -1968,7 +2389,9 @@ Check the edges after upscaling. Small visible seams often need a quick fix in a
 
 ### 212. Retro poster style without copying anyone
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 [subject], vintage travel poster style, bold flat shapes, limited four-color palette, strong silhouettes, textured print grain, large empty area at the top for a title --ar 2:3
@@ -1978,7 +2401,9 @@ Describing the techniques is enough. No need to name a living artist.
 
 ### 213. Macro and miniature scenes
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 macro photo of a tiny [object] world, tilt-shift effect, shallow depth of field, real scale cues like coins or fingers, soft daylight --ar 3:2
@@ -1988,7 +2413,9 @@ Words like "macro", "tilt-shift" and "scale cues" help it commit to a convincing
 
 ### 214. Iterate with variation, not from scratch
 
-**Community:** c/Image_Prompts · **Model tag:** Midjourney
+**Community:** c/Image_Prompts · **Model tag:** Midjourney · **Model slug:** `midjourney`
+
+**Body:**
 
 ~~~~
 When one image is almost right: use Vary (Subtle) to keep composition, Vary (Strong) to change more, and edit the prompt only for the part you dislike. Write down which phrase caused which change so you build your own prompt vocabulary.
@@ -1996,7 +2423,9 @@ When one image is almost right: use Vary (Subtle) to keep composition, Vary (Str
 
 ### 215. Token weighting in Automatic1111-style UIs
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Raise or lower the importance of a phrase with parentheses and a number:
@@ -2008,7 +2437,9 @@ Values above 1.5 often distort the image. Keep changes small and test one at a t
 
 ### 216. Negative prompt starter set for SD 1.5 / SDXL models
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Negative prompt: lowres, blurry, jpeg artifacts, extra fingers, malformed hands, cropped, watermark, text, signature, oversaturated
@@ -2018,7 +2449,9 @@ Adjust per model: some checkpoints respond to short negative prompts better than
 
 ### 217. Flux prompts: write full sentences, skip negative prompts
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Flux-style models respond well to natural language and generally don't use negative prompts. Describe what you want:
@@ -2030,7 +2463,9 @@ Put the most important details first.
 
 ### 218. Pick sampler, steps and CFG sensibly
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 A solid starting point: 25–30 steps, CFG 5–7 for SD 1.5/SDXL. Higher CFG makes the model follow the prompt more strictly but can fry colors. If an image looks overcooked, lower CFG before touching anything else. Change one setting per test and fix the seed to compare.
@@ -2038,7 +2473,9 @@ A solid starting point: 25–30 steps, CFG 5–7 for SD 1.5/SDXL. Higher CFG mak
 
 ### 219. Fix faces and hands with inpainting
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Generate the whole scene first. Then mask only the face (or hand), set denoising strength around 0.3–0.5 so identity is kept, and use a short prompt about just that area: "detailed face, natural skin, sharp eyes". Increase the mask padding if the result looks pasted on.
@@ -2046,7 +2483,9 @@ Generate the whole scene first. Then mask only the face (or hand), set denoising
 
 ### 220. Use img2img to turn a rough sketch into a finished image
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Upload your sketch, write a prompt describing the final look, and start with denoising strength 0.6. Lower keeps your composition; higher gives the model more freedom. Use a ControlNet (scribble or lineart) if you need the layout locked exactly.
@@ -2054,7 +2493,9 @@ Upload your sketch, write a prompt describing the final look, and start with den
 
 ### 221. LoRA basics: trigger words and weights
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Load a LoRA by adding its tag to the prompt, e.g. <lora:name:0.8>, plus its trigger word if the model page lists one. Start at weight 0.6–0.8; above 1.0 often burns the style into everything. Stack LoRAs one at a time so you know which does what.
@@ -2062,7 +2503,9 @@ Load a LoRA by adding its tag to the prompt, e.g. <lora:name:0.8>, plus its trig
 
 ### 222. Upscale without inventing new details
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Generate at a normal size (e.g. 1024 px for SDXL), then use an upscaler model for 2×. For "hires fix" keep denoising at 0.3–0.45 to avoid changing faces or objects. If details turn mushy, try a different upscaler before increasing steps.
@@ -2070,7 +2513,9 @@ Generate at a normal size (e.g. 1024 px for SDXL), then use an upscaler model fo
 
 ### 223. Build consistent style with a fixed prefix
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Keep a prompt prefix that defines your style, and only change the subject:
@@ -2082,7 +2527,9 @@ Save the prefix, seed range and settings with each image so you can rebuild the 
 
 ### 224. Architectural visualization from a plan
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Use a ControlNet with a simple line drawing or depth map of the building, and prompt: "modern [style] house, [materials], golden hour, landscaped garden, architectural photography, wide angle". Lock the geometry with ControlNet strength around 0.8.
@@ -2090,7 +2537,9 @@ Use a ControlNet with a simple line drawing or depth map of the building, and pr
 
 ### 225. Troubleshoot "muddy" results
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Checklist when images look muddy: lower CFG a notch, remove contradictory style words, try a different VAE, shorten the prompt, raise steps a little, and change the sampler. Fix the seed while testing so you can see which change actually helped.
@@ -2098,7 +2547,9 @@ Checklist when images look muddy: lower CFG a notch, remove contradictory style 
 
 ### 226. Compare prompt changes fairly with an X/Y plot
 
-**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux
+**Community:** c/Image_Prompts · **Model tag:** Stable Diffusion / Flux · **Model slug:** `stable-diffusion`
+
+**Body:**
 
 ~~~~
 Use the X/Y/Z plot script to vary one thing across a grid, for example CFG 4, 6, 8 on one axis and sampler on the other, with the seed fixed. A grid lets you see which setting actually causes a difference instead of guessing from separate images.
@@ -2111,7 +2562,9 @@ Literature review, reading papers, experimental design and checking claims again
 
 ### 227. Summarize a paper with its limits attached
 
-**Community:** c/Research_Science · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Research_Science · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 Summarize the paper below in: the question, the method in two sentences, the main result with the actual numbers, three limitations the authors admit or should admit, and what a skeptical reviewer would ask for next. Do not add claims that are not in the text.
@@ -2122,7 +2575,9 @@ Summarize the paper below in: the question, the method in two sentences, the mai
 
 ### 228. Ask Claude to quote before it answers
 
-**Community:** c/Research_Science · **Model tag:** Claude
+**Community:** c/Research_Science · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 For long documents, ask for evidence first:
@@ -2135,7 +2590,9 @@ Read the report below. First extract the exact quotes relevant to the question i
 
 ### 229. Ask a question about a very long document
 
-**Community:** c/Research_Science · **Model tag:** Gemini
+**Community:** c/Research_Science · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 I'm uploading a long document ([pages] pages). Answer only from it. For each answer, give the section or page and a one-line quote that supports it. If the document does not answer the question, say so instead of guessing. Question: [question].
@@ -2143,7 +2600,9 @@ I'm uploading a long document ([pages] pages). Answer only from it. For each ans
 
 ### 230. Ask Grok what people are actually saying about a topic
 
-**Community:** c/Research_Science · **Model tag:** Grok
+**Community:** c/Research_Science · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 Search recent posts on X about [topic] from the last [days] days. Summarize the three main viewpoints, name the types of accounts pushing each (researchers, companies, hobbyists, bots), and show one representative post per viewpoint. Separate verified facts from rumor and tell me which claims lack a source.
@@ -2151,7 +2610,9 @@ Search recent posts on X about [topic] from the last [days] days. Summarize the 
 
 ### 231. Compare two methods in a table
 
-**Community:** c/Research_Science · **Model tag:** Mistral
+**Community:** c/Research_Science · **Model tag:** Mistral · **Model slug:** `mistral`
+
+**Body:**
 
 ~~~~
 Compare [method A] and [method B] in a table with rows: how it works, strengths, weaknesses, typical use, cost, common mistakes. Keep each cell under 15 words. Say where experts disagree.
@@ -2159,7 +2620,9 @@ Compare [method A] and [method B] in a table with rows: how it works, strengths,
 
 ### 232. Work through a hard math problem carefully
 
-**Community:** c/Research_Science · **Model tag:** DeepSeek
+**Community:** c/Research_Science · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Solve the following problem. After you reach an answer, verify it by a second, different method (or by substituting back). If the two disagree, find the error. Give only the final answer and the verification summary, not every step.
@@ -2168,7 +2631,9 @@ Problem: [problem]
 
 ### 233. Critique an experimental design
 
-**Community:** c/Research_Science · **Model tag:** DeepSeek
+**Community:** c/Research_Science · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Here is my experiment design. List threats to internal and external validity, missing controls, the likely sample size needed for [effect size], and what I should preregister. Be specific to this design.
@@ -2177,7 +2642,9 @@ Here is my experiment design. List threats to internal and external validity, mi
 
 ### 234. Long document Q&A with sections cited
 
-**Community:** c/Research_Science · **Model tag:** Qwen
+**Community:** c/Research_Science · **Model tag:** Qwen · **Model slug:** `qwen`
+
+**Body:**
 
 ~~~~
 Read the document and answer the question. Cite each claim as (Section X, Paragraph Y). If a claim has no support, mark it as "not in document". Question: [question].
@@ -2186,7 +2653,9 @@ Read the document and answer the question. Cite each claim as (Section X, Paragr
 
 ### 235. Ask a question that forces cited, recent answers
 
-**Community:** c/Research_Science · **Model tag:** Perplexity
+**Community:** c/Research_Science · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 Use a question shape that rewards sources: "What did [2–3 named sources or institutions] publish about [topic] since [date]? Summarize each source's main finding with a link and note where they disagree." Then check the links yourself.
@@ -2194,7 +2663,9 @@ Use a question shape that rewards sources: "What did [2–3 named sources or ins
 
 ### 236. Compare studies on a contested question
 
-**Community:** c/Research_Science · **Model tag:** Perplexity
+**Community:** c/Research_Science · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 What does the research say about [question]? List the strongest studies on each side with sample size and year, say which kind of evidence each is (RCT, cohort, review), and explain why they may disagree. Link every claim.
@@ -2202,7 +2673,9 @@ What does the research say about [question]? List the strongest studies on each 
 
 ### 237. Find primary sources for a claim
 
-**Community:** c/Research_Science · **Model tag:** Perplexity
+**Community:** c/Research_Science · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 I saw the claim "[claim]". Find the original source (paper, dataset, filing, speech) rather than articles about it. Give the link, the exact wording there, and any part the claim exaggerates or leaves out.
@@ -2210,7 +2683,9 @@ I saw the claim "[claim]". Find the original source (paper, dataset, filing, spe
 
 ### 238. Chunk long documents for a small context window
 
-**Community:** c/Research_Science · **Model tag:** Open-source & local
+**Community:** c/Research_Science · **Model tag:** Open-source & local · **Model slug:** `local`
+
+**Body:**
 
 ~~~~
 If the model's context is 8k tokens, split a long text into ~1,500-word chunks. Summarize each chunk with the same prompt, then summarize the summaries. Ask for "key claims with page references" at each stage so nothing important is lost.
@@ -2218,7 +2693,9 @@ If the model's context is 8k tokens, split a long text into ~1,500-word chunks. 
 
 ### 239. Make the model separate fact from inference
 
-**Community:** c/Research_Science · **Model tag:** Multi-model / General
+**Community:** c/Research_Science · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Answer in two sections: "What the source says" (direct statements only, with locations) and "What I'm inferring" (conclusions that go beyond the text). Mark confidence as high, medium or low for each inference.
@@ -2227,7 +2704,9 @@ Answer in two sections: "What the source says" (direct statements only, with loc
 
 ### 240. Put the long document first, the question last
 
-**Community:** c/Research_Science · **Model tag:** Claude
+**Community:** c/Research_Science · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 With long inputs, place the material at the top and your question at the end:
@@ -2246,7 +2725,9 @@ Thinking tools and mental models: pre-mortems, inversion, trade-offs and honest 
 
 ### 241. Argue against my plan
 
-**Community:** c/Decision_Making · **Model tag:** ChatGPT / OpenAI
+**Community:** c/Decision_Making · **Model tag:** ChatGPT / OpenAI · **Model slug:** `chatgpt`
+
+**Body:**
 
 ~~~~
 I'm planning to [decision]. Steelman the strongest case against it in five points. Then tell me which assumptions I'm making that I have not verified, and what evidence would change your mind either way. Be blunt, not harsh.
@@ -2254,7 +2735,9 @@ I'm planning to [decision]. Steelman the strongest case against it in five point
 
 ### 242. Think out loud before deciding
 
-**Community:** c/Decision_Making · **Model tag:** Claude
+**Community:** c/Decision_Making · **Model tag:** Claude · **Model slug:** `claude`
+
+**Body:**
 
 ~~~~
 Before you answer, reason through the problem step by step inside <thinking> tags: list the options, the criteria that matter, and the evidence for each. Then give your recommendation in <answer> tags in three sentences. Problem: [problem].
@@ -2262,7 +2745,9 @@ Before you answer, reason through the problem step by step inside <thinking> tag
 
 ### 243. Compare options with a weighted matrix
 
-**Community:** c/Decision_Making · **Model tag:** Gemini
+**Community:** c/Decision_Making · **Model tag:** Gemini · **Model slug:** `gemini`
+
+**Body:**
 
 ~~~~
 Help me choose between [options]. Ask me for the 5–7 criteria that matter and weights that sum to 100. Score each option 1–5 per criterion with a one-line reason, show the weighted totals in a table, then tell me what would flip the ranking.
@@ -2270,7 +2755,9 @@ Help me choose between [options]. Ask me for the 5–7 criteria that matter and 
 
 ### 244. Play devil's advocate with attitude
 
-**Community:** c/Decision_Making · **Model tag:** Grok
+**Community:** c/Decision_Making · **Model tag:** Grok · **Model slug:** `grok`
+
+**Body:**
 
 ~~~~
 I'm about to [decision]. Take the opposite side and argue it like a sharp friend who has seen this go wrong: three reasons it might fail, one thing I'm in denial about, and one honest question I'd rather not answer. No hedging, but no cruelty.
@@ -2278,7 +2765,9 @@ I'm about to [decision]. Take the opposite side and argue it like a sharp friend
 
 ### 245. Pros and cons with weights
 
-**Community:** c/Decision_Making · **Model tag:** Llama / Meta AI
+**Community:** c/Decision_Making · **Model tag:** Llama / Meta AI · **Model slug:** `llama`
+
+**Body:**
 
 ~~~~
 Decision: [decision]. List up to five pros and five cons. Give each a weight 1–5 for how much it matters. Add up both sides and show the totals. Then name one factor missing from my list.
@@ -2286,7 +2775,9 @@ Decision: [decision]. List up to five pros and five cons. Give each a weight 1�
 
 ### 246. Expected value of a risky choice
 
-**Community:** c/Decision_Making · **Model tag:** DeepSeek
+**Community:** c/Decision_Making · **Model tag:** DeepSeek · **Model slug:** `deepseek`
+
+**Body:**
 
 ~~~~
 Option A: [outcome and probability]. Option B: [outcome and probability]. Compute the expected value for each, then show how the ranking changes if my probability estimates are off by 10 points. State what the expected value ignores (risk tolerance, ruin).
@@ -2294,7 +2785,9 @@ Option A: [outcome and probability]. Option B: [outcome and probability]. Comput
 
 ### 247. Gather evidence on both sides
 
-**Community:** c/Decision_Making · **Model tag:** Perplexity
+**Community:** c/Decision_Making · **Model tag:** Perplexity · **Model slug:** `perplexity`
+
+**Body:**
 
 ~~~~
 I'm deciding whether to [decision]. Gather the best evidence for and against from credible sources, including real-world case studies and data. For each point give a source and how strong it is. Finish with what I'd need to know about my own situation.
@@ -2302,7 +2795,9 @@ I'm deciding whether to [decision]. Gather the best evidence for and against fro
 
 ### 248. Inversion: how would this fail?
 
-**Community:** c/Decision_Making · **Model tag:** Multi-model / General
+**Community:** c/Decision_Making · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Instead of asking how to succeed at [goal], tell me how to guarantee failure. List the ten most reliable ways. Then flip each into a rule I should follow and mark the three that I'm currently most at risk of breaking.
@@ -2310,7 +2805,9 @@ Instead of asking how to succeed at [goal], tell me how to guarantee failure. Li
 
 ### 249. Second-order effects
 
-**Community:** c/Decision_Making · **Model tag:** Multi-model / General
+**Community:** c/Decision_Making · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 I'm considering [decision]. List the likely first-order effects, then second-order and third-order effects, in 6, 12 and 36 months. Mark which are certain, likely or speculative, and which would be hard to reverse.
@@ -2318,7 +2815,9 @@ I'm considering [decision]. List the likely first-order effects, then second-ord
 
 ### 250. Regret minimization check
 
-**Community:** c/Decision_Making · **Model tag:** Multi-model / General
+**Community:** c/Decision_Making · **Model tag:** Multi-model / General · **Model slug:** `general`
+
+**Body:**
 
 ~~~~
 Imagine I'm 80 looking back. For [decision], describe what I'd likely regret about doing it, and what I'd regret about not doing it. Then ask me three questions to clarify which regret is bigger.

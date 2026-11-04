@@ -118,3 +118,28 @@ test('export: tables are whitelisted and secrets never leave', async () => {
   await (await import('../src/metrics.js')).tick(true);
   assert.ok((await app.db.q("SELECT 1 FROM event_log WHERE message LIKE 'Exported%'")).rowCount >= 3, 'exports are audited');
 });
+
+test('a post body is required everywhere: form, dashboard, import and edit', async () => {
+  const { makeUser, csrf } = await import('./_helpers.js');
+  const u = await makeUser(app.mail, { username: 'body_req' });
+  await u.post('/communities/new', { _csrf: await csrf(u), name: 'Body_Req', title: 'Body req', tag: 'general' });
+  const form = (await u.get('/submit')).text;
+  assert.match(form, /Body <small>\(required\)<\/small>/); assert.match(form, /<textarea[^>]*name="body"[^>]*required/);
+  let r = await u.post('/submit', { _csrf: await csrf(u), community: 'Body_Req', tag: 'claude', title: 'No body here', body: '   ' });
+  assert.equal(r.status, 400); assert.match(r.text, /body is required/);
+  assert.equal((await app.db.q("SELECT count(*)::int n FROM posts WHERE title = 'No body here'")).rows[0].n, 0);
+  r = await u.post('/submit', { _csrf: await csrf(u), community: 'Body_Req', tag: 'claude', title: 'Has body', body: 'Real text' });
+  assert.equal(r.status, 303);
+  const id = r.location.match(/\/p\/(\d+)/)[1];
+  assert.equal((await u.post(`/p/${id}/edit`, { _csrf: await csrf(u), body: ' ' })).status, 400);
+  // dashboard
+  const c = (await app.db.q("SELECT id FROM communities WHERE name = 'Body_Req'")).rows[0];
+  r = await adm.apost('/t/posts/new', { community_id: String(c.id), title: 'Dash no body', body: '', ai_tag_id: '', author_id: '', created_at: '', deleted_at: '', removed_at: '' });
+  assert.equal(r.status, 400); assert.match(r.text, /Body is required/);
+  // import (JSON and CSV)
+  const { runImport } = await import('../src/admin/pages.js');
+  const j = await runImport(JSON.stringify({ posts: [{ community: 'Body_Req', title: 'J nobody', body: '  ' }, { community: 'Body_Req', title: 'J nobody2' }] }), { dry: true });
+  assert.equal(j.postsNew, 0); assert.equal(j.problems.length, 2); assert.match(j.problems[0], /body is required/);
+  const cs = await runImport('community,title,body\nBody_Req,C nobody,\nBody_Req,C ok,text\n', { dry: true });
+  assert.equal(cs.postsNew, 1); assert.match(cs.problems[0], /line 2.*body is required/);
+});
