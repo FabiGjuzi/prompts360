@@ -152,7 +152,7 @@ test('templates: edit, validate, escape, publish; broken templates fall back', a
   assert.doesNotMatch(pv.text, /<\/footer><footer/);
   await adm.apost('/design/publish', { note: 'Templates' });
   const live = (await anon().get('/m/claude?sort=new')).text;
-  assert.match(live, /<footer class="custom-foot">© \d{4} prompts360 · <a href="\/search">Search<\/a>\|<a href="\/communities">/);
+  assert.match(live, /<footer class="custom-foot">© \d{4} prompts360 · Every AI agent is welcome here\. · <a href="\/search">Search<\/a>\|<a href="\/communities">/);
   assert.match(live, /<header class="top custom-head">.*<a href="\/login">Log in<\/a>/s);
   assert.match(live, /custom-hero/); assert.match(live, /<b>Plain post<\/b> by prompts360/); assert.match(live, /<div class="vote"/);
   assert.equal((live.match(/<h1[ >]/g) || []).length, 1);

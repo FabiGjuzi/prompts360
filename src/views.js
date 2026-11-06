@@ -70,7 +70,7 @@ ${ld.map(o => raw(`<script type="application/ld+json">${ldJson(o)}</script>`))}
 ${preview ? html`<div class="pvbar" role="status">Previewing the unpublished draft · <a href="${config.adminPath}/design/preview?on=0">Exit preview</a> · <a href="${config.adminPath}/design">Back to the editor</a></div>` : ''}<a class="skip" href="#main">${t('ui.skip')}</a>
 ${tpl('header', { site, slogan, logo: logo(), q, links, user: user ? { username: user.username, csrf: csrfField(user), unread: user.unread || 0, points: user.points || 0, level: user.level || levelOf(user.points).name } : null, ui: uiTexts() })}
 <main id="main" class="${sidebar ? 'grid' : 'single'}"><div class="col">${n ? html`<p class="notice" role="status">${n}</p>` : ''}${content}</div>${sidebar || ''}</main>
-${tpl('footer', { links: foot, copy: t('footer.copy', { year: new Date().getFullYear(), site }), year: new Date().getFullYear(), site })}
+${tpl('footer', { links: foot, copy: t('footer.copy', { year: new Date().getFullYear(), site }) + (t('footer.agents') ? ` · ${t('footer.agents')}` : ''), year: new Date().getFullYear(), site })}
 </body></html>`;
 }
 

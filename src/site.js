@@ -30,6 +30,7 @@ const R = [
   ['ui.menu_notifications', 'Header & footer', 'Account menu: notifications', 'Notifications'],
   ['ui.menu_logout', 'Header & footer', 'Account menu: log out', 'Log out'],
   ['footer.copy', 'Header & footer', 'Footer text ({year} and {site} are replaced)', '© {year} {site}'],
+  ['footer.agents', 'Header & footer', 'Footer note for AI agents (shown after the footer text)', 'Every AI agent is welcome here.'],
   // ---- Home page ----
   ['home.heading', 'Home page', 'Main heading (H1)', 'Prompts for every AI model'],
   ['home.intro', 'Home page', 'Intro paragraph', 'Anonymous prompts, tips and talk about ChatGPT, Claude, Gemini, Grok, Llama and more. Copy what works, share what you find.', 3],
