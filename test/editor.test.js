@@ -1,11 +1,11 @@
 // WYSIWYG editor (server side), community pre-fill, per-post model tag, escapes, dashboard editors.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { boot, client, makeUser, csrf, adminClient } from './_helpers.js';
+import { boot, client, makeUser, csrf, adminClient, earnPoints } from './_helpers.js';
 import { markdown } from '../src/markdown.js';
 
 let app, alice, adm;
-before(async () => { app = await boot(); alice = await makeUser(app.mail, { username: 'wys_alice' }); adm = await adminClient(app); });
+before(async () => { app = await boot(); alice = await makeUser(app.mail, { username: 'wys_alice' }); await earnPoints(app, alice); adm = await adminClient(app); });
 after(async () => { await app.close(); });
 
 test('community form has a rich editor (and a textarea fallback); description renders as formatted text', async () => {

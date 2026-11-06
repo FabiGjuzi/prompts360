@@ -9,6 +9,7 @@
 import crypto from 'node:crypto';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { q } from './db.js';
+import { recalc } from './points.js';
 
 // Latency histogram: upper bounds in ms (bucket 7 = slower than the last bound).
 export const BOUNDS = [10, 25, 50, 100, 250, 500, 1000];
@@ -233,6 +234,7 @@ export async function prunetables() {
   await q(`DELETE FROM event_log WHERE ts < now() - interval '60 days'`);
   await q(`DELETE FROM notifications WHERE created_at < now() - interval '90 days'`);
   await q(`DELETE FROM event_log WHERE id < (SELECT coalesce(max(id), 0) - 100000 FROM event_log)`);
+  await recalc(null);   // hourly safety net: re-derive every user's points (catches any change made outside the app)
 }
 
 let timer;

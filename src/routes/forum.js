@@ -13,6 +13,7 @@ import { html, safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
 import { plain } from '../markdown.js';
+import { recalc, relatedToPost, relatedToComment, levelOf, COMMUNITY_MIN, POINTS } from '../points.js';
 
 // ---------- AI tags (tiny table, cached in-process) ----------
 // In-process copy of the AI tags: when it was loaded, and the rows.
@@ -36,7 +37,7 @@ const REPOST_COLS = `p.repost_of, o.id AS o_id, o.title AS o_title, left(o.body,
   (p.repost_of IS NOT NULL AND (o.id IS NULL OR o.deleted_at IS NOT NULL OR o.removed_at IS NOT NULL OR oc.removed_at IS NOT NULL)) AS o_gone,
   (SELECT count(*)::int FROM posts r WHERE r.repost_of = p.id AND r.deleted_at IS NULL AND r.removed_at IS NULL) AS reposts`;
 const POST_COLS = `p.id, p.title, p.url, p.score, p.comment_count, p.created_at, p.hot, left(p.body, 300) AS excerpt,
-  c.name AS community, t.slug AS tag_slug, t.name AS tag_name, CASE WHEN u.deleted_at IS NULL THEN u.username END AS author,
+  c.name AS community, t.slug AS tag_slug, t.name AS tag_name, CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, u.points AS author_points,
   ${REPOST_COLS}`;
 const POST_FROM = `FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
   LEFT JOIN users u ON u.id = p.author_id
@@ -232,14 +233,19 @@ async function communitiesList(req, res) {
 
 /** GET /communities/new — the create-community form. */
 async function communityNewGet(req, res) {
-  return page(req, res, { title: 'Create a community', content: V.communityForm({ user: req.user, tags: await tags() }) });
+  await recalc([req.user.id]);
+  const { points } = await one('SELECT points FROM users WHERE id = $1', [req.user.id]);
+  return page(req, res, { title: 'Create a community', content: V.communityForm({ user: req.user, tags: await tags(), points }) });
 }
 /** POST /communities/new — validate and create a community (3 per user per day). */
 async function communityNewPost(req, res) {
   const b = req.body;
   const v = { name: str(b.name, 21).trim(), title: str(b.title, 100).trim(), description: str(b.description, 4000).trim(), tag: str(b.tag, 30) };
-  const bad = (error, status = 400) => page(req, res, { status, title: 'Create a community', content: V.communityForm({ user: req.user, tags: allTags, v, error }) });
   const allTags = await tags();
+  await recalc([req.user.id]);   // exact total at the moment of the check (also picks up admin edits)
+  const { points } = await one('SELECT points FROM users WHERE id = $1', [req.user.id]);
+  const bad = (error, status = 400) => page(req, res, { status, title: 'Create a community', content: V.communityForm({ user: req.user, tags: allTags, v, error, points }) });
+  if (points < COMMUNITY_MIN) return bad(`You need ${COMMUNITY_MIN} points to create a community (you have ${points}).`, 403);
   const rl = await hit(`community:${req.user.id}`, ...LIMITS.community);
   if (!rl.ok) return bad('You can create up to 3 communities per day.', 429);
   if (!COMMUNITY_RE.test(v.name)) return bad('Name must be 3–21 letters, numbers or underscores.');
@@ -296,6 +302,7 @@ async function submitPost(req, res) {
     await db.query('UPDATE communities SET post_count = post_count + 1 WHERE id = $1', [c.id]);
     return p.id;
   });
+  await recalc([req.user.id]);
   return redirect(res, `/p/${id}/${slugify(v.title)}`);
 }
 
@@ -304,7 +311,7 @@ async function postPage(req, res, [idStr]) {
   const id = Number(idStr);
   const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at,
       p.deleted_at, coalesce(p.removed_at, c.removed_at) AS removed_at, c.name AS community, t.slug AS tag_slug, t.name AS tag_name,
-      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, ${REPOST_COLS}
+      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, u.points AS author_points, ${REPOST_COLS}
     ${POST_FROM} WHERE p.id = $1`, [id]);
   if (!post) throw new HttpError(404, 'That post doesn’t exist.');
   const gonePost = Boolean(post.removed_at || post.deleted_at);
@@ -314,7 +321,7 @@ async function postPage(req, res, [idStr]) {
   const sort = req.query.get('sort') === 'new' ? 'new' : 'best';
   // Logged-in readers use the primary so their own fresh comment is never missing due to replica lag.
   const { rows } = await (req.user ? q : qr)(`SELECT cm.id, cm.parent_id, cm.body, cm.score, cm.created_at, cm.edited_at, cm.deleted_at, cm.removed_at,
-      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author
+      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, u.points AS author_points
     FROM comments cm LEFT JOIN users u ON u.id = cm.author_id WHERE cm.post_id = $1
     ORDER BY ${sort === 'new' ? 'cm.id DESC' : 'cm.score DESC, cm.id'} LIMIT 2000`, [id]);
   const byId = new Map(rows.map(r => [r.id, { ...r, children: [] }]));
@@ -370,6 +377,7 @@ async function postDelete(req, res, [idStr]) {
     return true;
   });
   if (!ok) throw new HttpError(403, 'You can only delete your own posts.');
+  await recalc(await relatedToPost(id));   // the post's points, and the points others earned on it, are taken back
   return redirect(res, `/p/${id}?n=deleted`);
 }
 
@@ -406,9 +414,10 @@ async function repostCreate(req, res, [idStr]) {
     }
     if (root.author_id && root.author_id !== req.user.id)
       await db.query(`INSERT INTO notifications (user_id, kind, actor_id, post_id) VALUES ($1, 'repost', $2, $3)`, [root.author_id, req.user.id, p.id]);
-    return p.id;
+    return { id: p.id, authorId: root.author_id };
   });
-  return redirect(res, `/p/${id}?n=reposted`);
+  await recalc([req.user.id, id.authorId]);
+  return redirect(res, `/p/${id.id}?n=reposted`);
 }
 
 /** GET /reposts/:id — everyone who reposted a post (newest first). */
@@ -427,6 +436,10 @@ async function repostsPage(req, res, [idStr]) {
 /** Unread notification count for the header badge. */
 export async function unreadCount(userId) {
   return (await q('SELECT count(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [userId])).rows[0].n;
+}
+/** Header data for a logged-in user: unread notifications and points (read from the primary so it is never stale). */
+export async function userStats(userId) {
+  return (await one(`SELECT points, (SELECT count(*)::int FROM notifications WHERE user_id = $1 AND read_at IS NULL) AS unread FROM users WHERE id = $1`, [userId])) || { points: 0, unread: 0 };
 }
 /** GET /notifications — the latest 50, then mark everything read. */
 async function notificationsPage(req, res) {
@@ -464,6 +477,7 @@ async function commentCreate(req, res, [idStr]) {
     await db.query('UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1', [postId]);
     return c.id;
   });
+  await recalc([req.user.id]);
   return redirect(res, `/p/${postId}#c${id}`);
 }
 
@@ -485,6 +499,7 @@ async function commentDelete(req, res, [idStr]) {
   const r = await q(`UPDATE comments SET body = '[deleted]', deleted_at = now() WHERE id = $1 AND author_id = $2
     AND deleted_at IS NULL RETURNING post_id`, [id, req.user.id]);
   if (!r.rowCount) throw new HttpError(403, 'You can only delete your own comments.');
+  await recalc(await relatedToComment(id));
   return redirect(res, `/p/${r.rows[0].post_id}?n=deleted`);
 }
 
@@ -500,9 +515,10 @@ async function vote(req, res) {
   if (!T || !id || dir === undefined) throw new HttpError(400, 'Bad vote.');
   const rl = await hit(`vote:${req.user.id}`, ...LIMITS.vote);
   if (!rl.ok) throw new HttpError(429, 'You’re voting too fast.');
+  let authorId;
   const result = await tx(async db => {
     // Lock the target row: serialises concurrent votes on it, so score can never drift.
-    const row = (await db.query(`SELECT score FROM ${T.t} WHERE id = $1 AND deleted_at IS NULL AND removed_at IS NULL FOR NO KEY UPDATE`, [id])).rows[0];
+    const row = (await db.query(`SELECT score, author_id FROM ${T.t} WHERE id = $1 AND deleted_at IS NULL AND removed_at IS NULL FOR NO KEY UPDATE`, [id])).rows[0];
     if (!row) throw new HttpError(404, 'That’s gone.');
     const prev = (await db.query(`SELECT value FROM ${T.v} WHERE user_id = $1 AND ${T.k} = $2`, [req.user.id, id])).rows[0]?.value || 0;
     if (prev === dir) return { score: row.score, vote: dir };
@@ -510,8 +526,10 @@ async function vote(req, res) {
     else await db.query(`INSERT INTO ${T.v} (user_id, ${T.k}, value) VALUES ($1, $2, $3)
       ON CONFLICT (user_id, ${T.k}) DO UPDATE SET value = EXCLUDED.value`, [req.user.id, id, dir]);
     const { rows: [u] } = await db.query(T.upd, [id, dir - prev]);
+    authorId = row.author_id;
     return { score: u.score, vote: dir };
   });
+  if (authorId !== undefined) await recalc([req.user.id, authorId]);
   if (req.headers['x-requested-with'] === 'fetch') return json(req, res, 200, result);
   return redirect(res, safeBack(b.back, '/'));
 }
@@ -535,7 +553,7 @@ async function report(req, res) {
 // ---------- Profiles & search ----------
 /** GET /u/:name — a user's public profile with their posts or comments. */
 async function profile(req, res, [name]) {
-  const prof = await one('SELECT id, username, created_at, banned_at FROM users WHERE lower(username) = lower($1) AND deleted_at IS NULL AND verified_at IS NOT NULL', [name]);
+  const prof = await one('SELECT id, username, created_at, banned_at, points FROM users WHERE lower(username) = lower($1) AND deleted_at IS NULL AND verified_at IS NOT NULL', [name]);
   if (!prof) throw new HttpError(404, 'No such user.');
   const tab = req.query.get('tab') === 'comments' ? 'comments' : 'posts';
   const base = `/u/${prof.username}`;

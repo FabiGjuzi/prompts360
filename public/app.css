@@ -123,3 +123,9 @@ footer nav{justify-content:center;flex-wrap:wrap;gap:0 6px}footer a{color:var(--
 .rp{color:var(--mu);font-weight:600}.post.repost>.body>.ex{color:var(--tx)}
 .badge{display:inline-block;min-width:1.3em;padding:0 .35em;border-radius:999px;background:var(--ac);color:#fff;font-size:12px;line-height:1.5;text-align:center}
 .notifs{list-style:none;margin:0;padding:0}.notifs li{padding:.6rem .4rem;border-bottom:1px solid var(--bd)}.notifs li.unread{background:var(--hl);font-weight:600}
+
+.lvl{display:inline-block;padding:0 .5em;border-radius:999px;background:var(--hl);border:1px solid var(--bd);color:var(--mu);font-size:11px;font-weight:600;line-height:1.6;vertical-align:1px}
+.lvlbox{margin:.5em 0 0}.lvlbox .lvl{font-size:13px}
+.menu>div .pts{padding:6px 10px 8px;border-bottom:1px solid var(--bd);margin-bottom:4px;color:var(--mu);font-size:13px}
+fieldset.plain{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:inherit}fieldset.plain:disabled{opacity:.55}
+progress{vertical-align:middle;width:140px;height:8px;accent-color:var(--ac)}

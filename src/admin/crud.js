@@ -130,9 +130,9 @@ export const TABLES = {
     afterDelete: (db, row) => recountComments(db, row.post_id),
   },
   users: {
-    label: 'Users', pk: ['id'], list: ['id', 'username', 'verified_at', 'banned_at', 'deleted_at', 'created_at'], search: ['username'], order: 'id DESC', noCreate: true, view: r => `/u/${r.username}`,
+    label: 'Users', pk: ['id'], list: ['id', 'username', 'points', 'verified_at', 'banned_at', 'deleted_at', 'created_at'], search: ['username'], order: 'id DESC', noCreate: true, view: r => `/u/${r.username}`,
     cols: [text('username', 'Username', { req: true, max: 20, pattern: /^[A-Za-z0-9_-]{3,20}$/ }), ts('verified_at', 'Email verified at (UTC)'), ts('banned_at', 'Banned at (UTC; set to ban and sign out everywhere)'),
-      ts('deleted_at', 'Deleted at (UTC)'), ro('created_at', 'Joined', 'ts')],
+      ts('deleted_at', 'Deleted at (UTC)'), ro('points', 'Points (derived from activity, read-only)', 'int'), ro('created_at', 'Joined', 'ts')],
     after: async (db, row) => { if (row.banned_at || row.deleted_at) await destroyAllSessions(row.id); },
     protect: async row => { if (row.username === 'prompts360') throw new Problem('The site account cannot be changed or deleted.'); },
     afterDelete: async (db, row) => { await destroyAllSessions(row.id); },

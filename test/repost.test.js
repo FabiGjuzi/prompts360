@@ -1,7 +1,7 @@
 // Reposts (quote posts) and notifications.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { boot, client, makeUser, csrf, adminClient, flushLimits } from './_helpers.js';
+import { boot, client, makeUser, csrf, adminClient, flushLimits, earnPoints } from './_helpers.js';
 
 let app, alice, bob, carol, dan, adm, orig, origUrl;
 const one = async (sql, p = []) => (await app.db.q(sql, p)).rows[0];
@@ -10,6 +10,7 @@ const repost = async (u, id, body = '') => u.post(`/p/${id}/repost`, { _csrf: aw
 before(async () => {
   app = await boot(); adm = await adminClient(app);
   [alice, bob, carol, dan] = await Promise.all(['rp_alice', 'rp_bob', 'rp_carol', 'rp_dan'].map(n => makeUser(app.mail, { username: n })));
+  await earnPoints(app, alice);
   const t = await csrf(alice);
   await alice.post('/communities/new', { _csrf: t, name: 'Repost_Test', title: 'Repost test', tag: 'general' });
   const r = await alice.post('/submit', { _csrf: await csrf(alice), community: 'Repost_Test', tag: 'gemini', title: 'Original prompt about foxes', body: 'Write a **story** about a fox who learns to code.' });

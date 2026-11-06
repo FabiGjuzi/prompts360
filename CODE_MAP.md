@@ -428,3 +428,10 @@ Rate-limit names (`ratelimit.js LIMITS`): `signup`, `login`, `loginfail`, `forgo
 - `migrations/006_repost.sql`: `posts.repost_of` (FK, ON DELETE SET NULL; one live repost per user per original) and the `notifications` table.
 - `src/routes/forum.js`: `repostCreate` (POST `/p/:id/repost`), `repostsPage` (GET `/reposts/:id`), `notificationsPage` (GET `/notifications`), `unreadCount(userId)`. A repost always points at the root original (no nesting), takes its community and model tag, adds one upvote to the original per person, and notifies the original author (not for own posts). `REPOST_COLS` joins the original as `o_*` columns for the quote card.
 - `src/views.js`: `quoteCard`, `repostForm`, `notificationsPage`. Reposts are noindex, left out of the sitemap, search and CSV content export.
+
+## Points and levels
+- `migrations/007_points.sql`: `users.points` (cache), `created_at` on both vote tables (existing votes stay NULL = never count), `points_epoch` (the start date: everyone started at 0), views `live_posts` / `live_comments`.
+- `src/points.js`: `POINTS` (vote 1, comment 2, post 5, share 2), `COMMUNITY_MIN` (150), `TIERS` (Newcomer 0, Explorer 25, Contributor 75, Builder 150, Expert 500, Legend 1500), `levelOf(points)`, `recalc(ids|null)`, `relatedToPost`, `relatedToComment`. Points are DERIVED from live activity by one SQL query, so deleting/removing content or clearing a vote takes its points back automatically; `users.points` is only a cache.
+- Recalculated after: post, comment, vote, repost, post/comment delete, account deletion (everyone), any dashboard POST (everyone), and hourly (everyone, in `prunetables`).
+- Gate: `communityNewGet` / `communityNewPost` in `src/routes/forum.js` (recalc first, 403 below 150). The dashboard's own community form is not gated.
+- Display: header menu (`user.level`, `user.points` from `userStats`), profile (`levelBox`), level badge next to author names (`author(name, points)`, `author_level` in the post card template).

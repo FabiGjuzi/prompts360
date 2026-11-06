@@ -14,6 +14,7 @@ import { verifyHuman, turnstileEnabled } from '../turnstile.js';
 import { queueEmail, templates } from '../mail.js';
 import { page, redirect, str } from '../http.js';
 import * as V from '../views.js';
+import { recalc } from '../points.js';
 import { html, safeBack } from '../html.js';
 import { genAnonName, usernameProblem, emailOk, passwordProblem, ANON_RE } from '../validate.js';
 
@@ -279,6 +280,7 @@ async function settingsDelete(req, res) {
     await db.query(`UPDATE comments SET body = '[deleted]', deleted_at = coalesce(deleted_at, now()) WHERE author_id = $1`, [user.id]);
     await db.query(`DELETE FROM auth_tokens WHERE user_id = $1`, [user.id]);
   });
+  await recalc(null);   // their content is gone, so points others earned on it go too
   await destroyAllSessions(user.id);
   res.setHeader('Set-Cookie', clearCookieHeader());
   return redirect(res, '/?n=accountdeleted');

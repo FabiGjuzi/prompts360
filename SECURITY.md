@@ -69,3 +69,6 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 
 ## Reposts and notifications
 Reposting is POST-only with CSRF, per-user rate limits and a unique index (one repost per user per original), so it cannot be used to inflate a score more than once per person. The optional comment goes through the same sanitiser as post bodies. Notifications are visible only to their owner (`auth: 'user'`, filtered by `user_id`) and are pruned after 90 days. Reposts are noindex and excluded from the sitemap.
+
+## Points and levels
+Points cannot be set by users: they are recomputed server-side from live content (no client input). Anti-farming: nothing for your own posts/comments' votes or reposts, one vote per person per item (a vote toggle cannot be repeated for points), a repost's automatic upvote is not a vote, and a user's own comment on their own post earns nothing. The 150-point community gate is enforced on the server (POST returns 403), not just in the form. The existing per-user rate limits (posts, comments, votes, communities) still bound how fast points can be earned. Remaining risk: coordinated accounts voting for each other; watch the dashboard Users list (points column) and Reports.

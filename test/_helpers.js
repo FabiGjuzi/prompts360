@@ -129,3 +129,20 @@ export async function adminClient(app, password = ADMIN_PW) {
   c.apost = (path, form, o) => c.post(`${ADMIN}${path}`, { _csrf: c.csrf, ...form }, o);
   return c;
 }
+
+/** Give a test user real points the legitimate way (live comments are worth 2 each), so community creation is allowed.
+ *  Uses one hidden farm post by the site account; direct SQL, so no rate limits and no feed changes beyond that one post. */
+export async function earnPoints(app, user, points = 150) {
+  const q = (s, p) => app.db.q(s, p);
+  const u = (await q('SELECT id FROM users WHERE lower(username) = lower($1)', [user.username])).rows[0].id;
+  let farm = (await q("SELECT p.id FROM posts p JOIN communities c ON c.id = p.community_id WHERE c.name = 'Points_Farm' LIMIT 1")).rows[0];
+  if (!farm) {
+    const site = (await q("SELECT id FROM users WHERE username = 'prompts360'")).rows[0]?.id ?? (await q('SELECT min(id) AS id FROM users')).rows[0].id;
+    const tag = (await q('SELECT id FROM ai_tags ORDER BY id LIMIT 1')).rows[0].id;
+    const c = (await q("INSERT INTO communities (name, title, ai_tag_id, creator_id) VALUES ('Points_Farm', 'Points farm', $1, $2) RETURNING id", [tag, site])).rows[0].id;
+    farm = (await q("INSERT INTO posts (community_id, ai_tag_id, author_id, title, body, score, hot) VALUES ($1, $2, $3, 'Points farm', 'x', 1, 0) RETURNING id", [c, tag, site])).rows[0];
+  }
+  await q("INSERT INTO comments (post_id, author_id, depth, body) SELECT $1, $2, 0, 'c' FROM generate_series(1, $3::int)", [farm.id, u, Math.ceil(points / 2)]);
+  const { recalc } = await import('../src/points.js');
+  await recalc([u]);
+}

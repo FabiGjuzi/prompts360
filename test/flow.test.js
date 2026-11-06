@@ -2,7 +2,7 @@
 // signup/verify/login, communities, posts, comments, votes, moderation, recovery, account deletion.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { boot, client, field, makeUser, login, csrf, PW, adminClient, ADMIN } from './_helpers.js';
+import { boot, client, field, makeUser, login, csrf, PW, adminClient, ADMIN, earnPoints } from './_helpers.js';
 
 let app, alice, bob;
 before(async () => { app = await boot(); });
@@ -80,6 +80,7 @@ test('session cookie: HttpOnly, SameSite, no Max-Age (ends with browser); logged
 
 let postId;
 test('communities, posts, comments, replies, votes', async () => {
+  await earnPoints(app, alice);
   const t = await csrf(alice);
   let r = await alice.post('/communities/new', { _csrf: t, name: 'claude_prompts', title: 'Claude prompts', description: 'Share prompts for Claude', tag: 'claude' });
   assert.equal(r.status, 303);
@@ -133,6 +134,7 @@ test('only authors can edit/delete; IDOR blocked', async () => {
   assert.match((await client().getf(`/p/${postId}`)).text, /Edited body/);
 });
 
+// 62 = 60 bulk posts + the test's own post + the hidden Points_Farm post that earnPoints() creates.
 test('feeds paginate with keyset cursors and no duplicates', async () => {
   const t = await csrf(alice);
   const { rows: [c] } = await app.db.q("SELECT id, ai_tag_id FROM communities WHERE name = 'claude_prompts'");
@@ -150,7 +152,7 @@ test('feeds paginate with keyset cursors and no duplicates', async () => {
       url = r.text.match(/href="([^"]+)" rel="next"/)?.[1]?.replace(/&amp;/g, '&');
       pages++;
     }
-    assert.equal(seen.size, 61, `${sort} feed should list every post exactly once`);
+    assert.equal(seen.size, 62, `${sort} feed should list every post exactly once`);
   }
   void t;
 });

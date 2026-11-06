@@ -7,6 +7,7 @@ import { tpl, current as design, isPreview } from './design.js';
 import { config } from './config.js';
 import { assets } from './assets.js';
 import { t, nav, siteName } from './site.js';
+import { levelOf, COMMUNITY_MIN, TIERS } from './points.js';
 
 // Flash messages shown after a redirect (?n=<key>); only keys 'n.<key>' that exist in the texts registry are ever displayed.
 const NOTICE_KEYS = new Set(['verified', 'reset', 'pwchanged', 'logout', 'deleted', 'removed', 'reported', 'community', 'edited', 'reposted', 'accountdeleted']);
@@ -64,7 +65,7 @@ ${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cl
 ${ld.map(o => raw(`<script type="application/ld+json">${ldJson(o)}</script>`))}
 </head><body>
 ${preview ? html`<div class="pvbar" role="status">Previewing the unpublished draft · <a href="${config.adminPath}/design/preview?on=0">Exit preview</a> · <a href="${config.adminPath}/design">Back to the editor</a></div>` : ''}<a class="skip" href="#main">${t('ui.skip')}</a>
-${tpl('header', { site, slogan, logo: logo(), q, links, user: user ? { username: user.username, csrf: csrfField(user), unread: user.unread || 0 } : null, ui: uiTexts() })}
+${tpl('header', { site, slogan, logo: logo(), q, links, user: user ? { username: user.username, csrf: csrfField(user), unread: user.unread || 0, points: user.points || 0, level: user.level || levelOf(user.points).name } : null, ui: uiTexts() })}
 <main id="main" class="${sidebar ? 'grid' : 'single'}"><div class="col">${n ? html`<p class="notice" role="status">${n}</p>` : ''}${content}</div>${sidebar || ''}</main>
 ${tpl('footer', { links: foot, copy: t('footer.copy', { year: new Date().getFullYear(), site }), year: new Date().getFullYear(), site })}
 </body></html>`;
@@ -82,7 +83,7 @@ export function sidebar({ tags, activeTag, user, community }) {
 }
 
 /** Link to a user's profile, or '[deleted]'. */
-const author = name => name ? html`<a href="/u/${name}">u/${name}</a>` : html`<span>[deleted]</span>`;
+const author = (name, points) => name ? html`<a href="/u/${name}">u/${name}</a>${points === undefined ? '' : html` <span class="lvl" title="${points} points">${levelOf(points).name}</span>`}` : html`<span>[deleted]</span>`;
 
 /** Up/down arrows with the score. Logged-in users get real forms (no-JS works; app.js upgrades them to in-place updates); visitors get login links. */
 function voteBox(type, id, score, vote, user, back) {
@@ -103,7 +104,7 @@ export function postList(posts, votes, user, { back, showCommunity = true, nextU
   return html`<ol class="posts">${posts.map(p => {
     const url = `/p/${p.id}/${slugify(p.title)}`;
     return tpl('post_card', { votes: voteBox('p', p.id, p.score, votes.get(p.id), user, back), title: p.title, url, community: p.community, show_community: showCommunity, tag: p.tag_name, tag_slug: p.tag_slug,
-      author: p.author || null, age: timeAgo(p.created_at), link: p.url ? { url: p.url, host: hostOf(p.url) } : null, excerpt: p.excerpt ? excerpt(p.excerpt) : '', comments: plural(p.comment_count, 'comment'), score: p.score, id: p.id,
+      author: p.author || null, author_level: p.author && p.author_points !== undefined ? levelOf(p.author_points).name : '', author_points: p.author_points ?? 0, age: timeAgo(p.created_at), link: p.url ? { url: p.url, host: hostOf(p.url) } : null, excerpt: p.excerpt ? excerpt(p.excerpt) : '', comments: plural(p.comment_count, 'comment'), score: p.score, id: p.id,
       is_repost: Boolean(p.repost_of), quote: p.repost_of ? quoteData(p) : null, reposts: p.reposts ? plural(p.reposts, 'repost') : '', reposts_url: `/reposts/${p.id}` });
   })}</ol>
 ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}" rel="next">${t('feed.next')}</a>` : ''}`;
@@ -169,7 +170,7 @@ export function postPage({ post, comments, votes, cvotes, user, sort }) {
   const gone = post.deleted_at || post.removed_at;
   return html`<article class="card post full">
 ${voteBox('p', post.id, post.score, votes.get(post.id), gone ? null : user, back)}
-<div class="body"><p class="meta"><a class="c" href="/c/${post.community}">c/${post.community}</a> · <a class="tag" href="/m/${post.tag_slug}">${post.tag_name}</a> · ${author(post.author)} · ${timeAgo(post.created_at)}${post.edited_at ? ' · edited' : ''}</p>
+<div class="body"><p class="meta"><a class="c" href="/c/${post.community}">c/${post.community}</a> · <a class="tag" href="/m/${post.tag_slug}">${post.tag_name}</a> · ${author(post.author, post.author_points)} · ${timeAgo(post.created_at)}${post.edited_at ? ' · edited' : ''}</p>
 <h1>${post.removed_at ? '[removed]' : post.repost_of && !post.deleted_at ? html`<span class="rp" aria-hidden="true">↻</span> Repost: ${post.title}` : post.title}</h1>
 ${!gone && post.url ? html`<p><a class="dom" href="${post.url}" rel="nofollow ugc noopener noreferrer">${post.url}</a></p>` : ''}
 <div class="md">${post.removed_at ? html`<p class="muted">Removed by admin.</p>` : post.deleted_at ? html`<p class="muted">Deleted by author.</p>` : post.body ? raw(markdown(post.body)) : ''}</div>
@@ -188,7 +189,7 @@ function commentTree(nodes, cvotes, user, back, locked) {
   return html`<ul class="tree">${nodes.map(c => {
     const gone = c.deleted_at || c.removed_at;
     return html`<li class="cm" id="c${c.id}"><div class="ch"><button class="tog" type="button" aria-label="Collapse thread">[–]</button>
-${gone ? html`<span class="muted">[${c.removed_at ? 'removed' : 'deleted'}]</span>` : html`${author(c.author)}`} <span class="muted">· ${c.score} pts · ${timeAgo(c.created_at)}${c.edited_at ? ' · edited' : ''}</span></div>
+${gone ? html`<span class="muted">[${c.removed_at ? 'removed' : 'deleted'}]</span>` : html`${author(c.author, c.author_points)}`} <span class="muted">· ${c.score} pts · ${timeAgo(c.created_at)}${c.edited_at ? ' · edited' : ''}</span></div>
 <div class="cb">${gone ? '' : html`<div class="md">${raw(markdown(c.body))}</div>`}
 <div class="acts">${gone ? '' : voteBox('c', c.id, c.score, cvotes.get(c.id), user, `${back}#c${c.id}`)}
 ${user && !gone && !locked ? html`<details class="inline"><summary>reply</summary><form method="post" action="${back}/comment" class="stack">${csrfField(user)}<input type="hidden" name="parent" value="${c.id}"><textarea name="body" rows="3" maxlength="10000" required></textarea><button class="btn sm">Reply</button></form></details>` : ''}
@@ -276,15 +277,27 @@ export function submitForm({ user, community = '', v = {}, error, tags = [], com
 }
 
 /** Create-community form with the AI model picker and a WYSIWYG description. */
-export function communityForm({ user, tags, v = {}, error }) {
+/** Level name, point total and a progress bar to the next level (profile page). */
+function levelBox(points = 0) {
+  const L = levelOf(points);
+  return html`<p class="lvlbox"><span class="lvl">${L.name}</span> · <b>${points}</b> points · level ${L.level} of ${TIERS.length}</p>${L.next ? html`<p class="meta"><progress value="${points - L.min}" max="${L.next.min - L.min}" aria-label="Progress to ${L.next.name}"></progress> ${L.toNext} more to ${L.next.name}</p>` : ''}`;
+}
+/** How points are earned (shown where people ask for them). */
+const pointsHelp = () => html`<details class="inline"><summary>How points work</summary><ul>
+<li><b>5</b> points for each post you publish</li><li><b>2</b> points for each comment (not on your own post)</li><li><b>2</b> points when you repost someone's post, and 2 for the author of the post you reposted</li>
+<li><b>1</b> point when you vote on a post or comment, and 1 for its author (not on your own)</li><li>Deleting or removing content takes its points back. Levels: ${TIERS.map(([m, n]) => `${n} ${m}`).join(', ')}.</li></ul></details>`;
+
+export function communityForm({ user, tags, v = {}, error, points = COMMUNITY_MIN }) {
+  const locked = points < COMMUNITY_MIN;
   return html`<section class="card form wide"><h1>${t('cform.title')}</h1>${err(error)}
 <p class="muted">${t('cform.intro')}</p>
-<form method="post" action="/communities/new" class="stack">${csrfField(user)}
+${locked ? html`<div class="notice" role="status"><b>You need ${COMMUNITY_MIN} points to create a community.</b> You have ${points} (${COMMUNITY_MIN - points} to go). ${levelBox(points)}${pointsHelp()}</div>` : ''}
+<form method="post" action="/communities/new" class="stack"><fieldset class="plain"${locked ? raw(' disabled') : ''}>${csrfField(user)}
 <label>Name <small>(3–21 letters, numbers or _ · becomes c/name · unique · can't be changed)</small><input name="name" maxlength="21" pattern="[A-Za-z0-9_]{3,21}" required value="${v.name || ''}"></label>
 <label>Title<input name="title" maxlength="100" required value="${v.title || ''}"></label>
 <label>AI model<select name="tag" required><option value="">Choose…</option>${tags.map(t => html`<option value="${t.slug}"${v.tag === t.slug ? raw(' selected') : ''}>${t.name}</option>`)}</select></label>
 <div class="lbl">Description <small>(optional)</small>${wys({ name: 'description', md: v.description || '', rows: 6, max: 4000, label: 'Community description' })}</div>
-<button class="btn">${t('cform.button')}</button></form></section>`;
+<button class="btn">${t('cform.button')}</button></fieldset></form></section>`;
 }
 
 /** Browse communities: Popular/New tabs, model filter, list. */
@@ -301,7 +314,7 @@ ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}" rel="next">${t
 /** A user's profile with Posts / Comments tabs (and the ban button for admins). */
 export function profilePage({ profile, tab, items, votes, user, nextUrl }) {
   const base = `/u/${profile.username}`;
-  return html`<section class="card chead"><h1>u/${profile.username}</h1><p class="meta">joined ${timeAgo(profile.created_at)}${profile.banned_at ? ' · suspended' : ''}</p></section>
+  return html`<section class="card chead"><h1>u/${profile.username}</h1><p class="meta">joined ${timeAgo(profile.created_at)}${profile.banned_at ? ' · suspended' : ''}</p>${levelBox(profile.points)}</section>
 <nav class="tabs card"><a href="${base}"${tab !== 'comments' ? raw(' class="on"') : ''}>Posts</a><a href="${base}?tab=comments"${tab === 'comments' ? raw(' class="on"') : ''}>Comments</a></nav>
 ${tab === 'comments'
     ? (items.length ? html`<ul class="clist">${items.map(c => html`<li class="card"><p class="meta">on <a href="/p/${c.post_id}/${slugify(c.post_title)}#c${c.id}">${c.post_title}</a> · ${c.score} pts · ${timeAgo(c.created_at)}</p><div class="md">${raw(markdown(c.body))}</div></li>`)}</ul>

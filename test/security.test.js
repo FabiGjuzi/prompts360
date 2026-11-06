@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { boot, client, field, makeUser, login, csrf, PW, flushKv, flushLimits, BASE } from './_helpers.js';
+import { boot, client, field, makeUser, login, csrf, PW, flushKv, flushLimits, BASE, earnPoints } from './_helpers.js';
 
 let app, eve, victim, et, postPath;
 before(async () => {
@@ -10,6 +10,7 @@ before(async () => {
   victim = await makeUser(app.mail, { username: 'victim_user' });
   eve = await makeUser(app.mail, { username: 'eve_attacker' });
   et = await csrf(eve);
+  await earnPoints(app, eve);
   await eve.post('/communities/new', { _csrf: et, name: 'sec_test', title: 'Security', tag: 'general' });
 });
 after(async () => { await app.close(); });

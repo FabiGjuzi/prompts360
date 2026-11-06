@@ -19,7 +19,8 @@ import { securityHeaders, send, readBody, checkCsrf, renderError, redirect, serv
 import { safeEqual } from './crypto.js';
 import { drainOutbox } from './mail.js';
 import { authRoutes } from './routes/auth.js';
-import { forumRoutes, cmsRoutes, unreadCount } from './routes/forum.js';
+import { forumRoutes, cmsRoutes, userStats } from './routes/forum.js';
+import { recalc, levelOf } from './points.js';
 import { adminRoutes } from './admin/index.js';
 
 // Flat route table built from the three route files: {method, re (URL regex), handler, opts: {auth, form, bodyLimit}}.
@@ -101,7 +102,10 @@ export async function handle(req, res) {
     req.routeLabel = `${method} ${route.handler.name || 'handler'}`;
     req.cookieToken = readCookie(req);
     req.user = req.cookieToken ? await loadSession(req.cookieToken) : null;
-    if (req.user && method === 'GET') req.user.unread = await unreadCount(req.user.id).catch(() => 0);   // header badge
+    if (req.user && method === 'GET') {   // header: unread badge, points and level
+      const st = await userStats(req.user.id).catch(() => ({ points: 0, unread: 0 }));
+      Object.assign(req.user, { unread: st.unread, points: st.points, level: levelOf(st.points).name });
+    }
     // Design preview: only a signed-in superadmin holding the preview cookie sees the unpublished draft.
     if (config.adminPath && /(?:^|;\s*)pv=1/.test(req.headers.cookie || '') && (!config.adminIpAllow.length || config.adminIpAllow.includes(req.ip)) && await loadAdmin(req)) { req.preview = true; req.dstore.preview = true; }
     if (auth && !req.user) {
@@ -114,7 +118,9 @@ export async function handle(req, res) {
     req.body = await readBody(req, bodyLimit);
     if (!checkCsrf(req, req.body, form)) return renderError(req, res, 403, 'This form expired or came from another site. Go back, refresh and try again.');
   }
-  return route.handler(req, res, params);
+  const out = await route.handler(req, res, params);
+  if (admin && method === 'POST') recalc(null);   // any dashboard change (moderation, edits, imports) may change points; never throws
+  return out;
 }
 
 /** Wrap handle() so any thrown error becomes a safe error page (no stack traces or SQL ever reach the client). */

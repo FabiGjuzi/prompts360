@@ -120,8 +120,9 @@ test('export: tables are whitelisted and secrets never leave', async () => {
 });
 
 test('a post body is required everywhere: form, dashboard, import and edit', async () => {
-  const { makeUser, csrf } = await import('./_helpers.js');
+  const { makeUser, csrf, earnPoints } = await import('./_helpers.js');
   const u = await makeUser(app.mail, { username: 'body_req' });
+  await earnPoints(app, u);
   await u.post('/communities/new', { _csrf: await csrf(u), name: 'Body_Req', title: 'Body req', tag: 'general' });
   const form = (await u.get('/submit')).text;
   assert.match(form, /Body <small>\(required\)<\/small>/); assert.match(form, /<textarea[^>]*name="body"[^>]*required/);
