@@ -41,7 +41,7 @@ test('reposting: same community and tag, one upvote for the original, a notifica
   assert.equal(n.who, 'rp_alice'); assert.equal(n.actor, 'rp_bob'); assert.equal(Number(n.post_id), rp.id); assert.equal(n.kind, 'repost'); assert.equal(n.read_at, null);
   // the repost's own page: embedded card, comment rendered, never indexed
   const page = await bob.getf(r.location);
-  assert.match(page.text, /Repost: Original prompt about foxes/); assert.match(page.text, /<blockquote class="quote">/); assert.match(page.text, new RegExp(`<h2><a href="/p/${orig}/original_prompt_about_foxes">Original prompt about foxes</a></h2>`));
+  assert.match(page.text, /Repost: Original prompt about foxes/); assert.match(page.text, /<blockquote class="quote">/); assert.match(page.text, new RegExp(`<h2><a href="/p/${orig}/original-prompt-about-foxes">Original prompt about foxes</a></h2>`));
   assert.match(page.text, /a story about a fox|story about a fox/); assert.match(page.text, /<em>great<\/em>/); assert.match(page.text, /Reposted\./);
   assert.match(page.text, /name="robots" content="noindex/); assert.doesNotMatch(page.text, /rel="canonical"/); assert.doesNotMatch(page.text, /application\/ld\+json/);
 });

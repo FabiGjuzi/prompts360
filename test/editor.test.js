@@ -96,7 +96,7 @@ test('dashboard editors: posts, communities, comments and pages use the rich edi
   assert.equal((await app.db.q("SELECT t.slug FROM posts p JOIN ai_tags t ON t.id = p.ai_tag_id WHERE p.title = 'Dash default'")).rows[0].slug, 'grok');
   // the editor's source HTML is the server-rendered markdown (so edit forms open with the existing content)
   const { rows: [p] } = await app.db.q("SELECT id FROM posts WHERE title = 'Dash tagged'");
-  assert.match((await adm.get(`/hidden-admin-path-for-tests/t/posts/${p.id}`)).text, /<div class="wys-src" hidden><h3>Hi<\/h3><\/div>/);
+  assert.match((await adm.get(`/hidden-admin-path-for-tests/t/posts/${p.id}`)).text, /<div class="wys-src" hidden><h2>Hi<\/h2><\/div>/);
 });
 
 test('markdown backslash escapes: literal punctuation, no way to smuggle markup', () => {

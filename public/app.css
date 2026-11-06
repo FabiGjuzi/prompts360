@@ -129,3 +129,8 @@ footer nav{justify-content:center;flex-wrap:wrap;gap:0 6px}footer a{color:var(--
 .menu>div .pts{padding:6px 10px 8px;border-bottom:1px solid var(--bd);margin-bottom:4px;color:var(--mu);font-size:13px}
 fieldset.plain{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:inherit}fieldset.plain:disabled{opacity:.55}
 progress{vertical-align:middle;width:140px;height:8px;accent-color:var(--ac)}
+
+/* ===== cookie choice banner (only on pages with analytics/ads switched on) ===== */
+#p360-consent{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;max-width:640px;margin:0 auto;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+#p360-consent p{margin:0 0 8px;font-size:14px}#p360-consent a{font-size:14px;margin-right:12px}
+#p360-consent div{display:flex;gap:10px;margin-top:10px}#p360-consent .btn{flex:1;min-height:44px}

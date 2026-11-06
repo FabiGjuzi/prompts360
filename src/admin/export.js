@@ -35,14 +35,14 @@ async function contentCsv(kind) {
     const { rows } = await q(`SELECT c.name, c.title, c.description, t.slug AS model FROM communities c JOIN ai_tags t ON t.id = c.ai_tag_id WHERE c.removed_at IS NULL ORDER BY lower(c.name) LIMIT ${MAX_ROWS}`);
     return { csv: stringify(['name', 'title', 'description', 'model'], rows.map(r => [r.name, r.title, r.description, r.model])), count: rows.length };
   }
-  const { rows } = await q(`SELECT c.name AS community, p.title, p.body, t.slug AS model, p.url FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
-    WHERE p.deleted_at IS NULL AND p.removed_at IS NULL AND p.repost_of IS NULL AND c.removed_at IS NULL ORDER BY p.id LIMIT ${MAX_ROWS}`);
-  return { csv: stringify(['community', 'title', 'body', 'model', 'url'], rows.map(r => [r.community, r.title, r.body, r.model, r.url])), count: rows.length };
+  const { rows } = await q(`SELECT c.name AS community, p.title, p.body, t.slug AS model, p.url, p.draft, p.wave, p.seo_title, p.seo_desc FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
+    WHERE p.deleted_at IS NULL AND (p.removed_at IS NULL OR p.draft) AND p.repost_of IS NULL AND c.removed_at IS NULL ORDER BY p.id LIMIT ${MAX_ROWS}`);
+  return { csv: stringify(['community', 'title', 'body', 'model', 'url', 'draft', 'wave', 'seo_title', 'seo_desc'], rows.map(r => [r.community, r.title, r.body, r.model, r.url, r.draft ? 1 : '', r.wave ?? '', r.seo_title ?? '', r.seo_desc ?? ''])), count: rows.length };
 }
 
 const TEMPLATES = {
   communities: [['name', 'title', 'description', 'model'], ['Example_Community', 'Example community', 'What this community is about.', 'general']],
-  posts: [['community', 'title', 'body', 'model', 'url'], ['Example_Community', 'A useful prompt', 'Explain [topic] to me like I am new to it.', 'claude', '']],
+  posts: [['community', 'title', 'body', 'model', 'url', 'draft', 'wave', 'seo_title', 'seo_desc'], ['Example_Community', 'A useful prompt', 'Explain [topic] to me like I am new to it.', 'claude', '', '', '', '', '']],
 };
 
 function download(req, res, filename, type, data) {

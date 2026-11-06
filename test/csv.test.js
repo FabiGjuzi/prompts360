@@ -89,7 +89,7 @@ test('export: hidden from everyone but the admin; content CSV round-trips', asyn
   const res = await adm.get(`${ADMIN}/export/content/posts.csv`);
   assert.equal(res.status, 200); assert.match(res.headers.get('content-type'), /text\/csv/); assert.match(res.headers.get('content-disposition'), /^attachment; filename="prompts360-posts-\d{4}-\d{2}-\d{2}\.csv"$/); assert.match(res.headers.get('cache-control'), /no-store/);
   const { records, headers } = parseObjects(res.text);
-  assert.deepEqual(headers, ['community', 'title', 'body', 'model', 'url']); assert.ok(records.length >= 250);
+  assert.deepEqual(headers, ['community', 'title', 'body', 'model', 'url', 'draft', 'wave', 'seo_title', 'seo_desc']); assert.ok(records.length >= 250);
   const row = records.find(r => r.title === 'Third'); assert.equal(unprotect(row.body), '=cmd()'); assert.match(row.body, /^'=/, 'formula-looking text is neutralised for spreadsheets'); assert.equal(row.model, 'local');
   // exporting then importing the same file changes nothing
   const { runImport } = await import('../src/admin/pages.js');

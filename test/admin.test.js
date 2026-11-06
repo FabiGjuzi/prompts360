@@ -251,14 +251,14 @@ test('SEO: robots, sitemap, canonical, Open Graph, JSON-LD, slug redirects', asy
   const ld = [...home.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map(m => JSON.parse(m[1]));
   assert.ok(ld.some(o => o['@graph']?.some(g => g['@type'] === 'WebSite' && g.potentialAction)));
   assert.equal((home.match(/<h1[ >]/g) || []).length, 1, 'exactly one H1');
-  // Post page: canonical slug URL, 301 from the bare id, DiscussionForumPosting
+  // Post page: canonical slug URL, 301 from the bare id, TechArticle (site-written post)
   const { rows: [p] } = await app.db.q("SELECT id FROM posts WHERE title = 'First prompt'");
   const bare = await c.get(`/p/${p.id}`);
-  assert.equal(bare.status, 301); assert.equal(bare.location, `/p/${p.id}/first_prompt`);
+  assert.equal(bare.status, 301); assert.equal(bare.location, `/p/${p.id}/first-prompt`);
   const post = await c.get(bare.location);
   assert.equal(post.status, 200);
-  assert.match(post.text, new RegExp(`<link rel="canonical" href="http://localhost:18080/p/${p.id}/first_prompt">`));
-  assert.match(post.text, /DiscussionForumPosting/); assert.match(post.text, /BreadcrumbList/);
+  assert.match(post.text, new RegExp(`<link rel="canonical" href="http://localhost:18080/p/${p.id}/first-prompt">`));
+  assert.match(post.text, /"@type":"TechArticle"/); assert.doesNotMatch(post.text, /DiscussionForumPosting/, 'site-written posts are articles, not forum posts'); assert.match(post.text, /BreadcrumbList/);
   assert.match(post.text, /<meta property="og:type" content="article">/);
   // Search and account pages are noindex.
   assert.match((await c.get('/search?q=prompt')).text, /name="robots" content="noindex/);

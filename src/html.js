@@ -39,10 +39,10 @@ export function timeAgo(d) {
 /** '1 comment' / '2 comments'. */
 export const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
-/** Lower-case ASCII slug for post URLs (/p/12/my_title). Purely cosmetic: the numeric id is what identifies a post. */
+/** Lower-case ASCII slug for post URLs (/p/12/my-title). Purely cosmetic: the numeric id is what identifies a post. */
 export function slugify(title) {
   return String(title).toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim()
-    .replace(/[\s_-]+/g, '_').slice(0, 60).replace(/^_+|_+$/g, '') || 'post';
+    .replace(/[\s_-]+/g, '-').slice(0, 60).replace(/^-+|-+$/g, '') || 'post';
 }
 
 /** Allow only absolute http(s) URLs; returns a normalised string or null. */

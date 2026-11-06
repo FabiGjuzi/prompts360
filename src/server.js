@@ -9,7 +9,7 @@ import { migrate, closeDb, q } from './db.js';
 import { connectKv, closeKv } from './kv.js';
 import { loadSession, readCookie } from './session.js';
 import { begin, count, logEvent, startMetrics } from './metrics.js';
-import { ensureSite, refreshSite, t } from './site.js';
+import { ensureSite, refreshSite, t, conn } from './site.js';
 import { withDesign, ensureDesign, refreshDesign, liveAsset } from './design.js';
 import { robotsTxt, sitemapXml } from './seo.js';
 import { loadAdmin } from './admin/auth.js';
@@ -76,8 +76,16 @@ export async function handle(req, res) {
   await ensureSite();   // editable texts, links and pages (cached in memory, refreshed in the background)
   await ensureLevels(); // level tiers and the community requirement (same idea)
   await ensureDesign(); // theme, custom CSS/JS and templates (same idea)
+  securityHeaders(res); // again, now that the dashboard's Connections (Google hosts) are loaded
 
   if (req.path === '/robots.txt') { req.routeLabel = 'GET robots'; res.setHeader('Cache-Control', 'public, max-age=3600'); return send(req, res, 200, robotsTxt(), 'text/plain; charset=utf-8'); }
+  if (req.path === '/ads.txt') {   // published only while an AdSense publisher ID is set under Dashboard -> Connections
+    req.routeLabel = 'GET ads.txt';
+    const pub = conn('adsense');
+    if (!pub) return renderError(req, res, 404, t('err.404'));
+    res.setHeader('Cache-Control', 'public, max-age=600');
+    return send(req, res, 200, `google.com, ${pub}, DIRECT, f08c47fec0942fa0\n`, 'text/plain; charset=utf-8');
+  }
   if (req.path === '/sitemap.xml') { req.routeLabel = 'GET sitemap'; res.setHeader('Cache-Control', 'public, max-age=600'); return send(req, res, 200, await sitemapXml(), 'application/xml; charset=utf-8'); }
 
   const method = req.method === 'HEAD' ? 'GET' : req.method;
@@ -95,6 +103,7 @@ export async function handle(req, res) {
   if (admin) {
     // Dashboard: secret path, optional IP allow-list, its own session. Anything not allowed looks like a plain 404.
     req.routeLabel = 'admin';
+    securityHeaders(res, { google: false });   // the dashboard never loads Google scripts
     if (config.adminIpAllow.length && !config.adminIpAllow.includes(req.ip)) return renderError(req, res, 404, t('err.404'));
     req.admin = await loadAdmin(req);
     if (admin === 'required' && !req.admin) return renderError(req, res, 404, t('err.404'));

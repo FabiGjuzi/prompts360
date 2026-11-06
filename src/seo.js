@@ -53,5 +53,10 @@ export const ldPost = p => ({ '@context': 'https://schema.org', '@type': 'Discus
   interactionStatistic: [{ '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: p.comment_count },
     { '@type': 'InteractionCounter', interactionType: 'https://schema.org/LikeAction', userInteractionCount: Math.max(0, p.score) }],
   isPartOf: { '@type': 'WebSite', '@id': abs('/#site') } });
+/** Posts written by the site itself (the starter library): Google's forum markup is for user-written posts only, so these are a TechArticle by the site's organisation. */
+export const ldArticle = p => ({ '@context': 'https://schema.org', '@type': 'TechArticle', headline: p.title.slice(0, 110), url: abs(p.path), mainEntityOfPage: abs(p.path),
+  datePublished: new Date(p.created_at).toISOString(), ...(p.edited_at ? { dateModified: new Date(p.edited_at).toISOString() } : {}),
+  author: { '@type': 'Organization', '@id': abs('/#org'), name: siteName(), url: abs('/') }, publisher: { '@id': abs('/#org') },
+  articleBody: (p.body || '').slice(0, 5000), isPartOf: { '@type': 'WebSite', '@id': abs('/#site') } });
 export const ldCollection = (name, description, path) => ({ '@context': 'https://schema.org', '@type': 'CollectionPage', name, description, url: abs(path), isPartOf: { '@type': 'WebSite', '@id': abs('/#site') } });
 export const ldWebPage = (name, description, path) => ({ '@context': 'https://schema.org', '@type': 'WebPage', name, description, url: abs(path), isPartOf: { '@type': 'WebSite', '@id': abs('/#site') } });

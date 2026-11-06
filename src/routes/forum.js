@@ -8,7 +8,7 @@ import { ipKey } from '../crypto.js';
 import { page, redirect, json, str, HttpError } from '../http.js';
 import { t } from '../site.js';
 import { pageBySlug } from '../site.js';
-import { ldHome, ldBreadcrumbs, ldPost, ldCollection, ldWebPage } from '../seo.js';
+import { ldHome, ldBreadcrumbs, ldPost, ldArticle, ldCollection, ldWebPage } from '../seo.js';
 import { html, safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
@@ -307,17 +307,24 @@ async function submitPost(req, res) {
 }
 
 /** GET /p/:id — a post with its comment tree. */
-async function postPage(req, res, [idStr]) {
-  const id = Number(idStr);
-  const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at,
+const postPage = (req, res, [idStr]) => renderPost(req, res, Number(idStr));
+
+/**
+ * Render one post page. `preview` (used only by the dashboard's draft preview route, behind the admin session) lets a hidden
+ * draft render; for everyone else a draft does not exist (404), so its title and text never leak.
+ */
+export async function renderPost(req, res, id, { preview = false } = {}) {
+  const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at, p.draft, p.seo_title, p.seo_desc,
       p.deleted_at, coalesce(p.removed_at, c.removed_at) AS removed_at, c.name AS community, t.slug AS tag_slug, t.name AS tag_name,
-      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, u.points AS author_points, ${REPOST_COLS}
+      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, (u.username = 'prompts360') AS editorial, u.points AS author_points, ${REPOST_COLS}
     ${POST_FROM} WHERE p.id = $1`, [id]);
-  if (!post) throw new HttpError(404, 'That post doesn’t exist.');
+  if (!post || Boolean(post.draft) !== preview) throw new HttpError(404, 'That post doesn’t exist.');
+  const draftView = Boolean(post.draft);          // only reachable with preview=true
+  if (draftView) post.removed_at = null;          // a draft is hidden with removed_at; show it as a normal page in the preview
   const gonePost = Boolean(post.removed_at || post.deleted_at);
   const canon = `/p/${post.id}/${slugify(post.title)}`;
   // One URL per post: /p/12 and a stale slug are redirected (permanently) to /p/12/<current-title-slug>.
-  if (!gonePost && req.path !== canon) { const qsx = req.query.toString(); return redirect(res, `${canon}${qsx ? `?${qsx}` : ''}`, 301); }
+  if (!gonePost && !draftView && req.path !== canon) { const qsx = req.query.toString(); return redirect(res, `${canon}${qsx ? `?${qsx}` : ''}`, 301); }
   const sort = req.query.get('sort') === 'new' ? 'new' : 'best';
   // Logged-in readers use the primary so their own fresh comment is never missing due to replica lag.
   const { rows } = await (req.user ? q : qr)(`SELECT cm.id, cm.parent_id, cm.body, cm.score, cm.created_at, cm.edited_at, cm.deleted_at, cm.removed_at,
@@ -334,11 +341,14 @@ async function postPage(req, res, [idStr]) {
     myVotes(req.user, 'comment_votes', 'comment_id', rows.map(r => r.id)),
   ]);
   const isRepost = Boolean(post.repost_of);   // a repost duplicates another page: never indexed, never in the sitemap
+  const hide = gonePost || isRepost || draftView;   // no canonical, no structured data, noindex
   return page(req, res, {
-    title: post.removed_at ? '[removed]' : isRepost ? `Repost: ${post.title}` : post.title,
-    desc: gonePost ? undefined : descOf(post.body, post.title),
-    noindex: gonePost || isRepost, canonical: gonePost || isRepost ? undefined : canon, ogType: 'article',
-    jsonld: gonePost || isRepost ? undefined : [ldPost({ ...post, path: canon }), ldBreadcrumbs([['Home', '/'], [post.tag_name, `/m/${post.tag_slug}`], [`c/${post.community}`, `/c/${post.community}`], [post.title.slice(0, 80), canon]])],
+    title: draftView ? `Draft preview: ${post.title}` : post.removed_at ? '[removed]' : isRepost ? `Repost: ${post.title}` : post.title,
+    // The dashboard can set a separate title tag (used as is, no site suffix) and meta description; otherwise they come from the title and body.
+    fullTitle: !hide && post.seo_title ? post.seo_title : undefined,
+    desc: gonePost ? undefined : (!hide && post.seo_desc) || descOf(post.body, post.title),
+    noindex: hide, canonical: hide ? undefined : canon, ogType: 'article', cache: !draftView,
+    jsonld: hide ? undefined : [(post.editorial ? ldArticle : ldPost)({ ...post, path: canon }), ldBreadcrumbs([['Home', '/'], [post.tag_name, `/m/${post.tag_slug}`], [`c/${post.community}`, `/c/${post.community}`], [post.title.slice(0, 80), canon]])],
     content: V.postPage({ post, comments, votes, cvotes, user: req.user, sort }),
     sidebar: V.sidebar({ tags: await tags(), user: req.user, community: await getCommunity(post.community) }),
   });

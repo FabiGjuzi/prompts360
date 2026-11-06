@@ -94,6 +94,25 @@ const R = [
   ['n.accountdeleted', 'Flash messages', 'After deleting an account', 'Your account and content were deleted.'],
 ];
 
+// ---------- Connections (Google Analytics, AdSense, Search Console): IDs edited under Dashboard -> Connections ----------
+// Stored in site_settings as conn.<name>. A blank value switches that integration off completely (nothing is loaded, no CSP is widened).
+// Each value is validated on save and again on read, so a bad value can never reach a page or a header.
+const META_TOKEN = /^[A-Za-z0-9_-]{10,100}$/;
+export const CONN = Object.freeze({
+  ga4: { key: 'conn.ga4_id', label: 'Google Analytics 4 — Measurement ID', example: 'G-XXXXXXXXXX', help: 'GA4 property → Admin → Data streams → your web stream. Starts with G-. Loaded only after a visitor accepts analytics cookies.',
+    norm: v => v.trim().toUpperCase(), ok: v => /^G-[A-Z0-9]{4,20}$/.test(v), err: 'The Measurement ID must look like G-XXXXXXXXXX (letters and digits after “G-”).' },
+  adsense: { key: 'conn.adsense_pub', label: 'Google AdSense — Publisher ID', example: 'pub-0000000000000000', help: 'AdSense → Account → Settings → Account information. “pub-” followed by 16 digits (a leading “ca-” is removed). Also publishes /ads.txt. Ads load only after a visitor accepts.',
+    norm: v => v.trim().toLowerCase().replace(/^ca-/, ''), ok: v => /^pub-\d{16}$/.test(v), err: 'The Publisher ID must be “pub-” followed by 16 digits (you may paste it with the “ca-” prefix).' },
+  gsc: { key: 'conn.gsc_token', label: 'Google Search Console — HTML tag verification code', example: 'the content="…" value of the google-site-verification tag', help: 'Search Console → Add property → URL prefix → HTML tag. Paste the code, or the whole <meta> tag.',
+    norm: v => (v.match(/content\s*=\s*["']([^"']+)["']/i)?.[1] ?? v).trim(), ok: v => META_TOKEN.test(v), err: 'The verification code may contain only letters, digits, “-” and “_” (10–100 characters).' },
+});
+/** Normalise + validate a submitted value: returns { value } ('' = off) or { error }. */
+export function checkConn(name, raw) {
+  const d = CONN[name], v = d.norm(String(raw ?? '').replace(/\s+/g, ' ').trim() === '' ? '' : String(raw));
+  if (v === '') return { value: '' };
+  return d.ok(v) ? { value: v } : { error: `${d.label}: ${d.err}` };
+}
+
 /** Registry: key -> { key, group, label, def, rows }. */
 export const TEXTS = Object.freeze(Object.fromEntries(R.map(([key, group, label, def, rows = 1]) => [key, { key, group, label, def, rows }])));
 
@@ -128,6 +147,11 @@ export function t(key, vars) {
   if (v === undefined || v === '') v = d ? d.def : '';
   if (vars) v = v.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
   return v;
+}
+/** A connection ID from the dashboard ('' when unset or invalid). */
+export function conn(name) {
+  const d = CONN[name], v = snap.over.get(d.key);
+  return v && d.ok(v) ? v : '';
 }
 /** True if the editor set their own value for `key`. */
 export const isOverridden = key => (snap.over.get(key) ?? '') !== '';

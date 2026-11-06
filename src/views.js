@@ -6,7 +6,7 @@ import { wys, hasEditor } from './wys.js';
 import { tpl, current as design, isPreview } from './design.js';
 import { config } from './config.js';
 import { assets } from './assets.js';
-import { t, nav, siteName } from './site.js';
+import { t, nav, siteName, conn } from './site.js';
 import { levelOf, communityMin, getTiers } from './points.js';
 
 // Flash messages shown after a redirect (?n=<key>); only keys 'n.<key>' that exist in the texts registry are ever displayed.
@@ -46,11 +46,14 @@ export function layout({ title, fullTitle, user, content, sidebar, q = '', turns
   const tw = t('seo.twitter');
   const ld = jsonld ? [].concat(jsonld) : [];
   const links = nav('header'), foot = nav('footer');
+  // Analytics/ads only on public, indexable pages: never on account, reset/verify, search, profile, notification or preview pages.
+  const track = !noindex && !preview && !turnstile && !!(conn('ga4') || conn('adsense'));
   return html`<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${docTitle}</title>
 <meta name="description" content="${description}">
 <meta name="theme-color" content="${t('seo.theme_color')}">
+${conn('gsc') ? html`<meta name="google-site-verification" content="${conn('gsc')}">` : ''}${track && conn('adsense') ? html`<meta name="google-adsense-account" content="ca-${conn('adsense')}">` : ''}
 ${noindex || preview ? raw('<meta name="robots" content="noindex,follow">') : raw('<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">')}
 ${url && !noindex && !preview ? html`<link rel="canonical" href="${url}">` : ''}
 <meta property="og:site_name" content="${site}"><meta property="og:type" content="${ogType}"><meta property="og:title" content="${docTitle}">
@@ -60,7 +63,7 @@ ${url && !noindex && !preview ? html`<link rel="canonical" href="${url}">` : ''}
 ${tw ? html`<meta name="twitter:site" content="${tw}">` : ''}
 <link rel="stylesheet" href="${assets.css}">${D.css ? html`<link rel="stylesheet" href="${D.css.url}">` : ''}<link rel="icon" href="${assets.icon}" type="image/svg+xml"><link rel="apple-touch-icon" href="${assets.touch}">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<script src="${assets.js}" defer></script>${D.js ? html`<script src="${D.js.url}" defer></script>` : ''}${edit ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}
+<script src="${assets.js}" defer></script>${track ? html`${conn('ga4') ? html`<meta name="p360-ga" content="${conn('ga4')}">` : ''}${conn('adsense') ? html`<meta name="p360-ads" content="${conn('adsense')}">` : ''}<script src="${assets.consentJs}" defer></script>` : ''}${D.js ? html`<script src="${D.js.url}" defer></script>` : ''}${edit ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}
 ${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 ${ld.map(o => raw(`<script type="application/ld+json">${ldJson(o)}</script>`))}
 </head><body>
@@ -146,7 +149,7 @@ function controls({ user, ownerName, type, id, back, editBody, removed, deleted,
   const mine = user.username === ownerName;
   return html`${mine && editBody !== undefined ? html`<details class="inline"><summary>edit</summary>
 <form method="post" action="/${type === 'p' ? 'p' : 'comment'}/${id}/edit" class="stack">${csrfField(user)}
-${type === 'p' ? wys({ name: 'body', md: editBody, rows: 8, max: 40000, label: 'Post text' }) : html`<textarea name="body" rows="5" maxlength="10000" required>${editBody}</textarea>`}<button class="btn">Save</button></form></details>` : ''}
+${type === 'p' ? wys({ name: 'body', md: editBody, rows: 8, max: 40000, label: 'Post text', hlevel: 2, hoff: 0 }) : html`<textarea name="body" rows="5" maxlength="10000" required>${editBody}</textarea>`}<button class="btn">Save</button></form></details>` : ''}
 ${mine ? html`<details class="inline"><summary>delete</summary><form method="post" action="/${type === 'p' ? 'p' : 'comment'}/${id}/delete">${csrfField(user)}<button class="btn danger sm">Yes, delete</button></form></details>` : ''}
 ${!mine && reportable ? reportForm(user, type, id) : ''}`;
 }
@@ -173,7 +176,7 @@ ${voteBox('p', post.id, post.score, votes.get(post.id), gone ? null : user, back
 <div class="body"><p class="meta"><a class="c" href="/c/${post.community}">c/${post.community}</a> · <a class="tag" href="/m/${post.tag_slug}">${post.tag_name}</a> · ${author(post.author, post.author_points)} · ${timeAgo(post.created_at)}${post.edited_at ? ' · edited' : ''}</p>
 <h1>${post.removed_at ? '[removed]' : post.repost_of && !post.deleted_at ? html`<span class="rp" aria-hidden="true">↻</span> Repost: ${post.title}` : post.title}</h1>
 ${!gone && post.url ? html`<p><a class="dom" href="${post.url}" rel="nofollow ugc noopener noreferrer">${post.url}</a></p>` : ''}
-<div class="md">${post.removed_at ? html`<p class="muted">Removed by admin.</p>` : post.deleted_at ? html`<p class="muted">Deleted by author.</p>` : post.body ? raw(markdown(post.body)) : ''}</div>
+<div class="md">${post.removed_at ? html`<p class="muted">Removed by admin.</p>` : post.deleted_at ? html`<p class="muted">Deleted by author.</p>` : post.body ? raw(markdown(post.body, { min: 2, off: 0 })) : ''}</div>
 ${post.repost_of && !gone ? quoteCard(post) : ''}
 <div class="acts"><span>${plural(post.comment_count, 'comment')}</span>${post.reposts ? html` · <a href="/reposts/${post.id}">${plural(post.reposts, 'repost')}</a>` : ''} ${user && !gone && !post.o_gone ? repostForm(user, post.id) : ''} ${controls({ user, ownerName: post.author, type: 'p', id: post.id, back, editBody: post.body, removed: post.removed_at, deleted: post.deleted_at })}</div>
 </div></article>
@@ -272,7 +275,7 @@ export function submitForm({ user, community = '', v = {}, error, tags = [], com
 <label>AI model <small>(shown as the post's tag)</small><select name="tag" required><option value="">Choose…</option>${tags.map(m => html`<option value="${m.slug}"${tag === m.slug ? raw(' selected') : ''}>${m.name}</option>`)}</select></label>
 <label>Title<input name="title" maxlength="300" required value="${v.title || ''}"></label>
 <label>Link <small>(optional)</small><input name="url" type="url" maxlength="2000" placeholder="https://" value="${v.url || ''}"></label>
-<div class="lbl">Body <small>(required)</small>${wys({ name: 'body', md: v.body || '', rows: 10, max: 40000, label: 'Post body', required: true })}</div>
+<div class="lbl">Body <small>(required)</small>${wys({ name: 'body', md: v.body || '', rows: 10, max: 40000, label: 'Post body', required: true, hlevel: 2, hoff: 0 })}</div>
 <button class="btn">${t('submit.button')}</button></form></section>`;
 }
 

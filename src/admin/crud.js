@@ -84,13 +84,19 @@ export const TABLES = {
       int('creator_id', 'Creator user ID (blank = the site account)', { def: official }), ts('removed_at', 'Removed at (UTC; set to hide the community)'), ro('post_count', 'Posts', 'int'), ro('created_at', 'Created', 'ts')],
   },
   posts: {
-    label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'repost_of', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => `/p/${r.id}`,
+    label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'repost_of', 'draft', 'wave', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => (r.draft ? `${P}/drafts/${r.id}` : `/p/${r.id}`),
     filters: ['community_id', 'ai_tag_id', 'author_id'],
     cols: [sel('community_id', 'Community', communityOptions, { req: true }), text('title', 'Title', { req: true, max: 300 }), text('url', 'Link (optional)', { max: 2000, check: u => !u || safeUrl(u) }),
-      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body (required, except for a repost)', { rows: 22, max: 40000, md: true, req: true, soft: true }), ro('repost_of', 'Repost of post ID', 'int'), int('author_id', 'Author user ID (default: the site account)', { def: official }),
+      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body (required, except for a repost)', { rows: 22, max: 40000, md: true, req: true, soft: true, hl: 2, ho: 0 }), ro('repost_of', 'Repost of post ID', 'int'), int('author_id', 'Author user ID (default: the site account)', { def: official }),
+      bool('draft', 'Draft: hidden from everyone but this dashboard until published', { def: false }), int('wave', 'Publishing wave (optional, 1–99; used by “Publish a wave” on the Drafts page)'),
+      text('seo_title', 'Title tag override (optional; used as is, ≤ 60 characters is ideal, no site name is added)', { max: 120 }), area('seo_desc', 'Meta description (optional; blank = the first ~155 characters of the body)', { rows: 2, max: 300 }),
       ts('created_at', 'Created (UTC; leave blank for now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC; set to hide the post)'),
       ro('score', 'Score', 'int'), ro('comment_count', 'Comments', 'int')],
     before: async (db, v, ctx) => {
+      // A draft is hidden by setting removed_at (so every public query skips it); publishing through the editor clears it and dates the post now.
+      v.draft = Boolean(v.draft);
+      if (v.draft && !v.removed_at) v.removed_at = new Date().toISOString();
+      if (ctx.op === 'update' && ctx.old?.draft && !v.draft) { v.removed_at = null; v.created_at = new Date().toISOString(); }
       const c = (await db.query('SELECT ai_tag_id FROM communities WHERE id = $1', [v.community_id])).rows[0];
       if (!c) throw new Problem('That community does not exist.');
       v.ai_tag_id ??= c.ai_tag_id;

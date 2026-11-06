@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { layout, errorPage } from './views.js';
 import { checkFormToken, safeEqual } from './crypto.js';
 import { count } from './metrics.js';
+import { conn } from './site.js';
 
 const brotli = promisify(zlib.brotliCompress), gzip = promisify(zlib.gzip);
 /** Error carrying an HTTP status; thrown by handlers and turned into an error page by server.js. */
@@ -13,10 +14,15 @@ export class HttpError extends Error { constructor(status, msg) { super(msg); th
 // Cloudflare's captcha origin, allowed by the CSP only on pages that show a captcha.
 const TURNSTILE = 'https://challenges.cloudflare.com';
 /** Set the security response headers (CSP, HSTS, nosniff, framing, referrer, permissions). `turnstile` additionally allows Cloudflare's captcha script and frame. */
-export function securityHeaders(res, { turnstile = false } = {}) {
+export function securityHeaders(res, { turnstile = false, google = true } = {}) {
   const ts = turnstile ? ` ${TURNSTILE}` : '';
+  // Google hosts are allowed only while the matching ID is set under Dashboard -> Connections, and never on captcha pages or the dashboard.
+  const ga = google && !turnstile && conn('ga4'), ads = google && !turnstile && conn('adsense');
+  const script = ts + (ga ? ' https://*.googletagmanager.com' : '') + (ads ? ' https://pagead2.googlesyndication.com' : '');
+  const connect = ga ? ' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com' : '';
+  const img = ga ? ' https://*.google-analytics.com https://*.googletagmanager.com' : '';
   res.setHeader('Content-Security-Policy',
-    `default-src 'none'; script-src 'self'${ts}; style-src 'self'; img-src 'self'; connect-src 'self'; ` +
+    `default-src 'none'; script-src 'self'${script}; style-src 'self'; img-src 'self'${img}; connect-src 'self'${connect}; ` +
     `frame-src ${turnstile ? TURNSTILE : "'none'"}; form-action 'self'; frame-ancestors 'none'; base-uri 'none'` +
     (turnstile ? '' : "; require-trusted-types-for 'script'") +
     (config.isProd ? '; upgrade-insecure-requests' : ''));
