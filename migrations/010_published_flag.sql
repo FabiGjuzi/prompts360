@@ -5,9 +5,10 @@
 -- The old draft marker hid a post by ALSO setting removed_at; both are cleared here so a draft is only "unpublished".
 ALTER TABLE posts ADD COLUMN published boolean NOT NULL DEFAULT true;
 ALTER TABLE posts ADD COLUMN published_at timestamptz;
+-- The constraint must go BEFORE removed_at is cleared on drafts (it requires removed_at while draft is true).
+ALTER TABLE posts DROP CONSTRAINT posts_draft_is_hidden;
 UPDATE posts SET published = false, removed_at = NULL WHERE draft;
 UPDATE posts SET published_at = created_at WHERE published;          -- first-publish date of everything already live
-ALTER TABLE posts DROP CONSTRAINT posts_draft_is_hidden;
 DROP INDEX posts_drafts;
 ALTER TABLE posts DROP COLUMN draft;
 CREATE INDEX posts_unpublished ON posts (wave, id) WHERE NOT published AND deleted_at IS NULL;
