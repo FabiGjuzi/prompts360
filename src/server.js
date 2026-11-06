@@ -19,7 +19,7 @@ import { securityHeaders, send, readBody, checkCsrf, renderError, redirect, serv
 import { safeEqual } from './crypto.js';
 import { drainOutbox } from './mail.js';
 import { authRoutes } from './routes/auth.js';
-import { forumRoutes, cmsRoutes } from './routes/forum.js';
+import { forumRoutes, cmsRoutes, unreadCount } from './routes/forum.js';
 import { adminRoutes } from './admin/index.js';
 
 // Flat route table built from the three route files: {method, re (URL regex), handler, opts: {auth, form, bodyLimit}}.
@@ -101,6 +101,7 @@ export async function handle(req, res) {
     req.routeLabel = `${method} ${route.handler.name || 'handler'}`;
     req.cookieToken = readCookie(req);
     req.user = req.cookieToken ? await loadSession(req.cookieToken) : null;
+    if (req.user && method === 'GET') req.user.unread = await unreadCount(req.user.id).catch(() => 0);   // header badge
     // Design preview: only a signed-in superadmin holding the preview cookie sees the unpublished draft.
     if (config.adminPath && /(?:^|;\s*)pv=1/.test(req.headers.cookie || '') && (!config.adminIpAllow.length || config.adminIpAllow.includes(req.ip)) && await loadAdmin(req)) { req.preview = true; req.dstore.preview = true; }
     if (auth && !req.user) {

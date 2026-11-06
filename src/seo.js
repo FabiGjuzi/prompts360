@@ -28,7 +28,7 @@ export async function sitemapXml() {
   const [tags, comms, posts] = await Promise.all([
     qr(`SELECT slug FROM ai_tags WHERE enabled ORDER BY sort`),
     qr(`SELECT name, created_at FROM communities WHERE removed_at IS NULL ORDER BY id DESC LIMIT 5000`),
-    qr(`SELECT id, title, created_at, coalesce(edited_at, created_at) AS m FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL ORDER BY id DESC LIMIT 45000`),
+    qr(`SELECT id, title, created_at, coalesce(edited_at, created_at) AS m FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND repost_of IS NULL ORDER BY id DESC LIMIT 45000`),
   ]);
   const { slugify } = await import('./html.js');
   const urls = [entry('/', undefined, 'hourly', '1.0'), entry('/communities', undefined, 'daily', '0.7'),

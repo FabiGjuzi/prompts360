@@ -66,3 +66,6 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 ## CSV export / import
 - Export is admin-only (404 otherwise), `no-store`, audited. Only registry tables and their registry columns are exported (never password hashes, email fingerprints, tokens, the mail queue or admin account); cells starting with = + - @ are prefixed with ' to stop spreadsheet formula injection.
 - Import reads CSV/JSON as text only (the browser reads the chosen file; no multipart upload), caps size and rows, validates every field as before, and never treats cell content as HTML (Markdown is rendered by the safe renderer).
+
+## Reposts and notifications
+Reposting is POST-only with CSRF, per-user rate limits and a unique index (one repost per user per original), so it cannot be used to inflate a score more than once per person. The optional comment goes through the same sanitiser as post bodies. Notifications are visible only to their owner (`auth: 'user'`, filtered by `user_id`) and are pruned after 90 days. Reposts are noindex and excluded from the sitemap.

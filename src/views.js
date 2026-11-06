@@ -9,7 +9,7 @@ import { assets } from './assets.js';
 import { t, nav, siteName } from './site.js';
 
 // Flash messages shown after a redirect (?n=<key>); only keys 'n.<key>' that exist in the texts registry are ever displayed.
-const NOTICE_KEYS = new Set(['verified', 'reset', 'pwchanged', 'logout', 'deleted', 'removed', 'reported', 'community', 'edited', 'accountdeleted']);
+const NOTICE_KEYS = new Set(['verified', 'reset', 'pwchanged', 'logout', 'deleted', 'removed', 'reported', 'community', 'edited', 'reposted', 'accountdeleted']);
 
 // Animated logo (360.si → 3pSI and back, forever) is a separate, cached SVG made by scripts/build-logo.js.
 // <picture> picks the dark-mode file and, for visitors who ask for reduced motion, a still version.
@@ -31,7 +31,7 @@ const captcha = action => config.turnstileSiteKey
 /** JSON-LD must not be able to close its own <script>: escape < and the JS line separators. */
 const ldJson = o => JSON.stringify(o).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
-const uiTexts = () => Object.fromEntries(['skip', 'search_placeholder', 'search_label', 'post_button', 'login', 'signup', 'menu_profile', 'menu_new_community', 'menu_settings', 'menu_logout'].map(k => [k, t(`ui.${k}`)]));
+const uiTexts = () => Object.fromEntries(['skip', 'search_placeholder', 'search_label', 'post_button', 'login', 'signup', 'menu_profile', 'menu_new_community', 'menu_settings', 'menu_notifications', 'menu_logout'].map(k => [k, t(`ui.${k}`)]));
 
 /** The full HTML page: head (SEO, social cards, structured data), header (logo + slogan + search + account menu), main column + sidebar, footer. */
 export function layout({ title, fullTitle, user, content, sidebar, q = '', turnstile = false, notice, desc, noindex, canonical, jsonld, ogType = 'website' }) {
@@ -64,7 +64,7 @@ ${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cl
 ${ld.map(o => raw(`<script type="application/ld+json">${ldJson(o)}</script>`))}
 </head><body>
 ${preview ? html`<div class="pvbar" role="status">Previewing the unpublished draft · <a href="${config.adminPath}/design/preview?on=0">Exit preview</a> · <a href="${config.adminPath}/design">Back to the editor</a></div>` : ''}<a class="skip" href="#main">${t('ui.skip')}</a>
-${tpl('header', { site, slogan, logo: logo(), q, links, user: user ? { username: user.username, csrf: csrfField(user) } : null, ui: uiTexts() })}
+${tpl('header', { site, slogan, logo: logo(), q, links, user: user ? { username: user.username, csrf: csrfField(user), unread: user.unread || 0 } : null, ui: uiTexts() })}
 <main id="main" class="${sidebar ? 'grid' : 'single'}"><div class="col">${n ? html`<p class="notice" role="status">${n}</p>` : ''}${content}</div>${sidebar || ''}</main>
 ${tpl('footer', { links: foot, copy: t('footer.copy', { year: new Date().getFullYear(), site }), year: new Date().getFullYear(), site })}
 </body></html>`;
@@ -103,9 +103,23 @@ export function postList(posts, votes, user, { back, showCommunity = true, nextU
   return html`<ol class="posts">${posts.map(p => {
     const url = `/p/${p.id}/${slugify(p.title)}`;
     return tpl('post_card', { votes: voteBox('p', p.id, p.score, votes.get(p.id), user, back), title: p.title, url, community: p.community, show_community: showCommunity, tag: p.tag_name, tag_slug: p.tag_slug,
-      author: p.author || null, age: timeAgo(p.created_at), link: p.url ? { url: p.url, host: hostOf(p.url) } : null, excerpt: p.excerpt ? excerpt(p.excerpt) : '', comments: plural(p.comment_count, 'comment'), score: p.score, id: p.id });
+      author: p.author || null, age: timeAgo(p.created_at), link: p.url ? { url: p.url, host: hostOf(p.url) } : null, excerpt: p.excerpt ? excerpt(p.excerpt) : '', comments: plural(p.comment_count, 'comment'), score: p.score, id: p.id,
+      is_repost: Boolean(p.repost_of), quote: p.repost_of ? quoteData(p) : null, reposts: p.reposts ? plural(p.reposts, 'repost') : '', reposts_url: `/reposts/${p.id}` });
   })}</ol>
 ${nextUrl ? html`<a class="btn ghost wide next" href="${nextUrl}" rel="next">${t('feed.next')}</a>` : ''}`;
+}
+
+/** The embedded original of a repost, as plain values (used by the card template and the post page). */
+function quoteData(p) {
+  const gone = Boolean(p.o_gone);
+  return { gone, url: gone ? '' : `/p/${p.o_id}/${slugify(p.o_title)}`, title: gone ? '' : p.o_title, community: p.o_community, tag: p.o_tag_name, tag_slug: p.o_tag_slug,
+    author: gone ? null : p.o_author || null, age: gone ? '' : timeAgo(p.o_created), excerpt: gone || !p.o_excerpt ? '' : excerpt(p.o_excerpt) };
+}
+/** Twitter-style quote card for the post page (same markup as the card template's default). */
+function quoteCard(p) {
+  const q = quoteData(p);
+  return html`<blockquote class="quote">${q.gone ? html`<p class="muted">This post is no longer available.</p>` : html`<p class="meta"><a class="c" href="/c/${q.community}">c/${q.community}</a> · <a class="tag" href="/m/${q.tag_slug}">${q.tag}</a> · ${author(q.author)} · ${q.age}</p>
+<h2><a href="${q.url}">${q.title}</a></h2>${q.excerpt ? html`<p class="ex">${q.excerpt}</p>` : ''}`}</blockquote>`;
 }
 
 /** Domain shown next to link posts, e.g. 'example.com'. */
@@ -143,6 +157,12 @@ export function reportForm(user, type, id) {
 <input name="reason" maxlength="500" required placeholder="What's wrong?"><button class="btn sm">Send report</button></form></details>`;
 }
 
+/** Collapsible 'repost' form: an optional comment, then the post is quoted in the same community with the same model tag. */
+function repostForm(user, id) {
+  return html`<details class="inline"><summary>repost</summary><form method="post" action="/p/${id}/repost" class="stack">${csrfField(user)}
+${wys({ name: 'body', md: '', rows: 4, max: 40000, label: 'Your comment (optional)' })}<button class="btn sm">Repost</button></form></details>`;
+}
+
 /** A single post: body, comment box, sort tabs and the comment tree. */
 export function postPage({ post, comments, votes, cvotes, user, sort }) {
   const back = `/p/${post.id}`;
@@ -150,10 +170,11 @@ export function postPage({ post, comments, votes, cvotes, user, sort }) {
   return html`<article class="card post full">
 ${voteBox('p', post.id, post.score, votes.get(post.id), gone ? null : user, back)}
 <div class="body"><p class="meta"><a class="c" href="/c/${post.community}">c/${post.community}</a> · <a class="tag" href="/m/${post.tag_slug}">${post.tag_name}</a> · ${author(post.author)} · ${timeAgo(post.created_at)}${post.edited_at ? ' · edited' : ''}</p>
-<h1>${post.removed_at ? '[removed]' : post.title}</h1>
+<h1>${post.removed_at ? '[removed]' : post.repost_of && !post.deleted_at ? html`<span class="rp" aria-hidden="true">↻</span> Repost: ${post.title}` : post.title}</h1>
 ${!gone && post.url ? html`<p><a class="dom" href="${post.url}" rel="nofollow ugc noopener noreferrer">${post.url}</a></p>` : ''}
-<div class="md">${post.removed_at ? html`<p class="muted">Removed by admin.</p>` : post.deleted_at ? html`<p class="muted">Deleted by author.</p>` : raw(markdown(post.body))}</div>
-<div class="acts"><span>${plural(post.comment_count, 'comment')}</span> ${controls({ user, ownerName: post.author, type: 'p', id: post.id, back, editBody: post.body, removed: post.removed_at, deleted: post.deleted_at })}</div>
+<div class="md">${post.removed_at ? html`<p class="muted">Removed by admin.</p>` : post.deleted_at ? html`<p class="muted">Deleted by author.</p>` : post.body ? raw(markdown(post.body)) : ''}</div>
+${post.repost_of && !gone ? quoteCard(post) : ''}
+<div class="acts"><span>${plural(post.comment_count, 'comment')}</span>${post.reposts ? html` · <a href="/reposts/${post.id}">${plural(post.reposts, 'repost')}</a>` : ''} ${user && !gone && !post.o_gone ? repostForm(user, post.id) : ''} ${controls({ user, ownerName: post.author, type: 'p', id: post.id, back, editBody: post.body, removed: post.removed_at, deleted: post.deleted_at })}</div>
 </div></article>
 ${user && !gone ? html`<form method="post" action="/p/${post.id}/comment" class="card stack reply">${csrfField(user)}
 <textarea name="body" rows="4" maxlength="10000" required placeholder="${t('post.comment_placeholder')}"></textarea><button class="btn">${t('post.comment_button')}</button></form>`
@@ -321,3 +342,11 @@ export function hero(heading, intro) {
 
 /** Content of an error page. */
 export const errorPage = (status, text) => html`<section class="card form"><h1>${status}</h1><p>${text}</p><p><a href="/">Back to home</a></p></section>`;
+
+/** The notifications list (newest first). */
+export function notificationsPage(rows) {
+  return html`<section class="card form wide"><h1>Notifications</h1>${rows.length ? html`<ol class="notifs">${rows.map(n => {
+    const gone = n.deleted_at || n.removed_at;
+    return html`<li${n.read_at ? '' : raw(' class="unread"')}>${author(n.actor)} reposted your post ${gone ? html`<span class="muted">(since removed)</span>` : html`<a href="/p/${n.post_id}/${slugify(n.title)}">${n.title}</a>`} <span class="muted">· ${timeAgo(n.created_at)}</span></li>`;
+  })}</ol>` : html`<p class="empty">Nothing yet. When someone reposts one of your posts, you will see it here.</p>`}</section>`;
+}

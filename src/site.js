@@ -27,6 +27,7 @@ const R = [
   ['ui.menu_profile', 'Header & footer', 'Account menu: profile', 'Profile'],
   ['ui.menu_new_community', 'Header & footer', 'Account menu: new community', 'New community'],
   ['ui.menu_settings', 'Header & footer', 'Account menu: settings', 'Settings'],
+  ['ui.menu_notifications', 'Header & footer', 'Account menu: notifications', 'Notifications'],
   ['ui.menu_logout', 'Header & footer', 'Account menu: log out', 'Log out'],
   ['footer.copy', 'Header & footer', 'Footer text ({year} and {site} are replaced)', '© {year} {site}'],
   // ---- Home page ----
@@ -89,6 +90,7 @@ const R = [
   ['n.reported', 'Flash messages', 'After a report', 'Thanks — the administrator will review your report.'],
   ['n.community', 'Flash messages', 'After creating a community', 'Community created.'],
   ['n.edited', 'Flash messages', 'After editing', 'Saved.'],
+  ['n.reposted', 'Flash messages', 'After reposting', 'Reposted.'],
   ['n.accountdeleted', 'Flash messages', 'After deleting an account', 'Your account and content were deleted.'],
 ];
 

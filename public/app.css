@@ -117,3 +117,9 @@ footer nav{justify-content:center;flex-wrap:wrap;gap:0 6px}footer a{color:var(--
 
 /* Dashboard design preview banner */
 .pvbar{position:sticky;top:0;z-index:50;background:#1c1e21;color:#fff;text-align:center;font-size:13px;padding:7px 12px}.pvbar a{color:#c7d2fe;text-decoration:underline;padding:4px 2px}
+
+.quote{margin:.5rem 0;padding:.65rem .8rem;border:1px solid var(--bd);border-radius:var(--r,10px);background:var(--hl)}
+.quote h2{font-size:1rem;margin:.15rem 0}.quote .meta{margin:0}.quote .ex{margin:.25rem 0 0}.quote>p:last-child{margin-bottom:0}
+.rp{color:var(--mu);font-weight:600}.post.repost>.body>.ex{color:var(--tx)}
+.badge{display:inline-block;min-width:1.3em;padding:0 .35em;border-radius:999px;background:var(--ac);color:#fff;font-size:12px;line-height:1.5;text-align:center}
+.notifs{list-style:none;margin:0;padding:0}.notifs li{padding:.6rem .4rem;border-bottom:1px solid var(--bd)}.notifs li.unread{background:var(--hl);font-weight:600}

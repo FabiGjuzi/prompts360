@@ -82,16 +82,17 @@ export const TABLES = {
       int('creator_id', 'Creator user ID (blank = the site account)', { def: official }), ts('removed_at', 'Removed at (UTC; set to hide the community)'), ro('post_count', 'Posts', 'int'), ro('created_at', 'Created', 'ts')],
   },
   posts: {
-    label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => `/p/${r.id}`,
+    label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'repost_of', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => `/p/${r.id}`,
     filters: ['community_id', 'ai_tag_id', 'author_id'],
     cols: [sel('community_id', 'Community', communityOptions, { req: true }), text('title', 'Title', { req: true, max: 300 }), text('url', 'Link (optional)', { max: 2000, check: u => !u || safeUrl(u) }),
-      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body', { rows: 22, max: 40000, md: true, req: true }), int('author_id', 'Author user ID (default: the site account)', { def: official }),
+      sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body (required, except for a repost)', { rows: 22, max: 40000, md: true, req: true, soft: true }), ro('repost_of', 'Repost of post ID', 'int'), int('author_id', 'Author user ID (default: the site account)', { def: official }),
       ts('created_at', 'Created (UTC; leave blank for now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC; set to hide the post)'),
       ro('score', 'Score', 'int'), ro('comment_count', 'Comments', 'int')],
     before: async (db, v, ctx) => {
       const c = (await db.query('SELECT ai_tag_id FROM communities WHERE id = $1', [v.community_id])).rows[0];
       if (!c) throw new Problem('That community does not exist.');
       v.ai_tag_id ??= c.ai_tag_id;
+      if (!v.body?.trim() && !(ctx.op === 'update' && ctx.old?.repost_of)) throw new Problem('Body is required.');
       if (ctx.op === 'insert') v.hot = 0;
       if (ctx.op === 'update') v.edited_at = new Date().toISOString();
       if (!v.created_at) delete v.created_at;
@@ -102,6 +103,9 @@ export const TABLES = {
       await recountPosts(db, [row.community_id, ctx.old?.community_id]);
     },
     afterDelete: (db, row) => recountPosts(db, [row.community_id]),
+  },
+  notifications: {
+    label: 'Notifications', pk: ['id'], list: ['id', 'user_id', 'kind', 'actor_id', 'post_id', 'created_at', 'read_at'], order: 'id DESC', noCreate: true, noEdit: true, cols: [], filters: ['user_id', 'kind'],
   },
   comments: {
     label: 'Comments', pk: ['id'], list: ['id', 'post_id', 'author_id', 'body', 'score', 'created_at', 'removed_at'], search: ['body'], order: 'id DESC', filters: ['post_id', 'author_id'],
@@ -225,7 +229,7 @@ async function fieldHtml(c, v) {
   const id = `f_${c.n}`;
   const label = (inner) => html`<label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${inner}`;
   if (c.t === 'bool') return html`<div class="fld chk"><input type="hidden" name="${c.n}" value="0"><input type="checkbox" id="${id}" name="${c.n}" value="1"${v ? raw(' checked') : ''}><label for="${id}">${c.label}</label></div>`;
-  if (c.t === 'area' && c.md) return html`<div class="fld"><label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${wys({ name: c.n, id, md: v ?? '', rows: c.rows, max: c.max, required: Boolean(c.req), label: c.label, hlevel: c.hl ?? 3, hoff: c.ho ?? 2 })}</div>`;
+  if (c.t === 'area' && c.md) return html`<div class="fld"><label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${wys({ name: c.n, id, md: v ?? '', rows: c.rows, max: c.max, required: Boolean(c.req && !c.soft), label: c.label, hlevel: c.hl ?? 3, hoff: c.ho ?? 2 })}</div>`;
   if (c.t === 'area') return html`<div class="fld">${label(html`<textarea id="${id}" name="${c.n}" rows="${c.rows}" maxlength="${c.max}">${v ?? ''}</textarea>`)}</div>`;
   if (c.t === 'sel') {
     const opts = await c.opts();
@@ -268,7 +272,7 @@ async function readValues(T, b, { op }) {
     if (c.t !== 'area') s = s.trim();
     if (c.t === 'area') s = s.trim();
     if (!s && op === 'insert' && c.t === 'int' && c.def !== undefined) { v[c.n] = typeof c.def === 'function' ? await c.def() : c.def; continue; }
-    if (!s) { if (c.req) throw new Problem(`${c.label.split(' (')[0]} is required.`); v[c.n] = c.t === 'text' || c.t === 'area' ? '' : null; if (c.t === 'text' && c.n === 'url') v[c.n] = null; continue; }
+    if (!s) { if (c.req && !c.soft) throw new Problem(`${c.label.split(' (')[0]} is required.`); v[c.n] = c.t === 'text' || c.t === 'area' ? '' : null; if (c.t === 'text' && c.n === 'url') v[c.n] = null; continue; }
     if (c.t === 'text' || c.t === 'area') {
       if (s.length > c.max) throw new Problem(`${c.label.split(' (')[0]} is too long (max ${c.max}).`);
       if (c.pattern && !c.pattern.test(s)) throw new Problem(`${c.label.split(' (')[0]} has an invalid format.`);

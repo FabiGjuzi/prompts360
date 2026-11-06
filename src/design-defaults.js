@@ -23,7 +23,7 @@ export const NUMBERS = [['fs', 'Base font size (px)', 15, 13, 20], ['w', 'Page w
 
 // ---------- Templates ----------
 const V = (...a) => a;   // [name, description] pairs
-const UI = ['ui', 'Object with the text labels edited under "Texts & slogan": skip, search_placeholder, search_label, post_button, login, signup, menu_profile, menu_new_community, menu_settings, menu_logout'];
+const UI = ['ui', 'Object with the text labels edited under "Texts & slogan": skip, search_placeholder, search_label, post_button, login, signup, menu_profile, menu_new_community, menu_settings, menu_notifications, menu_logout'];
 const SIDE = ['side', 'Object with the sidebar texts: home_title, home_text, create_post, create_community, models_title, all, browse, join_text'];
 
 export const TEMPLATES = {
@@ -34,12 +34,12 @@ export const TEMPLATES = {
 <form class="search" action="/search" role="search"><input name="q" type="search" placeholder="{{ui.search_placeholder}}" maxlength="200" value="{{q}}" aria-label="{{ui.search_label}}"></form>
 {{#if links}}<nav class="links" aria-label="Main">{{#each links}}<a href="{{url}}">{{label}}</a>{{/each}}</nav>{{/if}}
 <nav aria-label="Account">{{#if user}}<a class="btn" href="/submit">{{ui.post_button}}</a>
-<details class="menu"><summary>{{user.username}}</summary><div>
-<a href="/u/{{user.username}}">{{ui.menu_profile}}</a><a href="/communities/new">{{ui.menu_new_community}}</a><a href="/settings">{{ui.menu_settings}}</a>
+<details class="menu"><summary>{{user.username}}{{#if user.unread}} <b class="badge">{{user.unread}}</b>{{/if}}</summary><div>
+<a href="/u/{{user.username}}">{{ui.menu_profile}}</a><a href="/notifications">{{ui.menu_notifications}}{{#if user.unread}} ({{user.unread}}){{/if}}</a><a href="/communities/new">{{ui.menu_new_community}}</a><a href="/settings">{{ui.menu_settings}}</a>
 <form method="post" action="/logout">{{{user.csrf}}}<button>{{ui.menu_logout}}</button></form></div></details>{{else}}<a class="btn ghost" href="/login">{{ui.login}}</a><a class="btn" href="/signup">{{ui.signup}}</a>{{/if}}</nav>
 </div></header>`,
-    vars: [V('site', 'Site name'), V('slogan', 'Slogan'), V('logo', 'The animated 360.si logo (HTML)'), V('q', 'Current search text'), V('links', 'List of header menu links: each has label and url'), V('user', 'Logged-in user (empty for visitors): username, csrf (HTML hidden field for forms)'), UI],
-    sample: () => ({ site: 'Site', slogan: 'Slogan', logo: raw('<i></i>'), q: 'x', links: [{ label: 'A', url: '/a' }], user: { username: 'sam', csrf: raw('<input type="hidden" name="_csrf" value="x">') }, ui: ui() }),
+    vars: [V('site', 'Site name'), V('slogan', 'Slogan'), V('logo', 'The animated 360.si logo (HTML)'), V('q', 'Current search text'), V('links', 'List of header menu links: each has label and url'), V('user', 'Logged-in user (empty for visitors): username, csrf (HTML hidden field for forms), unread (number of unread notifications)'), UI],
+    sample: () => ({ site: 'Site', slogan: 'Slogan', logo: raw('<i></i>'), q: 'x', links: [{ label: 'A', url: '/a' }], user: { username: 'sam', unread: 2, csrf: raw('<input type="hidden" name="_csrf" value="x">') }, ui: ui() }),
   },
   footer: {
     label: 'Footer', note: 'Bottom of every page.',
@@ -74,15 +74,17 @@ export const TEMPLATES = {
   },
   post_card: {
     label: 'Post card', note: 'One post in a feed (home, model, community, search and profile lists).',
-    src: `<li class="card post">
+    src: `<li class="card post{{#if is_repost}} repost{{/if}}">
 {{{votes}}}
-<div class="body"><p class="meta">{{#if show_community}}<a class="c" href="/c/{{community}}">c/{{community}}</a> · {{/if}}<a class="tag" href="/m/{{tag_slug}}">{{tag}}</a> · {{#if author}}<a href="/u/{{author}}">u/{{author}}</a>{{else}}<span>[deleted]</span>{{/if}} · {{age}}</p>
-<h2><a href="{{url}}">{{title}}</a>{{#if link}} <a class="dom" href="{{link.url}}" rel="nofollow ugc noopener noreferrer">({{link.host}})</a>{{/if}}</h2>
-{{#if excerpt}}<p class="ex">{{excerpt}}</p>{{/if}}
-<p class="acts"><a href="{{url}}">{{comments}}</a></p></div></li>`,
+<div class="body"><p class="meta">{{#if show_community}}<a class="c" href="/c/{{community}}">c/{{community}}</a> · {{/if}}<a class="tag" href="/m/{{tag_slug}}">{{tag}}</a> · {{#if author}}<a href="/u/{{author}}">u/{{author}}</a>{{else}}<span>[deleted]</span>{{/if}} · {{age}}{{#if is_repost}} · <span class="rp">↻ reposted</span>{{/if}}</p>
+{{#if is_repost}}{{#if excerpt}}<p class="ex">{{excerpt}}</p>{{/if}}<blockquote class="quote">{{#if quote.gone}}<p class="muted">This post is no longer available.</p>{{else}}<p class="meta"><a class="c" href="/c/{{quote.community}}">c/{{quote.community}}</a> · <a class="tag" href="/m/{{quote.tag_slug}}">{{quote.tag}}</a> · {{#if quote.author}}<a href="/u/{{quote.author}}">u/{{quote.author}}</a>{{else}}<span>[deleted]</span>{{/if}} · {{quote.age}}</p>
+<h2><a href="{{quote.url}}">{{quote.title}}</a></h2>{{#if quote.excerpt}}<p class="ex">{{quote.excerpt}}</p>{{/if}}{{/if}}</blockquote>{{else}}<h2><a href="{{url}}">{{title}}</a>{{#if link}} <a class="dom" href="{{link.url}}" rel="nofollow ugc noopener noreferrer">({{link.host}})</a>{{/if}}</h2>
+{{#if excerpt}}<p class="ex">{{excerpt}}</p>{{/if}}{{/if}}
+<p class="acts"><a href="{{url}}">{{comments}}</a>{{#if reposts}} · <a href="{{reposts_url}}">{{reposts}}</a>{{/if}}</p></div></li>`,
     vars: [V('votes', 'The up/down vote box (HTML)'), V('title', 'Post title'), V('url', 'Link to the post page'), V('community', 'Community name'), V('show_community', 'False on a community page'), V('tag', 'AI model name'), V('tag_slug', 'AI model slug'),
-      V('author', 'Author username (empty if deleted)'), V('age', '"3h ago"'), V('link', 'External link (empty for text posts): url, host'), V('excerpt', 'Plain-text teaser'), V('comments', '"3 comments"'), V('score', 'Score as a number'), V('id', 'Post id')],
-    sample: () => ({ votes: raw('<div class="vote"></div>'), title: 'T', url: '/p/1/t', community: 'c', show_community: true, tag: 'T', tag_slug: 't', author: 'a', age: '1h ago', link: { url: 'https://x.test', host: 'x.test' }, excerpt: 'e', comments: '0 comments', score: 1, id: 1 }),
+      V('author', 'Author username (empty if deleted)'), V('age', '"3h ago"'), V('link', 'External link (empty for text posts): url, host'), V('excerpt', 'Plain-text teaser'), V('comments', '"3 comments"'), V('score', 'Score as a number'), V('id', 'Post id'),
+      V('is_repost', 'True when this post is a repost (quote post)'), V('quote', 'For reposts, the embedded original: gone (true if removed), url, title, community, tag, tag_slug, author, age, excerpt'), V('reposts', 'How many times this post was reposted, e.g. "2 reposts" (empty if none)'), V('reposts_url', 'Link to the list of reposts')],
+    sample: () => ({ votes: raw('<div class="vote"></div>'), title: 'T', url: '/p/1/t', community: 'c', show_community: true, tag: 'T', tag_slug: 't', author: 'a', age: '1h ago', link: { url: 'https://x.test', host: 'x.test' }, excerpt: 'e', comments: '0 comments', score: 1, id: 1, is_repost: true, quote: { gone: false, url: '/p/2/q', title: 'Q', community: 'c', tag: 'T', tag_slug: 't', author: 'b', age: '2h ago', excerpt: 'q' }, reposts: '1 repost', reposts_url: '/reposts/1' }),
   },
 };
 const ui = () => ({ skip: 's', search_placeholder: 'a', search_label: 'b', post_button: 'c', login: 'd', signup: 'e', menu_profile: 'f', menu_new_community: 'g', menu_settings: 'h', menu_logout: 'i' });

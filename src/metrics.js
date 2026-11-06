@@ -231,6 +231,7 @@ export async function prunetables() {
   await q(`DELETE FROM metrics_page WHERE day < current_date - 90`);
   await q(`DELETE FROM metrics_day WHERE day < current_date - 800`);
   await q(`DELETE FROM event_log WHERE ts < now() - interval '60 days'`);
+  await q(`DELETE FROM notifications WHERE created_at < now() - interval '90 days'`);
   await q(`DELETE FROM event_log WHERE id < (SELECT coalesce(max(id), 0) - 100000 FROM event_log)`);
 }
 

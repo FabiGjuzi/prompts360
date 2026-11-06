@@ -36,7 +36,7 @@ async function contentCsv(kind) {
     return { csv: stringify(['name', 'title', 'description', 'model'], rows.map(r => [r.name, r.title, r.description, r.model])), count: rows.length };
   }
   const { rows } = await q(`SELECT c.name AS community, p.title, p.body, t.slug AS model, p.url FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
-    WHERE p.deleted_at IS NULL AND p.removed_at IS NULL AND c.removed_at IS NULL ORDER BY p.id LIMIT ${MAX_ROWS}`);
+    WHERE p.deleted_at IS NULL AND p.removed_at IS NULL AND p.repost_of IS NULL AND c.removed_at IS NULL ORDER BY p.id LIMIT ${MAX_ROWS}`);
   return { csv: stringify(['community', 'title', 'body', 'model', 'url'], rows.map(r => [r.community, r.title, r.body, r.model, r.url])), count: rows.length };
 }
 
@@ -61,7 +61,7 @@ export async function exportPage(req, res) {
   const { rows } = await q(`SELECT relname AS name, n_live_tup::bigint AS rows FROM pg_stat_user_tables`);
   const by = new Map(rows.map(r => [r.name, Number(r.rows)]));
   const content = html`<p class="muted">Download the site’s data as CSV (opens in Excel, Numbers or Google Sheets, UTF-8). Only what the dashboard may show is included: password hashes, email fingerprints, login tokens and the email queue are never exported. Cells starting with <code>=</code> <code>+</code> <code>-</code> <code>@</code> get a leading <code>'</code> so a spreadsheet cannot run them as formulas; the importer removes it again.</p>
-<section class="card"><h2>Content (can be imported again)</h2><p class="muted">Communities and live posts, in the same columns the <a href="${P}/import">importer</a> reads. Edit in a spreadsheet, then import to add new rows. (Importing skips posts that already exist; it does not update them. Use the post editor for that.)</p>
+<section class="card"><h2>Content (can be imported again)</h2><p class="muted">Communities and live posts (reposts are left out: they only point at another post), in the same columns the <a href="${P}/import">importer</a> reads. Edit in a spreadsheet, then import to add new rows. (Importing skips posts that already exist; it does not update them. Use the post editor for that.)</p>
 <div class="row"><a class="btn primary" href="${P}/export/content/communities.csv">communities.csv</a> <a class="btn primary" href="${P}/export/content/posts.csv">posts.csv</a></div></section>
 <section class="card"><h2>Everything</h2><p class="muted">One ZIP with a CSV for every table below. Large tables are cut at ${nf(MAX_ROWS)} rows each.</p>
 <div class="row"><a class="btn primary" href="${P}/export/all.zip">Download all tables (.zip)</a></div></section>

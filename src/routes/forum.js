@@ -9,7 +9,7 @@ import { page, redirect, json, str, HttpError } from '../http.js';
 import { t } from '../site.js';
 import { pageBySlug } from '../site.js';
 import { ldHome, ldBreadcrumbs, ldPost, ldCollection, ldWebPage } from '../seo.js';
-import { safeUrl, safeBack, slugify } from '../html.js';
+import { html, safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
 import { plain } from '../markdown.js';
@@ -31,10 +31,16 @@ const tagBySlug = async s => (await tags()).find(t => t.slug === s) || null;
 // SQL fragment: only posts that are neither deleted by the author nor removed by an admin.
 const VIS = 'p.deleted_at IS NULL AND p.removed_at IS NULL';
 // Columns and joins shared by every feed query (one place so all feeds return the same shape).
+const REPOST_COLS = `p.repost_of, o.id AS o_id, o.title AS o_title, left(o.body, 300) AS o_excerpt, oc.name AS o_community, ot.slug AS o_tag_slug, ot.name AS o_tag_name,
+  CASE WHEN ou.deleted_at IS NULL THEN ou.username END AS o_author, o.created_at AS o_created,
+  (p.repost_of IS NOT NULL AND (o.id IS NULL OR o.deleted_at IS NOT NULL OR o.removed_at IS NOT NULL OR oc.removed_at IS NOT NULL)) AS o_gone,
+  (SELECT count(*)::int FROM posts r WHERE r.repost_of = p.id AND r.deleted_at IS NULL AND r.removed_at IS NULL) AS reposts`;
 const POST_COLS = `p.id, p.title, p.url, p.score, p.comment_count, p.created_at, p.hot, left(p.body, 300) AS excerpt,
-  c.name AS community, t.slug AS tag_slug, t.name AS tag_name, CASE WHEN u.deleted_at IS NULL THEN u.username END AS author`;
+  c.name AS community, t.slug AS tag_slug, t.name AS tag_name, CASE WHEN u.deleted_at IS NULL THEN u.username END AS author,
+  ${REPOST_COLS}`;
 const POST_FROM = `FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
-  LEFT JOIN users u ON u.id = p.author_id`;
+  LEFT JOIN users u ON u.id = p.author_id
+  LEFT JOIN posts o ON o.id = p.repost_of LEFT JOIN communities oc ON oc.id = o.community_id LEFT JOIN ai_tags ot ON ot.id = o.ai_tag_id LEFT JOIN users ou ON ou.id = o.author_id`;
 // Top-feed time windows -> SQL interval. Values are constants, never user text (safe to inline in SQL).
 const WINDOWS = { day: '1 day', week: '7 days', month: '30 days', year: '365 days' }; // constants, never user text
 // Posts per page.
@@ -58,15 +64,16 @@ function parseCursor(sort, c) {
 const makeCursor = (sort, p) => sort === 'hot' ? `h${p.hot}_${p.id}` : sort === 'top' ? `s${p.score}_${p.id}` : `n${p.id}`;
 
 /** Fetch one page of posts for the given filters/sort (keyset-paginated, index-backed, cached briefly for ranked feeds). Returns {posts, next}. */
-async function loadFeed({ communityId, tagId, authorId, search, sort = 'hot', window = 'day', after }) {
+async function loadFeed({ communityId, tagId, authorId, repostOf, search, sort = 'hot', window = 'day', after }) {
   if (search) return searchFeed(search, after);
-  if (authorId) sort = 'new';
+  if (authorId || repostOf) sort = 'new';
   const cursor = parseCursor(sort, after);
   const where = [VIS], vals = [];
   const p = v => { vals.push(v); return `$${vals.length}`; };
   if (communityId) where.push(`p.community_id = ${p(communityId)}`);
   if (tagId) where.push(`p.ai_tag_id = ${p(tagId)}`);
   if (authorId) where.push(`p.author_id = ${p(authorId)}`);
+  if (repostOf) where.push(`p.repost_of = ${p(repostOf)}`);
   let order;
   if (sort === 'new') { order = 'p.id DESC'; if (cursor) where.push(`p.id < ${p(cursor.id)}`); }
   else if (sort === 'top') {
@@ -79,7 +86,7 @@ async function loadFeed({ communityId, tagId, authorId, search, sort = 'hot', wi
   // Shared cache for ranked feeds: hot 10 s; windowed top 60 s (its uncached worst case is the slowest
   // feed query, ~65 ms on 1M posts). Personal state (votes) is never cached.
   const ttl = sort === 'top' && window !== 'all' ? 60 : 10;
-  const rows = (authorId || sort === 'new') ? await run()
+  const rows = (authorId || repostOf || sort === 'new') ? await run()
     : await cached(`feed:${sort}:${window}:${communityId || 0}:${tagId || 0}:${cursor ? makeCursor(sort, cursor) : ''}`, ttl, run);
   return pageOf(rows, sort);
 }
@@ -109,7 +116,7 @@ const RECENT = 20_000;
 async function searchFeed(text, after) {
   const cursor = parseCursor('new', after);
   const floor = (await maxPostId()) - RECENT;
-  const base = `SELECT ${POST_COLS} ${POST_FROM} WHERE ${VIS} AND p.search @@ websearch_to_tsquery('english', $1)`;
+  const base = `SELECT ${POST_COLS} ${POST_FROM} WHERE ${VIS} AND p.repost_of IS NULL AND p.search @@ websearch_to_tsquery('english', $1)`;
   const rows = [];
   if (!cursor || cursor.id > floor + 1) {
     const vals = [text, floor];
@@ -297,7 +304,7 @@ async function postPage(req, res, [idStr]) {
   const id = Number(idStr);
   const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at,
       p.deleted_at, coalesce(p.removed_at, c.removed_at) AS removed_at, c.name AS community, t.slug AS tag_slug, t.name AS tag_name,
-      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author
+      CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, ${REPOST_COLS}
     ${POST_FROM} WHERE p.id = $1`, [id]);
   if (!post) throw new HttpError(404, 'That post doesn’t exist.');
   const gonePost = Boolean(post.removed_at || post.deleted_at);
@@ -319,11 +326,12 @@ async function postPage(req, res, [idStr]) {
     postVotes(req.user, [post]),
     myVotes(req.user, 'comment_votes', 'comment_id', rows.map(r => r.id)),
   ]);
+  const isRepost = Boolean(post.repost_of);   // a repost duplicates another page: never indexed, never in the sitemap
   return page(req, res, {
-    title: post.removed_at ? '[removed]' : post.title,
+    title: post.removed_at ? '[removed]' : isRepost ? `Repost: ${post.title}` : post.title,
     desc: gonePost ? undefined : descOf(post.body, post.title),
-    noindex: gonePost, canonical: gonePost ? undefined : canon, ogType: 'article',
-    jsonld: gonePost ? undefined : [ldPost({ ...post, path: canon }), ldBreadcrumbs([['Home', '/'], [post.tag_name, `/m/${post.tag_slug}`], [`c/${post.community}`, `/c/${post.community}`], [post.title.slice(0, 80), canon]])],
+    noindex: gonePost || isRepost, canonical: gonePost || isRepost ? undefined : canon, ogType: 'article',
+    jsonld: gonePost || isRepost ? undefined : [ldPost({ ...post, path: canon }), ldBreadcrumbs([['Home', '/'], [post.tag_name, `/m/${post.tag_slug}`], [`c/${post.community}`, `/c/${post.community}`], [post.title.slice(0, 80), canon]])],
     content: V.postPage({ post, comments, votes, cvotes, user: req.user, sort }),
     sidebar: V.sidebar({ tags: await tags(), user: req.user, community: await getCommunity(post.community) }),
   });
@@ -339,12 +347,15 @@ function descOf(body, title) {
 /** POST /p/:id/edit — the author edits the body. */
 async function postEdit(req, res, [idStr]) {
   const id = Number(idStr), body = str(req.body.body, 40000).trim();
-  if (!body) throw new HttpError(400, 'The body cannot be empty.');
   const rl = await hit(`edit:${req.user.id}`, ...LIMITS.edit);
   if (!rl.ok) throw new HttpError(429, 'Too many edits. Slow down a little.');
+  // Only a repost may have an empty body (its embedded card is the content); every other post needs one.
   const r = await q(`UPDATE posts SET body = $3, edited_at = now() WHERE id = $1 AND author_id = $2
-    AND deleted_at IS NULL AND removed_at IS NULL RETURNING id`, [id, req.user.id, body]);
-  if (!r.rowCount) throw new HttpError(403, 'You can only edit your own posts.');
+    AND deleted_at IS NULL AND removed_at IS NULL AND ($3 <> '' OR repost_of IS NOT NULL) RETURNING id`, [id, req.user.id, body]);
+  if (!r.rowCount) {
+    if (!body && await one('SELECT 1 FROM posts WHERE id = $1 AND author_id = $2 AND deleted_at IS NULL AND removed_at IS NULL', [id, req.user.id])) throw new HttpError(400, 'The body cannot be empty.');
+    throw new HttpError(403, 'You can only edit your own posts.');
+  }
   return redirect(res, `/p/${id}?n=edited`);
 }
 
@@ -360,6 +371,72 @@ async function postDelete(req, res, [idStr]) {
   });
   if (!ok) throw new HttpError(403, 'You can only delete your own posts.');
   return redirect(res, `/p/${id}?n=deleted`);
+}
+
+
+// ---------- Reposts ----------
+/** POST /p/:id/repost — quote a post. The new post lands in the original's community with the original's model tag,
+ *  embeds the ORIGINAL (reposting a repost embeds its original), counts as one upvote for the original, and tells its author. */
+async function repostCreate(req, res, [idStr]) {
+  const clicked = Number(idStr), comment = str(req.body.body, 40000).trim();
+  for (const [k, lim] of [['post', LIMITS.post], ['postDay', LIMITS.postDay]]) {
+    const rl = await hit(`${k}:${req.user.id}`, ...lim);
+    if (!rl.ok) throw new HttpError(429, `You're posting too fast. Try again in ${Math.ceil(rl.retryAfter / 60)} min.`);
+  }
+  const id = await tx(async db => {
+    const start = (await db.query('SELECT id, repost_of FROM posts WHERE id = $1', [clicked])).rows[0];
+    if (!start) throw new HttpError(404, 'That post doesn’t exist.');
+    const rootId = start.repost_of || start.id;
+    const root = (await db.query(`SELECT p.id, p.title, p.community_id, p.ai_tag_id, p.author_id, p.score FROM posts p JOIN communities c ON c.id = p.community_id
+      WHERE p.id = $1 AND p.deleted_at IS NULL AND p.removed_at IS NULL AND p.repost_of IS NULL AND c.removed_at IS NULL FOR NO KEY UPDATE OF p`, [rootId])).rows[0];
+    if (!root) throw new HttpError(404, 'That post is no longer available to repost.');
+    if ((await db.query(`SELECT 1 FROM posts WHERE author_id = $1 AND repost_of = $2 AND deleted_at IS NULL AND removed_at IS NULL`, [req.user.id, root.id])).rowCount)
+      throw new HttpError(409, 'You have already reposted this post.');
+    const { rows: [p] } = await db.query(
+      `INSERT INTO posts (community_id, ai_tag_id, author_id, title, body, repost_of, score, hot)
+       VALUES ($1, $2, $3, $4, $5, $6, 1, hot_rank(1, now())) RETURNING id`,
+      [root.community_id, root.ai_tag_id, req.user.id, root.title, comment, root.id]);
+    await db.query('INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1)', [req.user.id, p.id]);
+    await db.query('UPDATE communities SET post_count = post_count + 1 WHERE id = $1', [root.community_id]);
+    // A repost is an upvote for the original (one per person, so it cannot be farmed).
+    const prev = (await db.query('SELECT value FROM post_votes WHERE user_id = $1 AND post_id = $2', [req.user.id, root.id])).rows[0]?.value || 0;
+    if (prev !== 1) {
+      await db.query(`INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1) ON CONFLICT (user_id, post_id) DO UPDATE SET value = 1`, [req.user.id, root.id]);
+      await db.query('UPDATE posts SET score = score + $2, hot = hot_rank(score + $2, created_at) WHERE id = $1', [root.id, 1 - prev]);
+    }
+    if (root.author_id && root.author_id !== req.user.id)
+      await db.query(`INSERT INTO notifications (user_id, kind, actor_id, post_id) VALUES ($1, 'repost', $2, $3)`, [root.author_id, req.user.id, p.id]);
+    return p.id;
+  });
+  return redirect(res, `/p/${id}?n=reposted`);
+}
+
+/** GET /reposts/:id — everyone who reposted a post (newest first). */
+async function repostsPage(req, res, [idStr]) {
+  const id = Number(idStr);
+  const post = await one(`SELECT p.id, p.title, p.deleted_at, p.removed_at FROM posts p WHERE p.id = $1 AND p.repost_of IS NULL`, [id]);
+  if (!post || post.deleted_at || post.removed_at) throw new HttpError(404, 'That post doesn’t exist.');
+  const { posts, next } = await loadFeed({ repostOf: id, after: req.query.get('after') });
+  return page(req, res, {
+    title: `Reposts of ${post.title}`, noindex: true,
+    content: html`<section class="card chead"><h1>Reposts</h1><p class="meta">of <a href="/p/${post.id}/${slugify(post.title)}">${post.title}</a></p></section>${V.postList(posts, await postVotes(req.user, posts), req.user, { back: `/reposts/${id}`, nextUrl: next && `/reposts/${id}?after=${next}`, empty: 'No reposts yet.' })}`,
+  });
+}
+
+// ---------- Notifications ----------
+/** Unread notification count for the header badge. */
+export async function unreadCount(userId) {
+  return (await q('SELECT count(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [userId])).rows[0].n;
+}
+/** GET /notifications — the latest 50, then mark everything read. */
+async function notificationsPage(req, res) {
+  const { rows } = await q(`SELECT n.id, n.kind, n.created_at, n.read_at, n.post_id, CASE WHEN a.deleted_at IS NULL THEN a.username END AS actor,
+      p.title, p.deleted_at, p.removed_at
+    FROM notifications n LEFT JOIN users a ON a.id = n.actor_id LEFT JOIN posts p ON p.id = n.post_id
+    WHERE n.user_id = $1 ORDER BY n.id DESC LIMIT 50`, [req.user.id]);
+  await q('UPDATE notifications SET read_at = now() WHERE user_id = $1 AND read_at IS NULL', [req.user.id]);
+  req.user.unread = 0;
+  return page(req, res, { title: 'Notifications', noindex: true, cache: false, content: V.notificationsPage(rows) });
 }
 
 // ---------- Comments ----------
@@ -514,6 +591,9 @@ export const forumRoutes = [
   ['GET', /^\/submit$/, submitGet, { auth: 'user' }],
   ['POST', /^\/submit$/, submitPost, { form: 'user', auth: 'user', bodyLimit: 200_000 }],
   ['GET', /^\/p\/(\d{1,15})(?:\/[A-Za-z0-9_-]{0,80})?$/, postPage],
+  ['POST', /^\/p\/(\d{1,15})\/repost$/, repostCreate, { form: 'user', auth: 'user', bodyLimit: 200_000 }],
+  ['GET', /^\/reposts\/(\d{1,15})$/, repostsPage],
+  ['GET', /^\/notifications$/, notificationsPage, { auth: 'user' }],
   ['POST', /^\/p\/(\d{1,15})\/edit$/, postEdit, { form: 'user', auth: 'user', bodyLimit: 200_000 }],
   ['POST', /^\/p\/(\d{1,15})\/delete$/, postDelete, { form: 'user', auth: 'user' }],
   ['POST', /^\/p\/(\d{1,15})\/comment$/, commentCreate, { form: 'user', auth: 'user', bodyLimit: 60_000 }],
