@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { boot, makeUser, csrf, adminClient, flushLimits, earnPoints } from './_helpers.js';
-import { levelOf, TIERS, COMMUNITY_MIN } from '../src/points.js';
+import { levelOf, getTiers, communityMin } from '../src/points.js';
 
 let app, alice, bob, carol, adm, comm;
 const pts = async name => (await app.db.q('SELECT points FROM users WHERE username = $1', [name])).rows[0].points;
@@ -21,11 +21,11 @@ before(async () => {
 after(async () => { await app.close(); });
 
 test('level tiers: names, thresholds and progress', () => {
-  assert.deepEqual(TIERS.map(t => t[1]), ['Newcomer', 'Explorer', 'Contributor', 'Builder', 'Expert', 'Legend']);
+  assert.deepEqual(getTiers().map(t => t[1]), ['Newcomer', 'Explorer', 'Contributor', 'Builder', 'Expert', 'Legend']);
   assert.equal(levelOf(0).name, 'Newcomer'); assert.equal(levelOf(24).name, 'Newcomer'); assert.equal(levelOf(25).name, 'Explorer');
   assert.equal(levelOf(149).name, 'Contributor'); assert.equal(levelOf(150).name, 'Builder'); assert.equal(levelOf(499).name, 'Builder');
   assert.equal(levelOf(500).name, 'Expert'); assert.equal(levelOf(1500).name, 'Legend'); assert.equal(levelOf(99999).next, null);
-  assert.equal(levelOf(-5).name, 'Newcomer'); assert.equal(levelOf(100).toNext, 50); assert.equal(levelOf(150).level, 4); assert.equal(COMMUNITY_MIN, 150);
+  assert.equal(levelOf(-5).name, 'Newcomer'); assert.equal(levelOf(100).toNext, 50); assert.equal(levelOf(150).level, 4); assert.equal(communityMin(), 150);
 });
 
 test('everyone starts at 0, including activity from before points existed', async () => {
@@ -158,4 +158,53 @@ test('points and level are shown: header menu, profile and author badges', async
 test('dashboard users list shows the points column (read-only)', async () => {
   const r = await adm.get(`${(await import('./_helpers.js')).ADMIN}/t/users`);
   assert.equal(r.status, 200); assert.match(r.text, /points/i);
+});
+
+test('dashboard: levels can be created, renamed, re-thresholded and deleted; the site follows immediately', async () => {
+  const { ADMIN } = await import('./_helpers.js');
+  const ids = async () => Object.fromEntries((await sql('SELECT name, id FROM levels')).rows.map(r => [r.name, r.id]));
+  assert.equal((await adm.get(`${ADMIN}/t/levels`)).status, 200);
+  // rename Builder → Maker, move Expert to 400, add a new tier
+  let l = await ids();
+  assert.equal((await adm.apost(`/t/levels/${l.Builder}`, { name: 'Maker', min_points: '150' })).status, 303);
+  assert.equal((await adm.apost(`/t/levels/${l.Expert}`, { name: 'Expert', min_points: '400' })).status, 303);
+  assert.equal((await adm.apost('/t/levels/new', { name: 'Grandmaster', min_points: '5000' })).status, 303);
+  const { levelOf, getTiers } = await import('../src/points.js');
+  assert.equal(levelOf(150).name, 'Maker'); assert.equal(levelOf(400).name, 'Expert'); assert.equal(levelOf(5000).name, 'Grandmaster');
+  assert.equal(getTiers().length, 7);
+  // validation: duplicate threshold, duplicate name, negative, bad number
+  for (const [name, pts] of [['Dupe', '25'], ['explorer', '26'], ['Neg', '-5'], ['Huge', '99999999999'], ['Words', 'abc'], ['', '10']]) {
+    const r = await adm.apost('/t/levels/new', { name, min_points: pts });
+    assert.equal(r.status, 400, `${name}/${pts} must be rejected`);
+  }
+  // the 0-point level can be renamed but not moved or deleted
+  l = await ids();
+  assert.equal((await adm.apost(`/t/levels/${l.Newcomer}`, { name: 'Rookie', min_points: '0' })).status, 303);
+  assert.equal(levelOf(0).name, 'Rookie');
+  assert.equal((await adm.apost(`/t/levels/${l.Newcomer}`, { name: 'Rookie', min_points: '5' })).status, 400);
+  assert.equal((await adm.apost(`/t/levels/${l.Newcomer}/delete`, {})).status, 400);
+  assert.equal((await sql('SELECT 1 FROM levels WHERE min_points = 0')).rowCount, 1);
+  // other tiers can be deleted
+  assert.equal((await adm.apost(`/t/levels/${l.Contributor}/delete`, {})).status, 303);
+  assert.equal(getTiers().length, 6);
+  // the public pages use the new names
+  assert.match((await alice.get('/')).text, /<span class="pts">(Rookie|Explorer) · \d+ pts<\/span>/);
+});
+
+test('dashboard: the community-creation requirement is its own editable number', async () => {
+  const { ADMIN } = await import('./_helpers.js');
+  const { communityMin } = await import('../src/points.js');
+  assert.equal((await adm.get(`${ADMIN}/t/points_settings`)).status, 200);
+  assert.equal((await adm.get(`${ADMIN}/t/points_settings/new`)).status, 404, 'a single settings row: no create');
+  assert.equal((await adm.apost('/t/points_settings/1/delete', {})).status, 404, 'and no delete');
+  assert.equal((await adm.apost('/t/points_settings/1', { community_min: '-1' })).status, 400);
+  assert.equal((await adm.apost('/t/points_settings/1', { community_min: '10' })).status, 303);
+  assert.equal(communityMin(), 10);
+  const erin = await makeUser(app.mail, { username: 'pt_erin' });
+  assert.match((await erin.get('/communities/new')).text, /You need 10 points/);
+  await earnPoints(app, erin, 10);
+  await flushLimits();
+  assert.equal((await erin.post('/communities/new', { _csrf: await csrf(erin), name: 'Ten_Is_Enough', title: 'ok', tag: 'general' })).status, 303);
+  assert.equal((await adm.apost('/t/points_settings/1', { community_min: '150' })).status, 303);
+  assert.equal(communityMin(), 150);
 });

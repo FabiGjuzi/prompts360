@@ -13,7 +13,7 @@ import { html, safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
 import { plain } from '../markdown.js';
-import { recalc, relatedToPost, relatedToComment, levelOf, COMMUNITY_MIN, POINTS } from '../points.js';
+import { recalc, relatedToPost, relatedToComment, levelOf, communityMin, POINTS } from '../points.js';
 
 // ---------- AI tags (tiny table, cached in-process) ----------
 // In-process copy of the AI tags: when it was loaded, and the rows.
@@ -245,7 +245,7 @@ async function communityNewPost(req, res) {
   await recalc([req.user.id]);   // exact total at the moment of the check (also picks up admin edits)
   const { points } = await one('SELECT points FROM users WHERE id = $1', [req.user.id]);
   const bad = (error, status = 400) => page(req, res, { status, title: 'Create a community', content: V.communityForm({ user: req.user, tags: allTags, v, error, points }) });
-  if (points < COMMUNITY_MIN) return bad(`You need ${COMMUNITY_MIN} points to create a community (you have ${points}).`, 403);
+  if (points < communityMin()) return bad(`You need ${communityMin()} points to create a community (you have ${points}).`, 403);
   const rl = await hit(`community:${req.user.id}`, ...LIMITS.community);
   if (!rl.ok) return bad('You can create up to 3 communities per day.', 429);
   if (!COMMUNITY_RE.test(v.name)) return bad('Name must be 3–21 letters, numbers or underscores.');

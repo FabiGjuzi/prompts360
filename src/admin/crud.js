@@ -15,6 +15,7 @@ import { refreshSite, TEXTS } from '../site.js';
 import { clearMicro } from '../http.js';
 import { resetTagCache } from '../routes/forum.js';
 import { clearSeoCache } from '../seo.js';
+import { refreshLevels } from '../points.js';
 import { adminPage, csrf, table as htmlTable, card, nf, when, P } from './ui.js';
 
 /** Make every cache forget what it knows, so an edit shows up on the site immediately. */
@@ -22,6 +23,7 @@ export async function invalidate() {
   clearMicro(); resetTagCache(); clearSeoCache();
   try { const keys = await kv.keys('feed:*'); if (keys.length) await kv.del(keys); } catch { /* cache only */ }
   await refreshSite().catch(() => {});
+  await refreshLevels().catch(() => {});
 }
 
 const RESERVED_SLUGS = new Set(['login', 'signup', 'logout', 'forgot', 'reset', 'verify', 'resend', 'settings', 'search', 'submit', 'communities',
@@ -136,6 +138,20 @@ export const TABLES = {
     after: async (db, row) => { if (row.banned_at || row.deleted_at) await destroyAllSessions(row.id); },
     protect: async row => { if (row.username === 'prompts360') throw new Problem('The site account cannot be changed or deleted.'); },
     afterDelete: async (db, row) => { await destroyAllSessions(row.id); },
+  },
+  levels: {
+    label: 'Levels', pk: ['id'], list: ['id', 'name', 'min_points'], order: 'min_points', search: ['name'],
+    cols: [text('name', 'Level name (shown next to usernames, on profiles and in the account menu)', { req: true, max: 30 }), int('min_points', 'Points needed to unlock this level', { req: true })],
+    before: (db, v, ctx) => {
+      if (v.min_points < 0 || v.min_points > 10_000_000) throw new Problem('Points must be between 0 and 10,000,000.');
+      if (ctx.op === 'update' && ctx.old.min_points === 0 && v.min_points !== 0) throw new Problem('The first level must stay at 0 points so every user has a level. Rename it instead, or add another level above it.');
+    },
+    protectDelete: async row => { if (row.min_points === 0) throw new Problem('The 0-point level cannot be deleted (every user needs a level). You can rename it.'); },
+  },
+  points_settings: {
+    label: 'Points settings', pk: ['id'], list: ['id', 'community_min'], order: 'id', noCreate: true, noDelete: true,
+    cols: [int('community_min', 'Points needed to create a community', { req: true })],
+    before: (db, v) => { if (v.community_min < 0 || v.community_min > 10_000_000) throw new Problem('Points must be between 0 and 10,000,000.'); },
   },
   reports: {
     label: 'Reports', pk: ['id'], list: ['id', 'reason', 'post_id', 'comment_id', 'community_id', 'created_at', 'resolved_at'], search: ['reason'], order: 'id DESC', noCreate: true,
@@ -257,7 +273,7 @@ async function form(req, res, name, T, { row = {}, error, status = 200, isNew })
   const content = html`<p><a href="${url(name)}">← ${T.label}</a></p>${error ? html`<p class="error" role="alert">${error}</p>` : ''}
 <form method="post" action="${url(name, isNew ? '/new' : `/${key}`)}" class="edit">${csrf(req)}${fields}
 ${editable.length ? html`<button class="btn primary">${isNew ? 'Create' : 'Save'}</button>` : ''}</form>
-${!isNew && !T.readOnly && T.pk ? html`<details class="danger"><summary>Delete this row</summary><form method="post" action="${url(name, `/${key}/delete`)}">${csrf(req)}<p>This cannot be undone.</p><button class="btn danger">Yes, delete permanently</button></form></details>` : ''}`;
+${!isNew && !T.readOnly && !T.noDelete && T.pk ? html`<details class="danger"><summary>Delete this row</summary><form method="post" action="${url(name, `/${key}/delete`)}">${csrf(req)}<p>This cannot be undone.</p><button class="btn danger">Yes, delete permanently</button></form></details>` : ''}`;
   return adminPage(req, res, { title: `${isNew ? 'New' : 'Edit'} · ${T.label}`, active: `/t/${name}`, content, status });
 }
 
@@ -374,13 +390,14 @@ export async function update(req, res, [name, idStr]) {
 /** POST /t/:table/:id/delete */
 export async function remove(req, res, [name, idStr]) {
   const T = tableOf(name);
-  if (T.readOnly || !T.pk) throw new HttpError(404, 'Page not found.');
+  if (T.readOnly || T.noDelete || !T.pk) throw new HttpError(404, 'Page not found.');
   const ids = parseId(T, idStr);
   try {
     await tx(async db => {
       const old = (await db.query(`SELECT * FROM ${name} WHERE ${keyWhere(T)} FOR UPDATE`, ids)).rows[0];
       if (!old) throw new HttpError(404, 'Page not found.');
       await T.protect?.(old);
+      await T.protectDelete?.(old);
       await db.query(`DELETE FROM ${name} WHERE ${keyWhere(T)}`, ids);
       await T.afterDelete?.(db, old);
     });

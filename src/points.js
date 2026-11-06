@@ -1,6 +1,7 @@
 // points.js — the point system and level tiers.
 //
-// Rules (all counted only for activity after migration 007, so everyone started at 0):
+// Rules (point values are fixed in code; tier names/thresholds and the community requirement are edited in the dashboard).
+// All counted only for activity after migration 007, so everyone started at 0):
 //   post        +5  to the author of a live post (a repost is a share, not a post)
 //   comment     +2  to the commenter, unless the comment is on their own post
 //   share       +2  to the reposter AND +2 to the author of the original (nothing if you repost your own post)
@@ -12,12 +13,35 @@
 import { q } from './db.js';
 
 export const POINTS = { vote: 1, comment: 2, post: 5, share: 2 };
-export const COMMUNITY_MIN = 150;                 // points needed to create a community
-export const TIERS = [[0, 'Newcomer'], [25, 'Explorer'], [75, 'Contributor'], [150, 'Builder'], [500, 'Expert'], [1500, 'Legend']];
+
+// ---------- Level tiers and the community requirement: editable in the dashboard (tables levels / points_settings) ----------
+// An in-memory snapshot, refreshed after every dashboard save and at most every 15 s (so other instances catch up).
+// Built-in defaults are used until the first load. Tiers are [min points, name], ascending, the first at 0.
+let tiers = [[0, 'Newcomer'], [25, 'Explorer'], [75, 'Contributor'], [150, 'Builder'], [500, 'Expert'], [1500, 'Legend']];
+let communityMinPts = 150, loadedAt = 0, loading = null;
+/** The current tier list: [[min points, name], …] ascending. */
+export const getTiers = () => tiers;
+/** Points needed to create a community. */
+export const communityMin = () => communityMinPts;
+/** Reload tiers and the community requirement from the database. */
+export function refreshLevels() {
+  loading ||= (async () => {
+    const [l, s] = await Promise.all([q('SELECT name, min_points FROM levels ORDER BY min_points'), q('SELECT community_min FROM points_settings WHERE id = 1')]);
+    if (l.rows.length && l.rows[0].min_points === 0) tiers = l.rows.map(r => [r.min_points, r.name]);
+    if (s.rows[0]) communityMinPts = s.rows[0].community_min;
+    loadedAt = Date.now();
+  })().finally(() => { loading = null; });
+  return loading;
+}
+/** Make sure a snapshot exists (waits for the first load; later refreshes happen in the background). */
+export async function ensureLevels() {
+  if (!loadedAt) await refreshLevels().catch(e => console.error('[levels]', e.message));
+  else if (Date.now() - loadedAt > 15_000) refreshLevels().catch(e => console.error('[levels]', e.message));
+}
 
 /** Level for a point total: { name, min, level (1-based), next: {name, min} | null, toNext, pct (0-100 progress to the next level) }. */
 export function levelOf(points) {
-  const pts = Math.max(0, Number(points) || 0);
+  const pts = Math.max(0, Number(points) || 0), TIERS = tiers;
   let i = 0;
   while (i + 1 < TIERS.length && pts >= TIERS[i + 1][0]) i++;
   const [min, name] = TIERS[i], nx = TIERS[i + 1];

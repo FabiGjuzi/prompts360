@@ -7,7 +7,7 @@ import { tpl, current as design, isPreview } from './design.js';
 import { config } from './config.js';
 import { assets } from './assets.js';
 import { t, nav, siteName } from './site.js';
-import { levelOf, COMMUNITY_MIN, TIERS } from './points.js';
+import { levelOf, communityMin, getTiers } from './points.js';
 
 // Flash messages shown after a redirect (?n=<key>); only keys 'n.<key>' that exist in the texts registry are ever displayed.
 const NOTICE_KEYS = new Set(['verified', 'reset', 'pwchanged', 'logout', 'deleted', 'removed', 'reported', 'community', 'edited', 'reposted', 'accountdeleted']);
@@ -280,18 +280,18 @@ export function submitForm({ user, community = '', v = {}, error, tags = [], com
 /** Level name, point total and a progress bar to the next level (profile page). */
 function levelBox(points = 0) {
   const L = levelOf(points);
-  return html`<p class="lvlbox"><span class="lvl">${L.name}</span> · <b>${points}</b> points · level ${L.level} of ${TIERS.length}</p>${L.next ? html`<p class="meta"><progress value="${points - L.min}" max="${L.next.min - L.min}" aria-label="Progress to ${L.next.name}"></progress> ${L.toNext} more to ${L.next.name}</p>` : ''}`;
+  return html`<p class="lvlbox"><span class="lvl">${L.name}</span> · <b>${points}</b> points · level ${L.level} of ${getTiers().length}</p>${L.next ? html`<p class="meta"><progress value="${points - L.min}" max="${L.next.min - L.min}" aria-label="Progress to ${L.next.name}"></progress> ${L.toNext} more to ${L.next.name}</p>` : ''}`;
 }
 /** How points are earned (shown where people ask for them). */
 const pointsHelp = () => html`<details class="inline"><summary>How points work</summary><ul>
 <li><b>5</b> points for each post you publish</li><li><b>2</b> points for each comment (not on your own post)</li><li><b>2</b> points when you repost someone's post, and 2 for the author of the post you reposted</li>
-<li><b>1</b> point when you vote on a post or comment, and 1 for its author (not on your own)</li><li>Deleting or removing content takes its points back. Levels: ${TIERS.map(([m, n]) => `${n} ${m}`).join(', ')}.</li></ul></details>`;
+<li><b>1</b> point when you vote on a post or comment, and 1 for its author (not on your own)</li><li>Deleting or removing content takes its points back. Levels: ${getTiers().map(([m, n]) => `${n} ${m}`).join(', ')}.</li></ul></details>`;
 
-export function communityForm({ user, tags, v = {}, error, points = COMMUNITY_MIN }) {
-  const locked = points < COMMUNITY_MIN;
+export function communityForm({ user, tags, v = {}, error, points = Infinity }) {
+  const need = communityMin(), locked = points < need;
   return html`<section class="card form wide"><h1>${t('cform.title')}</h1>${err(error)}
 <p class="muted">${t('cform.intro')}</p>
-${locked ? html`<div class="notice" role="status"><b>You need ${COMMUNITY_MIN} points to create a community.</b> You have ${points} (${COMMUNITY_MIN - points} to go). ${levelBox(points)}${pointsHelp()}</div>` : ''}
+${locked ? html`<div class="notice" role="status"><b>You need ${need} points to create a community.</b> You have ${points} (${need - points} to go). ${levelBox(points)}${pointsHelp()}</div>` : ''}
 <form method="post" action="/communities/new" class="stack"><fieldset class="plain"${locked ? raw(' disabled') : ''}>${csrfField(user)}
 <label>Name <small>(3–21 letters, numbers or _ · becomes c/name · unique · can't be changed)</small><input name="name" maxlength="21" pattern="[A-Za-z0-9_]{3,21}" required value="${v.name || ''}"></label>
 <label>Title<input name="title" maxlength="100" required value="${v.title || ''}"></label>

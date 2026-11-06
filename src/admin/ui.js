@@ -13,7 +13,7 @@ const NAV = [
   ['Overview', [['', 'Dashboard'], ['/live', 'Live'], ['/logs', 'Logs & events']]],
   ['Site', [['/design', 'Site design'], ['/texts', 'Texts & slogan'], ['/t/pages', 'Pages'], ['/t/nav_links', 'Navigation'], ['/t/ai_tags', 'AI models']]],
   ['Content', [['/t/communities', 'Communities'], ['/t/posts', 'Posts'], ['/t/comments', 'Comments'], ['/import', 'Import prompts'], ['/export', 'Export (CSV)'], ['/reports', 'Reports']]],
-  ['People', [['/t/users', 'Users']]],
+  ['People', [['/t/users', 'Users'], ['/t/levels', 'Levels'], ['/t/points_settings', 'Points settings']]],
   ['System', [['/db', 'Database tables'], ['/account', 'Account & security']]],
 ];
 

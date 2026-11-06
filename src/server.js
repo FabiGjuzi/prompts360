@@ -20,7 +20,7 @@ import { safeEqual } from './crypto.js';
 import { drainOutbox } from './mail.js';
 import { authRoutes } from './routes/auth.js';
 import { forumRoutes, cmsRoutes, userStats } from './routes/forum.js';
-import { recalc, levelOf } from './points.js';
+import { recalc, levelOf, ensureLevels, refreshLevels } from './points.js';
 import { adminRoutes } from './admin/index.js';
 
 // Flat route table built from the three route files: {method, re (URL regex), handler, opts: {auth, form, bodyLimit}}.
@@ -74,6 +74,7 @@ export async function handle(req, res) {
 
   if (!ipThrottle(req.ip, config.ipBurst, config.ipRate)) { count('limited'); res.setHeader('Retry-After', '30'); return renderError(req, res, 429, t('err.429')); }
   await ensureSite();   // editable texts, links and pages (cached in memory, refreshed in the background)
+  await ensureLevels(); // level tiers and the community requirement (same idea)
   await ensureDesign(); // theme, custom CSS/JS and templates (same idea)
 
   if (req.path === '/robots.txt') { req.routeLabel = 'GET robots'; res.setHeader('Cache-Control', 'public, max-age=3600'); return send(req, res, 200, robotsTxt(), 'text/plain; charset=utf-8'); }
@@ -159,6 +160,7 @@ async function startWorker() {
   await connectKv();
   await refreshSite();
   await refreshDesign();
+  await refreshLevels();
   const stopMetrics = startMetrics();
   logEvent('info', 'boot', `Server started (pid ${process.pid}, ${process.version})`);
   const server = createServer();

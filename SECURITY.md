@@ -72,3 +72,5 @@ Reposting is POST-only with CSRF, per-user rate limits and a unique index (one r
 
 ## Points and levels
 Points cannot be set by users: they are recomputed server-side from live content (no client input). Anti-farming: nothing for your own posts/comments' votes or reposts, one vote per person per item (a vote toggle cannot be repeated for points), a repost's automatic upvote is not a vote, and a user's own comment on their own post earns nothing. The 150-point community gate is enforced on the server (POST returns 403), not just in the form. The existing per-user rate limits (posts, comments, votes, communities) still bound how fast points can be earned. Remaining risk: coordinated accounts voting for each other; watch the dashboard Users list (points column) and Reports.
+
+Level names and thresholds are edited only through the dashboard CRUD (registry whitelist, bound parameters, length and range checks; names are HTML-escaped wherever shown). The 0-point level is protected so every user always has a level.
