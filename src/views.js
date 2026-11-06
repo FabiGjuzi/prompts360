@@ -149,7 +149,7 @@ function controls({ user, ownerName, type, id, back, editBody, removed, deleted,
   const mine = user.username === ownerName;
   return html`${mine && editBody !== undefined ? html`<details class="inline"><summary>edit</summary>
 <form method="post" action="/${type === 'p' ? 'p' : 'comment'}/${id}/edit" class="stack">${csrfField(user)}
-${type === 'p' ? wys({ name: 'body', md: editBody, rows: 8, max: 40000, label: 'Post text', hlevel: 2, hoff: 0 }) : html`<textarea name="body" rows="5" maxlength="10000" required>${editBody}</textarea>`}<button class="btn">Save</button></form></details>` : ''}
+${type === 'p' ? wys({ name: 'body', md: editBody, rows: 8, max: 40000, label: 'Post text', hlevel: 2, hoff: 0 }) : wys({ name: 'body', md: editBody, rows: 5, max: 10000, required: true, label: 'Comment', compact: true })}<button class="btn">Save</button></form></details>` : ''}
 ${mine ? html`<details class="inline"><summary>delete</summary><form method="post" action="/${type === 'p' ? 'p' : 'comment'}/${id}/delete">${csrfField(user)}<button class="btn danger sm">Yes, delete</button></form></details>` : ''}
 ${!mine && reportable ? reportForm(user, type, id) : ''}`;
 }
@@ -181,7 +181,7 @@ ${post.repost_of && !gone ? quoteCard(post) : ''}
 <div class="acts"><span>${plural(post.comment_count, 'comment')}</span>${post.reposts ? html` · <a href="/reposts/${post.id}">${plural(post.reposts, 'repost')}</a>` : ''} ${user && !gone && !post.o_gone ? repostForm(user, post.id) : ''} ${controls({ user, ownerName: post.author, type: 'p', id: post.id, back, editBody: post.body, removed: post.removed_at, deleted: post.deleted_at })}</div>
 </div></article>
 ${user && !gone ? html`<form method="post" action="/p/${post.id}/comment" class="card stack reply">${csrfField(user)}
-<textarea name="body" rows="4" maxlength="10000" required placeholder="${t('post.comment_placeholder')}"></textarea><button class="btn">${t('post.comment_button')}</button></form>`
+${wys({ name: 'body', md: '', rows: 4, max: 10000, required: true, label: t('post.comment_placeholder'), compact: true })}<button class="btn">${t('post.comment_button')}</button></form>`
   : !user ? html`<p class="card empty"><a href="/login">Log in</a> or <a href="/signup">sign up</a> to comment.</p>` : ''}
 <nav class="tabs card"><a href="${back}"${sort !== 'new' ? raw(' class="on"') : ''}>Best</a><a href="${back}?sort=new"${sort === 'new' ? raw(' class="on"') : ''}>New</a></nav>
 <section class="comments">${comments.length ? commentTree(comments, cvotes, user, back, gone) : html`<p class="muted pad">${t('post.no_comments')}</p>`}</section>`;
@@ -195,7 +195,7 @@ function commentTree(nodes, cvotes, user, back, locked) {
 ${gone ? html`<span class="muted">[${c.removed_at ? 'removed' : 'deleted'}]</span>` : html`${author(c.author, c.author_points)}`} <span class="muted">· ${c.score} pts · ${timeAgo(c.created_at)}${c.edited_at ? ' · edited' : ''}</span></div>
 <div class="cb">${gone ? '' : html`<div class="md">${raw(markdown(c.body))}</div>`}
 <div class="acts">${gone ? '' : voteBox('c', c.id, c.score, cvotes.get(c.id), user, `${back}#c${c.id}`)}
-${user && !gone && !locked ? html`<details class="inline"><summary>reply</summary><form method="post" action="${back}/comment" class="stack">${csrfField(user)}<input type="hidden" name="parent" value="${c.id}"><textarea name="body" rows="3" maxlength="10000" required></textarea><button class="btn sm">Reply</button></form></details>` : ''}
+${user && !gone && !locked ? html`<details class="inline"><summary>reply</summary><form method="post" action="${back}/comment" class="stack">${csrfField(user)}<input type="hidden" name="parent" value="${c.id}">${wys({ name: 'body', md: '', rows: 3, max: 10000, required: true, label: 'Reply', compact: true })}<button class="btn sm">Reply</button></form></details>` : ''}
 ${controls({ user, ownerName: c.author, type: 'c', id: c.id, back: `${back}#c${c.id}`, editBody: c.body, removed: c.removed_at, deleted: c.deleted_at })}</div>
 ${c.children.length ? commentTree(c.children, cvotes, user, back, locked) : ''}</div></li>`;
   })}</ul>`;

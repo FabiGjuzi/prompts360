@@ -16,7 +16,6 @@ import { adminPage, csrf, captcha, tile, table, card, lineChart, barChart, nf, m
 import { COMMUNITY_RE } from '../validate.js';
 import { parseObjects, unprotect } from '../csv.js';
 import { renderPost } from '../routes/forum.js';
-import { bulkBar, selectColumn, bulkFlash, publishDrafts } from './bulk.js';
 
 const note = (k, v) => html`<div class="kv"><span>${k}</span><b>${v}</b></div>`;
 
@@ -210,7 +209,7 @@ export async function connectionsPost(req, res) {
 // ---------- Import prompts ----------
 const SEED = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'seed', 'prompts.json');
 const bundled = () => { try { return fs.readFileSync(SEED, 'utf8'); } catch { return ''; } };
-// The SEO-planned library: 249 posts shipped as hidden drafts in 3 publishing waves (see Content > Drafts).
+// The SEO-planned library: 249 posts shipped as hidden drafts in 3 publishing waves (see Content > Posts: filter “published = false”).
 const SEED_DRAFTS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'seed', 'drafts-library.json');
 const bundledDrafts = () => { try { return fs.readFileSync(SEED_DRAFTS, 'utf8'); } catch { return ''; } };
 const EXAMPLE = JSON.stringify({ communities: [{ name: 'Example_Prompts', title: 'Example prompts', description: 'What this community is about.', model: 'chatgpt' }],
@@ -226,7 +225,7 @@ export function parseImportText(text) {
   const { headers, records } = parsed;
   const has = h => headers.includes(h);
   const cell = (r, k) => unprotect(String(r[k] ?? '')).replace(/\r\n/g, '\n');
-  if (has('community') && has('title')) return { data: { posts: records.map(r => ({ community: cell(r, 'community').trim(), title: cell(r, 'title').trim(), body: cell(r, 'body'), model: cell(r, 'model').trim(), url: cell(r, 'url').trim(), draft: cell(r, 'draft').trim(), wave: cell(r, 'wave').trim(), seo_title: cell(r, 'seo_title').trim(), seo_desc: cell(r, 'seo_desc').trim(), _line: r._line })) } };
+  if (has('community') && has('title')) return { data: { posts: records.map(r => ({ community: cell(r, 'community').trim(), title: cell(r, 'title').trim(), body: cell(r, 'body'), model: cell(r, 'model').trim(), url: cell(r, 'url').trim(), published: cell(r, 'published').trim(), draft: cell(r, 'draft').trim(), wave: cell(r, 'wave').trim(), seo_title: cell(r, 'seo_title').trim(), seo_desc: cell(r, 'seo_desc').trim(), _line: r._line })) } };
   if (has('name') && (has('model') || has('title'))) return { data: { communities: records.map(r => ({ name: cell(r, 'name').trim(), title: cell(r, 'title').trim(), description: cell(r, 'description'), model: cell(r, 'model').trim(), _line: r._line })) } };
   return { error: 'Could not tell what this CSV is. A posts file needs the columns community, title (and optionally body, model, url). A communities file needs name, model (and optionally title, description). The first row must be the column names.' };
 }
@@ -264,8 +263,10 @@ export async function runImport(text, { dry }) {
     if (seoTitle.length > 120 || seoDesc.length > 300) { problems.push(`Post "${title.slice(0, 40)}": seo_title may be 120 characters and seo_desc 300.`); continue; }
     const wv = p?.wave === undefined || p.wave === null || p.wave === '' ? null : Number(p.wave);
     if (wv !== null && !(Number.isInteger(wv) && wv >= 1 && wv <= 99)) { problems.push(`Post "${title.slice(0, 40)}": wave must be a whole number from 1 to 99.`); continue; }
-    const draft = p?.draft === true || /^(1|true|yes)$/i.test(String(p?.draft ?? '').trim());
-    P2.push({ cname, key: cname.toLowerCase(), title, body, url: urlv, tag: model ? tags.get(model) : null, seoTitle: seoTitle || null, seoDesc: seoDesc || null, wave: wv, draft });
+    // `published` (1/0/true/false) is the column; the older `draft` column is still read (draft = true means unpublished). Neither = published.
+    const truthy = x => /^(1|true|yes)$/i.test(String(x ?? '').trim()), falsy = x => /^(0|false|no)$/i.test(String(x ?? '').trim());
+    const unpublished = p?.published !== undefined && p.published !== null && String(p.published).trim() !== '' ? falsy(p.published) : truthy(p?.draft);
+    P2.push({ cname, key: cname.toLowerCase(), title, body, url: urlv, tag: model ? tags.get(model) : null, seoTitle: seoTitle || null, seoDesc: seoDesc || null, wave: wv, draft: unpublished });
   }
   const res = { communitiesNew: 0, communitiesExisting: 0, postsNew: 0, postsDrafts: 0, postsDuplicate: 0, problems };
   const run = async db => {
@@ -278,13 +279,12 @@ export async function runImport(text, { dry }) {
       let c = ids.get(p.key);
       if (!c) { const r = (await db.query('SELECT id, ai_tag_id AS tag FROM communities WHERE lower(name) = $1 AND removed_at IS NULL', [p.key])).rows[0]; if (!r) { problems.push(`Post "${p.title.slice(0, 40)}": community "${p.cname.slice(0, 30)}" does not exist.`); continue; } c = r; ids.set(p.key, c); }
       if ((await db.query('SELECT 1 FROM posts WHERE community_id = $1 AND lower(title) = lower($2) AND deleted_at IS NULL', [c.id, p.title])).rowCount) { res.postsDuplicate++; continue; }
-      // A draft is hidden (removed_at set) until it is published from the Drafts page.
-      const { rows: [row] } = await db.query(`INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot, draft, wave, seo_title, seo_desc, removed_at)
-        VALUES ($1,$2,$3,$4,$5,$6,1, hot_rank(1, now()), $7, $8, $9, $10, CASE WHEN $7 THEN now() END) RETURNING id`, [c.id, p.tag ?? c.tag, official, p.title, p.url, p.body, p.draft, p.wave, p.seoTitle, p.seoDesc]);
-      await db.query('INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1)', [official, row.id]);
+      // A draft is simply published = false: no public query or route can see it until it is published from the Posts panel.
+      await db.query(`INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot, published, published_at, wave, seo_title, seo_desc)
+        VALUES ($1,$2,$3,$4,$5,$6,0, hot_rank(0, now()), $7, CASE WHEN $7 THEN now() END, $8, $9, $10)`, [c.id, p.tag ?? c.tag, official, p.title, p.url, p.body, !p.draft, p.wave, p.seoTitle, p.seoDesc]);
       res.postsNew++; if (p.draft) res.postsDrafts++;
     }
-    await db.query(`UPDATE communities c SET post_count = (SELECT count(*) FROM posts p WHERE p.community_id = c.id AND p.deleted_at IS NULL AND p.removed_at IS NULL)`);
+    await db.query(`UPDATE communities c SET post_count = (SELECT count(*) FROM posts p WHERE p.community_id = c.id AND p.deleted_at IS NULL AND p.removed_at IS NULL AND p.published)`);
     if (dry) throw new DryRun();
   };
   class DryRun extends Error {}
@@ -295,7 +295,7 @@ export async function runImport(text, { dry }) {
 
 const importPage = (req, res, { text = '', result, status = 200 } = {}) => {
   const r = result;
-  const content = html`<p class="muted">Paste <b>JSON or CSV</b> (or choose a file), or load the starter set that ships with the site. Import communities first, then posts. <b>Preview</b> shows what would happen without changing anything. Posts that already exist (same community + title) are skipped, so importing twice is safe. A posts file may also have the columns <code>draft</code> (1/true = hidden until you publish it on the <a href="${P}/drafts">Drafts</a> page), <code>wave</code> (1–99), <code>seo_title</code> and <code>seo_desc</code>. Imported posts belong to the site account <code>u/prompts360</code>.</p>
+  const content = html`<p class="muted">Paste <b>JSON or CSV</b> (or choose a file), or load the starter set that ships with the site. Import communities first, then posts. <b>Preview</b> shows what would happen without changing anything. Posts that already exist (same community + title) are skipped, so importing twice is safe. A posts file may also have the columns <code>published</code> (1 = live, 0 = a draft that stays hidden until you publish it in the <a href="${P}/t/posts">Posts</a> panel; blank = live; the older <code>draft</code> column, 1 = hidden, is still understood), <code>wave</code> (1–99), <code>seo_title</code> and <code>seo_desc</code>. Imported posts belong to the site account <code>u/prompts360</code>.</p>
 ${r?.error ? html`<p class="error" role="alert">${r.error}</p>` : ''}
 ${r && !r.error ? html`<div class="card"><h2>${r.dry ? 'Preview' : 'Done'}</h2><div class="kvs">${note('New communities', r.communitiesNew)}${note('Communities already there', r.communitiesExisting)}${note('New posts', r.postsNew)}${note('…of which hidden drafts', r.postsDrafts)}${note('Duplicate posts skipped', r.postsDuplicate)}</div>
 ${r.problems.length ? html`<h3>Problems (${r.problems.length})</h3><ul class="plain">${r.problems.slice(0, 60).map(p => html`<li>${p}</li>`)}</ul>` : ''}</div>` : ''}
@@ -304,7 +304,7 @@ ${r.problems.length ? html`<h3>Problems (${r.problems.length})</h3><ul class="pl
 <div class="fld"><label for="data">JSON or CSV</label><textarea id="data" name="data" rows="16" maxlength="4000000" placeholder="${EXAMPLE}">${text}</textarea></div>
 <div class="row"><button class="btn" name="mode" value="preview">Preview</button><button class="btn primary" name="mode" value="import">Import</button>
 ${bundled() ? html`<button class="btn" name="mode" value="bundled-preview">Preview starter set</button><button class="btn primary" name="mode" value="bundled-import">Import starter set</button>` : ''}</div>
-${bundledDrafts() ? html`<fieldset class="card"><legend>Draft library (249 posts in 3 waves)</legend><p class="muted">Ships with the site. Every post is imported as a <b>hidden draft</b>: nobody but this dashboard can see it until you publish it on the <a href="${P}/drafts">Drafts</a> page. Importing twice is safe (existing posts are skipped).</p>
+${bundledDrafts() ? html`<fieldset class="card"><legend>Draft library (249 posts in 3 waves)</legend><p class="muted">Ships with the site. Every post is imported as a <b>hidden draft</b>: nobody but this dashboard can see it until you publish it in the <a href="${P}/t/posts">Posts</a> panel (<code>published</code> stays off until then). Importing twice is safe (existing posts are skipped).</p>
 <div class="row"><button class="btn" name="mode" value="drafts-preview">Preview draft library</button><button class="btn primary" name="mode" value="drafts-import">Import draft library as hidden drafts</button></div></fieldset>` : ''}</form>
 <p class="muted">CSV templates: <a href="${P}/export/template/communities.csv">communities.csv</a> · <a href="${P}/export/template/posts.csv">posts.csv</a> (first row = column names; <code>model</code> is an AI model slug such as <code>claude</code> or <code>general</code>). To get the data out, see <a href="${P}/export">Export</a>.</p>`;
   return adminPage(req, res, { title: 'Import prompts', active: '/import', content, status });
@@ -323,43 +323,10 @@ export async function importPost(req, res) {
 }
 
 
-// ---------- Drafts (hidden posts, published from here) ----------
-const wordsOf = b => (String(b).match(/\S+/g) || []).length;
-/** GET /drafts — every hidden draft, with checkboxes for mass actions, preview, edit and publish buttons. */
-export async function drafts(req, res) {
-  const { rows } = await q(`SELECT p.id, p.title, p.wave, p.body, c.name AS community FROM posts p JOIN communities c ON c.id = p.community_id
-    WHERE p.draft AND p.deleted_at IS NULL ORDER BY p.wave NULLS LAST, p.id LIMIT 400`);
-  const { rows: byWave } = await q(`SELECT wave, count(*)::int AS n FROM posts WHERE draft AND deleted_at IS NULL GROUP BY wave ORDER BY wave NULLS LAST`);
-  const total = byWave.reduce((a, r) => a + r.n, 0);
-  const done = Number(req.query.get('published'));
-  const flash = bulkFlash(req.query.get('bulk')) || (Number.isInteger(done) && req.query.has('published') ? `Published ${done} post${done === 1 ? '' : 's'}.` : undefined);
-  const content = html`<p class="muted">Drafts are invisible to visitors, search, the sitemap, feeds, counts and points. Only this dashboard can open them. Publishing makes a post public, dates it now and adds it to the sitemap. ${nf(total)} draft${total === 1 ? '' : 's'} waiting${total > 400 ? ' (the first 400 are listed; “all matching” below covers every draft)' : ''}.</p>
-${card('Publish in bulk', html`<div class="row">
-${byWave.filter(w => w.wave).map(w => html`<form method="post" action="${P}/drafts/publish">${csrf(req)}<input type="hidden" name="wave" value="${w.wave}"><button class="btn">Publish wave ${w.wave} (${w.n})</button></form>`)}
-<form method="post" action="${P}/drafts/publish" class="row">${csrf(req)}<label for="nx">Publish the next</label><input id="nx" name="next" type="number" min="1" max="250" value="20" required><button class="btn primary">drafts (lowest wave first)</button></form></div>`)}
-${total ? bulkBar(req, { from: 'drafts', total }) : ''}
-${table([selectColumn(), { h: 'ID', f: r => r.id }, { h: 'Title', f: r => html`<a href="${P}/drafts/${r.id}" target="_blank" rel="noopener">${r.title}</a>` }, { h: 'Community', f: r => `c/${r.community}` }, { h: 'Wave', f: r => r.wave ?? '–' },
-  { h: 'Words', f: r => nf(wordsOf(r.body)) }, { h: '', f: r => html`<a class="btn" href="${P}/t/posts/${r.id}">Edit</a> <form method="post" action="${P}/drafts/publish" class="inline">${csrf(req)}<input type="hidden" name="id" value="${r.id}"><button class="btn primary">Publish</button></form>` }],
-  rows, { empty: 'No drafts. Import posts with draft = 1, or tick “Draft” on a post, and they appear here.' })}`;
-  return adminPage(req, res, { title: 'Drafts', active: '/drafts', content, flash });
-}
-/** GET /drafts/:id — preview one draft exactly as visitors will see it once published (admin session only; never cached, noindex). */
-export async function draftPreview(req, res, [idStr]) {
+/** GET /posts/:id/preview — preview an unpublished post exactly as visitors will see it once published (admin session only; never cached, noindex). */
+export async function postPreview(req, res, [idStr]) {
   res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
   return renderPost(req, res, Number(idStr), { preview: true });
-}
-/** POST /drafts/publish — publish one draft (id), a whole wave (wave) or the next N drafts (next). */
-export async function draftsPublish(req, res) {
-  const id = Number(str(req.body.id, 15)), wave = Number(str(req.body.wave, 3)), next = Number(str(req.body.next, 4));
-  let sel;
-  if (req.body.id && Number.isInteger(id) && id > 0) sel = ['SELECT id FROM posts WHERE draft AND id = $1', [id]];
-  else if (req.body.wave && Number.isInteger(wave) && wave >= 1 && wave <= 99) sel = ['SELECT id FROM posts WHERE draft AND wave = $1 ORDER BY id', [wave]];
-  else if (req.body.next && Number.isInteger(next) && next >= 1 && next <= 250) sel = ['SELECT id FROM posts WHERE draft ORDER BY wave NULLS LAST, id LIMIT $1', [next]];
-  else throw new HttpError(400, 'Choose a draft, a wave or a number to publish.');
-  const n = await tx(async db => publishDrafts(db, (await db.query(sel[0], sel[1])).rows.map(r => r.id)));
-  logEvent('info', 'admin', `Published ${n} draft post${n === 1 ? '' : 's'}`);
-  await invalidate();
-  return redirect(res, `${P}/drafts?published=${n}`);
 }
 
 // ---------- Reports ----------

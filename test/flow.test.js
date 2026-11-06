@@ -101,14 +101,14 @@ test('communities, posts, comments, replies, votes', async () => {
   r = await alice.post(`/p/${postId}/comment`, { _csrf: t, body: 'Thanks!', parent: String(cid) });
   assert.equal(r.status, 303);
 
-  // Votes: author auto-upvotes (score 1). Bob upvotes -> 2, flips to down -> 0, clears -> 1.
+  // Votes: a score starts at 0 (no automatic author vote) and never shows below 0. Bob upvotes -> 1, flips to down -> 0 (floor), clears -> 0.
   const vote = async dir => JSON.parse((await bob.post('/vote', { _csrf: tb, type: 'p', id: String(postId), dir }, { headers: { 'x-requested-with': 'fetch' } })).text);
-  assert.deepEqual(await vote('1'), { score: 2, vote: 1 });
-  assert.deepEqual(await vote('1'), { score: 2, vote: 1 });          // idempotent
+  assert.deepEqual(await vote('1'), { score: 1, vote: 1 });
+  assert.deepEqual(await vote('1'), { score: 1, vote: 1 });          // idempotent
   assert.deepEqual(await vote('-1'), { score: 0, vote: -1 });
-  assert.deepEqual(await vote('0'), { score: 1, vote: 0 });
+  assert.deepEqual(await vote('0'), { score: 0, vote: 0 });
   const cv = JSON.parse((await alice.post('/vote', { _csrf: t, type: 'c', id: String(cid), dir: '1' }, { headers: { 'x-requested-with': 'fetch' } })).text);
-  assert.deepEqual(cv, { score: 2, vote: 1 });
+  assert.deepEqual(cv, { score: 1, vote: 1 });
 
   const post = await client().getf(`/p/${postId}`);
   assert.match(post.text, /2 comments/);

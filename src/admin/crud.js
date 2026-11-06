@@ -16,7 +16,8 @@ import { clearMicro } from '../http.js';
 import { resetTagCache } from '../routes/forum.js';
 import { clearSeoCache } from '../seo.js';
 import { refreshLevels } from '../points.js';
-import { bulkBar, selectColumn, bulkFlash } from './bulk.js';
+import { recordAction } from '../actions.js';
+import { bulkBar, selectColumn, bulkFlash, statusCell, publishBar } from './bulk.js';
 import { adminPage, csrf, table as htmlTable, card, nf, when, P } from './ui.js';
 
 /** Make every cache forget what it knows, so an edit shows up on the site immediately. */
@@ -46,7 +47,7 @@ const sel = (n, label, opts, o = {}) => ({ n, label, t: 'sel', opts, ...o });
 const tagOptions = async () => (await q('SELECT id, name FROM ai_tags ORDER BY sort, name')).rows.map(r => [String(r.id), r.name]);
 const communityOptions = async () => (await q('SELECT id, name FROM communities ORDER BY lower(name) LIMIT 2000')).rows.map(r => [String(r.id), `c/${r.name}`]);
 
-const recountPosts = (db, ids) => db.query(`UPDATE communities c SET post_count = (SELECT count(*) FROM posts p WHERE p.community_id = c.id AND p.deleted_at IS NULL AND p.removed_at IS NULL) WHERE c.id = ANY($1::bigint[])`, [ids.filter(Boolean)]);
+const recountPosts = (db, ids) => db.query(`UPDATE communities c SET post_count = (SELECT count(*) FROM posts p WHERE p.community_id = c.id AND p.deleted_at IS NULL AND p.removed_at IS NULL AND p.published) WHERE c.id = ANY($1::bigint[])`, [ids.filter(Boolean)]);
 const recountComments = (db, id) => db.query(`UPDATE posts SET comment_count = (SELECT count(*) FROM comments WHERE post_id = $1 AND deleted_at IS NULL AND removed_at IS NULL) WHERE id = $1`, [id]);
 
 /** The registry. pk: key column(s). list: columns in the list view. search: text columns for ?q=. ro: no create/update/delete flags. */
@@ -85,19 +86,20 @@ export const TABLES = {
       int('creator_id', 'Creator user ID (blank = the site account)', { def: official }), ts('removed_at', 'Removed at (UTC; set to hide the community)'), ro('post_count', 'Posts', 'int'), ro('created_at', 'Created', 'ts')],
   },
   posts: {
-    label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'repost_of', 'draft', 'wave', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => (r.draft ? `${P}/drafts/${r.id}` : `/p/${r.id}`),
-    filters: ['community_id', 'ai_tag_id', 'author_id'],
+    label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'repost_of', 'published', 'wave', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => (r.published ? `/p/${r.id}` : `${P}/posts/${r.id}/preview`),
+    filters: ['community_id', 'ai_tag_id', 'author_id', 'published'],
     cols: [sel('community_id', 'Community', communityOptions, { req: true }), text('title', 'Title', { req: true, max: 300 }), text('url', 'Link (optional)', { max: 2000, check: u => !u || safeUrl(u) }),
       sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body (required, except for a repost)', { rows: 22, max: 40000, md: true, req: true, soft: true, hl: 2, ho: 0 }), ro('repost_of', 'Repost of post ID', 'int'), int('author_id', 'Author user ID (default: the site account)', { def: official }),
-      bool('draft', 'Draft: hidden from everyone but this dashboard until published', { def: false }), int('wave', 'Publishing wave (optional, 1–99; used by “Publish a wave” on the Drafts page)'),
+      bool('published', 'Published: untick to keep this post hidden from the public site (a draft) until you publish it', { def: true }), int('wave', 'Publishing wave (optional, 1–99; used by “Publish a wave” above the Posts list)'),
       text('seo_title', 'Title tag override (optional; used as is, ≤ 60 characters is ideal, no site name is added)', { max: 120 }), area('seo_desc', 'Meta description (optional; blank = the first ~155 characters of the body)', { rows: 2, max: 300 }),
       ts('created_at', 'Created (UTC; leave blank for now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC; set to hide the post)'),
       ro('score', 'Score', 'int'), ro('comment_count', 'Comments', 'int')],
     before: async (db, v, ctx) => {
-      // A draft is hidden by setting removed_at (so every public query skips it); publishing through the editor clears it and dates the post now.
-      v.draft = Boolean(v.draft);
-      if (v.draft && !v.removed_at) v.removed_at = new Date().toISOString();
-      if (ctx.op === 'update' && ctx.old?.draft && !v.draft) { v.removed_at = null; v.created_at = new Date().toISOString(); }
+      // One flag: published = false is a draft that no public query or route can see. The first publication dates the post now.
+      v.published = Boolean(v.published);
+      const firstTime = v.published && !(ctx.op === 'update' && ctx.old?.published_at);
+      if (firstTime) { v.published_at = new Date().toISOString(); if (ctx.op === 'update' && !ctx.old?.published) v.created_at = v.published_at; }
+      if (ctx.op === 'insert' && !firstTime) v.published_at = null;
       const c = (await db.query('SELECT ai_tag_id FROM communities WHERE id = $1', [v.community_id])).rows[0];
       if (!c) throw new Problem('That community does not exist.');
       v.ai_tag_id ??= c.ai_tag_id;
@@ -108,8 +110,8 @@ export const TABLES = {
     },
     after: async (db, row, ctx) => {
       await db.query('UPDATE posts SET hot = hot_rank(score, created_at) WHERE id = $1', [row.id]);
-      if (ctx.op === 'insert' && row.author_id) await db.query('INSERT INTO post_votes (user_id, post_id, value) SELECT id, $2, 1 FROM users WHERE id = $1 ON CONFLICT DO NOTHING', [row.author_id, row.id]);
       await recountPosts(db, [row.community_id, ctx.old?.community_id]);
+      if (ctx.op === 'update' && ctx.old.published !== row.published) await recordAction(db, { kind: row.published ? 'post.publish' : 'post.unpublish', targetType: 'post', targetId: row.id, meta: { by: 'admin' } });
     },
     afterDelete: (db, row) => recountPosts(db, [row.community_id]),
   },
@@ -133,7 +135,6 @@ export const TABLES = {
       if (!v.created_at) delete v.created_at;
     },
     after: async (db, row, ctx) => {
-      if (ctx.op === 'insert' && row.author_id) await db.query('INSERT INTO comment_votes (user_id, comment_id, value) SELECT id, $2, 1 FROM users WHERE id = $1 ON CONFLICT DO NOTHING', [row.author_id, row.id]);
       await recountComments(db, row.post_id);
     },
     afterDelete: (db, row) => recountComments(db, row.post_id),
@@ -165,9 +166,10 @@ export const TABLES = {
     cols: [ro('reason', 'Reason'), ts('resolved_at', 'Resolved at (UTC; set to close the report)')],
   },
   post_votes: { label: 'Post votes', pk: ['user_id', 'post_id'], list: ['user_id', 'post_id', 'value'], order: 'post_id DESC, user_id', noCreate: true, noEdit: true, cols: [],
-    afterDelete: async (db, row) => { await db.query('UPDATE posts SET score = coalesce((SELECT sum(value) FROM post_votes WHERE post_id = $1), 0)::int WHERE id = $1', [row.post_id]); await db.query('UPDATE posts SET hot = hot_rank(score, created_at) WHERE id = $1', [row.post_id]); } },
+    afterDelete: async (db, row) => { await db.query('UPDATE posts SET net = coalesce((SELECT sum(value) FROM post_votes WHERE post_id = $1), 0)::int WHERE id = $1', [row.post_id]); await db.query('UPDATE posts SET score = greatest(net, 0), hot = hot_rank(greatest(net, 0), created_at) WHERE id = $1', [row.post_id]); } },
   comment_votes: { label: 'Comment votes', pk: ['user_id', 'comment_id'], list: ['user_id', 'comment_id', 'value'], order: 'comment_id DESC, user_id', noCreate: true, noEdit: true, cols: [],
-    afterDelete: async (db, row) => { await db.query('UPDATE comments SET score = coalesce((SELECT sum(value) FROM comment_votes WHERE comment_id = $1), 0)::int WHERE id = $1', [row.comment_id]); } },
+    afterDelete: async (db, row) => { await db.query('UPDATE comments SET net = coalesce((SELECT sum(value) FROM comment_votes WHERE comment_id = $1), 0)::int WHERE id = $1', [row.comment_id]); await db.query('UPDATE comments SET score = greatest(net, 0) WHERE id = $1', [row.comment_id]); } },
+  action_events: { label: 'Action log', pk: ['id'], list: ['id', 'ts', 'kind', 'actor_id', 'target_type', 'target_id'], search: ['kind'], order: 'id DESC', noCreate: true, noEdit: true, cols: [], filters: ['kind', 'actor_id', 'target_type', 'target_id'] },
   event_log: { label: 'Event log', pk: ['id'], list: ['id', 'ts', 'level', 'kind', 'message'], search: ['message', 'kind'], order: 'id DESC', noCreate: true, noEdit: true, cols: [], filters: ['level', 'kind'] },
   metrics_minute: { label: 'Metrics per minute', pk: null, list: ['ts', 'requests', 'pages', 'bots', 's4xx', 's5xx', 'limited', 'ms_max', 'rss_mb', 'lag_ms', 'cpu_pct', 'db_ms'], order: 'ts DESC', readOnly: true, cols: [] },
   metrics_day: { label: 'Metrics per day', pk: null, list: ['day', 'visitors', 'pageviews', 'bot_hits'], order: 'day DESC', readOnly: true, cols: [] },
@@ -238,13 +240,14 @@ export async function list(req, res, [name]) {
   const qsOf = (extra = {}) => { const p = new URLSearchParams(); const m = { q: search, f, v: fv, sort: sortCol, dir: sortCol ? dir.toLowerCase() : '', ...extra }; for (const [k, v] of Object.entries(m)) if (v) p.set(k, v); const s = p.toString(); return s ? `?${s}` : ''; };
   const editable = T.pk && !T.noEdit && !T.readOnly;
   const bulk = name === 'posts';
-  const cols = [...(bulk ? [selectColumn()] : []), ...T.list.map(n => ({ h: html`<a href="${url(name)}${qsOf({ sort: n, dir: sortCol === n && dir === 'DESC' ? 'asc' : 'desc', page: '' })}">${n}</a>`, f: r => cell(T, r, n) })),
+  const cols = [...(bulk ? [selectColumn()] : []), ...T.list.map(n => ({ h: html`<a href="${url(name)}${qsOf({ sort: n, dir: sortCol === n && dir === 'DESC' ? 'asc' : 'desc', page: '' })}">${n}</a>`, f: r => (name === 'posts' && n === 'published' ? statusCell(req, r) : cell(T, r, n)) })),
     ...(T.pk && !T.readOnly ? [{ h: '', cls: 'act', f: r => html`${T.view ? html`<a href="${T.view(r)}" target="_blank" rel="noopener">view ↗</a> ` : ''}${editable ? html`<a href="${url(name, `/${idOf(T, r)}`)}">edit</a>` : html`<a href="${url(name, `/${idOf(T, r)}`)}">open</a>`}` }] : [])];
   const flash = { saved: 'Saved.', created: 'Created.', deleted: 'Deleted.' }[req.query.get('n')] || (bulk ? bulkFlash(req.query.get('bulk')) : undefined);
   const content = html`<div class="bar-tools"><form method="get" action="${url(name)}" class="inline">${f ? html`<input type="hidden" name="f" value="${f}"><input type="hidden" name="v" value="${fv}">` : ''}
 ${T.search ? html`<input type="search" name="q" value="${search}" placeholder="Search…" aria-label="Search ${T.label}"><button class="btn">Search</button>` : ''}</form>
 ${!T.noCreate && !T.readOnly && !T.noEdit ? html`<a class="btn primary" href="${url(name, '/new')}">+ New</a>` : ''}<span class="muted">${nf(n)} row${n === 1 ? '' : 's'}${f ? html` · filtered by ${f} = ${fv} · <a href="${url(name)}">clear</a>` : ''}</span></div>
-${bulk && n ? bulkBar(req, { from: 'posts', total: n, filter: { q: search, f, v: fv } }) : ''}
+${bulk ? await publishBar(req) : ''}
+${bulk && n ? bulkBar(req, { total: n, filter: { q: search, f, v: fv } }) : ''}
 ${htmlTable(cols, shown, { empty: 'No rows.' })}
 <p class="pager">${pg > 1 ? html`<a href="${url(name)}${qsOf({ page: String(pg - 1) })}">← Previous</a>` : ''}<span>Page ${pg}</span>${rows.length > PAGE ? html`<a href="${url(name)}${qsOf({ page: String(pg + 1) })}">Next →</a>` : ''}</p>`;
   return adminPage(req, res, { title: T.label, active: ['pages', 'nav_links', 'ai_tags', 'communities', 'posts', 'comments', 'users'].includes(name) ? `/t/${name}` : '/db', content, flash });
@@ -253,7 +256,8 @@ ${htmlTable(cols, shown, { empty: 'No rows.' })}
 async function fieldHtml(c, v) {
   const id = `f_${c.n}`;
   const label = (inner) => html`<label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${inner}`;
-  if (c.t === 'bool') return html`<div class="fld chk"><input type="hidden" name="${c.n}" value="0"><input type="checkbox" id="${id}" name="${c.n}" value="1"${v ? raw(' checked') : ''}><label for="${id}">${c.label}</label></div>`;
+  // The checkbox comes BEFORE the hidden 0: the body parser keeps the first value of a repeated name, so a ticked box (1) wins and an unticked one falls back to 0.
+  if (c.t === 'bool') return html`<div class="fld chk"><input type="checkbox" id="${id}" name="${c.n}" value="1"${v ? raw(' checked') : ''}><input type="hidden" name="${c.n}" value="0"><label for="${id}">${c.label}</label></div>`;
   if (c.t === 'area' && c.md) return html`<div class="fld"><label for="${id}">${c.label}${c.req ? raw(' <abbr title="required">*</abbr>') : ''}</label>${wys({ name: c.n, id, md: v ?? '', rows: c.rows, max: c.max, required: Boolean(c.req && !c.soft), label: c.label, hlevel: c.hl ?? 3, hoff: c.ho ?? 2 })}</div>`;
   if (c.t === 'area') return html`<div class="fld">${label(html`<textarea id="${id}" name="${c.n}" rows="${c.rows}" maxlength="${c.max}">${v ?? ''}</textarea>`)}</div>`;
   if (c.t === 'sel') {

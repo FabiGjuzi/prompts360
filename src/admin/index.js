@@ -5,7 +5,7 @@ import * as A from './pages.js';
 import * as C from './crud.js';
 import * as G from './design.js';
 import * as X from './export.js';
-import { bulkPosts } from './bulk.js';
+import { bulkPosts, postsPublish } from './bulk.js';
 
 const P = config.adminPath;
 const R = rest => new RegExp(`^${P}${rest}$`);
@@ -41,9 +41,8 @@ export const adminRoutes = !P ? [] : [
   ['GET', R('/connections'), A.connections, need],
   ['POST', R('/connections'), A.connectionsPost, post],
   ['POST', R('/bulk/posts'), bulkPosts, { ...post, bodyLimit: 131_072 }],
-  ['GET', R('/drafts'), A.drafts, need],
-  ['GET', R('/drafts/(\\d{1,15})'), A.draftPreview, need],
-  ['POST', R('/drafts/publish'), A.draftsPublish, post],
+  ['GET', R('/posts/(\\d{1,15})/preview'), A.postPreview, need],
+  ['POST', R('/posts/publish'), postsPublish, post],
   ['GET', R('/reports'), A.reports, need],
   ['POST', R('/reports/(\\d{1,15})/remove'), A.reportAction(true), post],
   ['POST', R('/reports/(\\d{1,15})/resolve'), A.reportAction(false), post],

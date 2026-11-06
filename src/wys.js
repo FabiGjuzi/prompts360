@@ -4,9 +4,9 @@
 import { html, raw } from './html.js';
 import { markdown } from './markdown.js';
 
-/** hlevel: heading element the "H" button inserts; hoff: markdown "#" count = heading level − hoff (posts: 3/2; CMS pages: 2/0). */
-export function wys({ name, id, md = '', rows = 10, max = 40000, required = false, label = 'Text', hlevel = 3, hoff = 2 }) {
-  return html`<div class="wys" data-hlevel="${hlevel}" data-hoff="${hoff}" data-label="${label}">
+/** compact: a small toolbar (bold, italic, quote, lists) for comments. hlevel: heading element the "H" button inserts; hoff: markdown "#" count = heading level − hoff (posts: 3/2; CMS pages: 2/0). */
+export function wys({ name, id, md = '', rows = 10, max = 40000, required = false, label = 'Text', hlevel = 3, hoff = 2, compact = false }) {
+  return html`<div class="wys" data-hlevel="${hlevel}" data-hoff="${hoff}" data-label="${label}"${compact ? raw(' data-compact="1"') : ''}>
 <textarea${id ? html` id="${id}"` : ''} name="${name}" rows="${rows}" maxlength="${max}"${required ? raw(' required') : ''}>${md}</textarea>
 <div class="wys-src" hidden>${raw(markdown(md, { min: hlevel, off: hoff }))}</div></div>`;
 }

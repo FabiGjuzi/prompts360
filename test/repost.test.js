@@ -34,7 +34,7 @@ test('reposting: same community and tag, one upvote for the original, a notifica
   assert.equal(r.status, 303); assert.match(r.location, /\/p\/\d+\?n=reposted$/);
   const rp = await one('SELECT p.*, t.slug AS tag, c.name AS community FROM posts p JOIN ai_tags t ON t.id = p.ai_tag_id JOIN communities c ON c.id = p.community_id WHERE p.repost_of = $1', [orig]);
   assert.equal(rp.community, 'Repost_Test'); assert.equal(rp.tag, 'gemini', 'tag of the ORIGINAL, not of the community'); assert.equal(rp.title, 'Original prompt about foxes');
-  assert.equal(rp.body, 'This is *great* for onboarding.'); assert.equal(rp.score, 1);
+  assert.equal(rp.body, 'This is *great* for onboarding.'); assert.equal(rp.score, 0);
   assert.equal((await one('SELECT score FROM posts WHERE id = $1', [orig])).score, before.score + 1, 'a repost is an upvote for the original');
   assert.equal((await one("SELECT post_count FROM communities WHERE name = 'Repost_Test'")).post_count, cBefore.post_count + 1);
   const n = await one('SELECT n.*, u.username AS who, a.username AS actor FROM notifications n JOIN users u ON u.id = n.user_id JOIN users a ON a.id = n.actor_id');
@@ -71,7 +71,7 @@ test('rules: one repost per person, reposting a repost embeds the original, own 
   // own post
   const sBefore = (await one('SELECT score FROM posts WHERE id = $1', [orig])).score;
   assert.equal((await repost(alice, orig, 'my own, again')).status, 303);
-  assert.equal((await one('SELECT score FROM posts WHERE id = $1', [orig])).score, sBefore, 'author already upvoted their own post');
+  assert.equal((await one('SELECT score FROM posts WHERE id = $1', [orig])).score, sBefore, 'reposting your own post is not an upvote for it');
   assert.equal((await app.db.q("SELECT count(*)::int n FROM notifications")).rows[0].n, 2, 'no notification to yourself');
   assert.equal((await one('SELECT count(*)::int n FROM posts WHERE repost_of = $1', [orig])).n, 3);
 });

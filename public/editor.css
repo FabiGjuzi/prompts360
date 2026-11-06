@@ -15,3 +15,5 @@
 .wys-area pre code{padding:0;background:none}.wys-area a{color:var(--ac,#4f46e5);text-decoration:underline}.wys-area ul,.wys-area ol{margin:.4em 0;padding-left:1.4em}
 .wys-area hr{border:0;border-top:1px solid var(--bd,#dde1e7);margin:.8em 0}
 .wys.on textarea{display:none}
+
+.wys[data-compact="1"] .wys-area{min-height:6rem;max-height:40vh}

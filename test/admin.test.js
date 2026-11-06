@@ -187,12 +187,12 @@ test('communities and posts CRUD keep counters and feeds consistent', async () =
   let r = await adm.apost('/t/communities/new', { name: 'Gemini_Tricks', title: 'Gemini tricks', description: 'Tips for Gemini', ai_tag_id: String(tag.id), creator_id: '', removed_at: '' });
   assert.equal(r.status, 303, r.text.slice(0, 300));
   const { rows: [c] } = await app.db.q("SELECT id FROM communities WHERE name = 'Gemini_Tricks'");
-  r = await adm.apost('/t/posts/new', { community_id: String(c.id), title: 'Summarise a PDF', url: '', body: 'Summarise this document in 5 bullets:\n\n```\n[paste]\n```', author_id: '', created_at: '', deleted_at: '', removed_at: '' });
+  r = await adm.apost('/t/posts/new', { community_id: String(c.id), title: 'Summarise a PDF', url: '', published: '1', body: 'Summarise this document in 5 bullets:\n\n```\n[paste]\n```', author_id: '', created_at: '', deleted_at: '', removed_at: '' });
   assert.equal(r.status, 303, r.text.slice(0, 300));
   const { rows: [p] } = await app.db.q("SELECT * FROM posts WHERE title = 'Summarise a PDF'");
-  assert.equal(p.score, 1); assert.equal(p.ai_tag_id, tag.id);
+  assert.equal(p.score, 0); assert.equal(p.ai_tag_id, tag.id); assert.equal(p.published, true);
   assert.equal((await app.db.q('SELECT post_count FROM communities WHERE id = $1', [c.id])).rows[0].post_count, 1);
-  assert.equal((await app.db.q('SELECT count(*)::int AS n FROM post_votes WHERE post_id = $1', [p.id])).rows[0].n, 1);
+  assert.equal((await app.db.q('SELECT count(*)::int AS n FROM post_votes WHERE post_id = $1', [p.id])).rows[0].n, 0, 'no automatic author vote');
   const pg = await client().getf(`/p/${p.id}`);
   assert.match(pg.text, /Summarise a PDF/); assert.match(pg.text, /u\/prompts360/);
   assert.match((await client().get('/m/gemini')).text, /Summarise a PDF/);
@@ -206,7 +206,7 @@ test('communities and posts CRUD keep counters and feeds consistent', async () =
   r = await adm.apost('/t/comments/new', { post_id: '999999', body: 'x' });
   assert.equal(r.status, 400);
   // Remove (hide) the post
-  r = await adm.apost(`/t/posts/${p.id}`, { community_id: String(c.id), title: 'Summarise a PDF', url: '', body: 'x', author_id: String(p.author_id), created_at: '', deleted_at: '', removed_at: '2026-01-01T00:00' });
+  r = await adm.apost(`/t/posts/${p.id}`, { community_id: String(c.id), title: 'Summarise a PDF', url: '', published: '1', body: 'x', author_id: String(p.author_id), created_at: '', deleted_at: '', removed_at: '2026-01-01T00:00' });
   assert.equal(r.status, 303);
   assert.equal((await app.db.q('SELECT post_count FROM communities WHERE id = $1', [c.id])).rows[0].post_count, 0);
   assert.doesNotMatch((await client().get('/m/gemini')).text, /Summarise a PDF/);

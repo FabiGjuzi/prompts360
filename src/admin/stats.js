@@ -45,7 +45,7 @@ export async function hours24() {
 export async function days30() {
   const { rows } = await q(`SELECT to_char(d::date, 'MM-DD') AS label, coalesce(m.visitors, 0) AS visitors, coalesce(m.pageviews, 0) AS pageviews, coalesce(m.bot_hits, 0) AS bots,
       (SELECT count(*) FROM users u WHERE u.created_at::date = d::date AND u.verified_at IS NOT NULL)::int AS signups,
-      (SELECT count(*) FROM posts p WHERE p.created_at::date = d::date)::int AS posts,
+      (SELECT count(*) FROM posts p WHERE p.created_at::date = d::date AND p.published)::int AS posts,
       (SELECT count(*) FROM comments c WHERE c.created_at::date = d::date)::int AS comments
     FROM generate_series(current_date - 29, current_date, interval '1 day') d LEFT JOIN metrics_day m ON m.day = d::date ORDER BY d`);
   return rows;
@@ -66,7 +66,7 @@ export async function content() {
     (SELECT count(*) FROM users WHERE deleted_at IS NULL AND verified_at IS NOT NULL)::int AS users,
     (SELECT count(*) FROM users WHERE deleted_at IS NULL AND verified_at IS NULL)::int AS unverified,
     (SELECT count(*) FROM users WHERE banned_at IS NOT NULL)::int AS banned,
-    (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL)::int AS posts,
+    (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND published)::int AS posts,
     (SELECT count(*) FROM comments WHERE deleted_at IS NULL AND removed_at IS NULL)::int AS comments,
     (SELECT count(*) FROM communities WHERE removed_at IS NULL)::int AS communities,
     (SELECT count(*) FROM ai_tags WHERE enabled)::int AS models,
@@ -100,8 +100,8 @@ export async function seoHealth() {
     (SELECT count(*) FROM pages WHERE published AND NOT noindex AND meta_description = '')::int AS pages_no_desc,
     (SELECT count(*) FROM ai_tags WHERE enabled AND description = '')::int AS models_no_desc,
     (SELECT count(*) FROM communities WHERE removed_at IS NULL AND description = '')::int AS communities_no_desc,
-    (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND char_length(body) < 80 AND url IS NULL)::int AS thin_posts,
-    (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL)::int AS indexable_posts,
+    (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND published AND char_length(body) < 80 AND url IS NULL)::int AS thin_posts,
+    (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND published)::int AS indexable_posts,
     (SELECT coalesce(sum(bot_hits), 0) FROM metrics_day WHERE day > current_date - 7)::int AS bot_hits_7d`);
   return r;
 }

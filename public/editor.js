@@ -140,7 +140,8 @@
       else if (id === 'clear') { exec('removeFormat'); exec('formatBlock', 'P'); }
       sync();
     };
-    for (const [id, text, title] of BUTTONS) {
+    const compact = box.dataset.compact === '1';                       // comments: bold, italic, quote and lists only
+    for (const [id, text, title] of BUTTONS.filter(b => !compact || ['bold', 'italic', 'quote', 'ul', 'ol'].includes(b[0]))) {
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = text; b.title = title; b.setAttribute('aria-label', title); b.className = 'wys-btn wys-' + id;
       b.addEventListener('mousedown', e => e.preventDefault());   // keep the selection in the editor
@@ -164,7 +165,7 @@
         const k = e.key.toLowerCase();
         if (k === 'b') { e.preventDefault(); run('bold'); }
         else if (k === 'i') { e.preventDefault(); run('italic'); }
-        else if (k === 'k') { e.preventDefault(); run('link'); }
+        else if (k === 'k' && !compact) { e.preventDefault(); run('link'); }
       }
     });
     area.addEventListener('paste', e => {                            // plain text only: pasted HTML is never inserted
@@ -186,7 +187,12 @@
     box.classList.add('on');
   }
 
-  const start = () => document.querySelectorAll('.wys').forEach(enhance);
+  // Editors inside a closed <details> (reply / edit forms: there can be hundreds on a busy post) are built only when opened.
+  const start = () => document.querySelectorAll('.wys').forEach(box => {
+    const d = box.closest('details');
+    if (d && !d.open) d.addEventListener('toggle', () => { if (d.open) enhance(box); }, { once: false });
+    else enhance(box);
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   // <details> forms (edit post) are in the DOM from the start, so nothing else to do; expose for tests/dashboard re-use.
   window.p360Editor = { toMarkdown, enhance };

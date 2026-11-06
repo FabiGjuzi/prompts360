@@ -13,6 +13,7 @@ import { html, safeUrl, safeBack, slugify } from '../html.js';
 import * as V from '../views.js';
 import { COMMUNITY_RE, intId } from '../validate.js';
 import { plain } from '../markdown.js';
+import { recordAction } from '../actions.js';
 import { recalc, relatedToPost, relatedToComment, levelOf, communityMin, POINTS } from '../points.js';
 
 // ---------- AI tags (tiny table, cached in-process) ----------
@@ -29,13 +30,13 @@ export const resetTagCache = () => { tagCache.at = 0; };
 const tagBySlug = async s => (await tags()).find(t => t.slug === s) || null;
 
 // ---------- Feeds (keyset pagination: cost is independent of page depth) ----------
-// SQL fragment: only posts that are neither deleted by the author nor removed by an admin.
-const VIS = 'p.deleted_at IS NULL AND p.removed_at IS NULL';
+// SQL fragment: only posts that are published and neither deleted by the author nor removed by an admin.
+const VIS = 'p.deleted_at IS NULL AND p.removed_at IS NULL AND p.published';
 // Columns and joins shared by every feed query (one place so all feeds return the same shape).
 const REPOST_COLS = `p.repost_of, o.id AS o_id, o.title AS o_title, left(o.body, 300) AS o_excerpt, oc.name AS o_community, ot.slug AS o_tag_slug, ot.name AS o_tag_name,
   CASE WHEN ou.deleted_at IS NULL THEN ou.username END AS o_author, o.created_at AS o_created,
-  (p.repost_of IS NOT NULL AND (o.id IS NULL OR o.deleted_at IS NOT NULL OR o.removed_at IS NOT NULL OR oc.removed_at IS NOT NULL)) AS o_gone,
-  (SELECT count(*)::int FROM posts r WHERE r.repost_of = p.id AND r.deleted_at IS NULL AND r.removed_at IS NULL) AS reposts`;
+  (p.repost_of IS NOT NULL AND (o.id IS NULL OR o.deleted_at IS NOT NULL OR o.removed_at IS NOT NULL OR NOT o.published OR oc.removed_at IS NOT NULL)) AS o_gone,
+  (SELECT count(*)::int FROM posts r WHERE r.repost_of = p.id AND r.deleted_at IS NULL AND r.removed_at IS NULL AND r.published) AS reposts`;
 const POST_COLS = `p.id, p.title, p.url, p.score, p.comment_count, p.created_at, p.hot, left(p.body, 300) AS excerpt,
   c.name AS community, t.slug AS tag_slug, t.name AS tag_name, CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, u.points AS author_points,
   ${REPOST_COLS}`;
@@ -295,10 +296,9 @@ async function submitPost(req, res) {
   if (!v.body) return bad('The body is required: write the prompt or the text of your post.');
   const id = await tx(async db => {
     const { rows: [p] } = await db.query(
-      `INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot)
-       VALUES ($1, $2, $3, $4, $5, $6, 1, hot_rank(1, now())) RETURNING id`,
+      `INSERT INTO posts (community_id, ai_tag_id, author_id, title, url, body, score, hot, published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 0, hot_rank(0, now()), now()) RETURNING id`,
       [c.id, llm.id, req.user.id, v.title, url, v.body]);
-    await db.query('INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1)', [req.user.id, p.id]);
     await db.query('UPDATE communities SET post_count = post_count + 1 WHERE id = $1', [c.id]);
     return p.id;
   });
@@ -310,17 +310,16 @@ async function submitPost(req, res) {
 const postPage = (req, res, [idStr]) => renderPost(req, res, Number(idStr));
 
 /**
- * Render one post page. `preview` (used only by the dashboard's draft preview route, behind the admin session) lets a hidden
- * draft render; for everyone else a draft does not exist (404), so its title and text never leak.
+ * Render one post page. `preview` (used only by the dashboard's preview route, behind the admin session) lets an unpublished
+ * post render; for everyone else an unpublished post does not exist (404), so its title and text never leak.
  */
 export async function renderPost(req, res, id, { preview = false } = {}) {
-  const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at, p.draft, p.seo_title, p.seo_desc,
+  const post = await one(`SELECT p.id, p.title, p.url, p.body, p.score, p.comment_count, p.created_at, p.edited_at, p.published, p.seo_title, p.seo_desc,
       p.deleted_at, coalesce(p.removed_at, c.removed_at) AS removed_at, c.name AS community, t.slug AS tag_slug, t.name AS tag_name,
       CASE WHEN u.deleted_at IS NULL THEN u.username END AS author, (u.username = 'prompts360') AS editorial, u.points AS author_points, ${REPOST_COLS}
     ${POST_FROM} WHERE p.id = $1`, [id]);
-  if (!post || Boolean(post.draft) !== preview) throw new HttpError(404, 'That post doesn’t exist.');
-  const draftView = Boolean(post.draft);          // only reachable with preview=true
-  if (draftView) post.removed_at = null;          // a draft is hidden with removed_at; show it as a normal page in the preview
+  if (!post || (!post.published) !== preview) throw new HttpError(404, 'That post doesn’t exist.');
+  const draftView = !post.published;              // only reachable with preview=true
   const gonePost = Boolean(post.removed_at || post.deleted_at);
   const canon = `/p/${post.id}/${slugify(post.title)}`;
   // One URL per post: /p/12 and a stale slug are redirected (permanently) to /p/12/<current-title-slug>.
@@ -368,7 +367,7 @@ async function postEdit(req, res, [idStr]) {
   if (!rl.ok) throw new HttpError(429, 'Too many edits. Slow down a little.');
   // Only a repost may have an empty body (its embedded card is the content); every other post needs one.
   const r = await q(`UPDATE posts SET body = $3, edited_at = now() WHERE id = $1 AND author_id = $2
-    AND deleted_at IS NULL AND removed_at IS NULL AND ($3 <> '' OR repost_of IS NOT NULL) RETURNING id`, [id, req.user.id, body]);
+    AND deleted_at IS NULL AND removed_at IS NULL AND published AND ($3 <> '' OR repost_of IS NOT NULL) RETURNING id`, [id, req.user.id, body]);
   if (!r.rowCount) {
     if (!body && await one('SELECT 1 FROM posts WHERE id = $1 AND author_id = $2 AND deleted_at IS NULL AND removed_at IS NULL', [id, req.user.id])) throw new HttpError(400, 'The body cannot be empty.');
     throw new HttpError(403, 'You can only edit your own posts.');
@@ -406,21 +405,20 @@ async function repostCreate(req, res, [idStr]) {
     if (!start) throw new HttpError(404, 'That post doesn’t exist.');
     const rootId = start.repost_of || start.id;
     const root = (await db.query(`SELECT p.id, p.title, p.community_id, p.ai_tag_id, p.author_id, p.score FROM posts p JOIN communities c ON c.id = p.community_id
-      WHERE p.id = $1 AND p.deleted_at IS NULL AND p.removed_at IS NULL AND p.repost_of IS NULL AND c.removed_at IS NULL FOR NO KEY UPDATE OF p`, [rootId])).rows[0];
+      WHERE p.id = $1 AND p.deleted_at IS NULL AND p.removed_at IS NULL AND p.published AND p.repost_of IS NULL AND c.removed_at IS NULL FOR NO KEY UPDATE OF p`, [rootId])).rows[0];
     if (!root) throw new HttpError(404, 'That post is no longer available to repost.');
     if ((await db.query(`SELECT 1 FROM posts WHERE author_id = $1 AND repost_of = $2 AND deleted_at IS NULL AND removed_at IS NULL`, [req.user.id, root.id])).rowCount)
       throw new HttpError(409, 'You have already reposted this post.');
     const { rows: [p] } = await db.query(
-      `INSERT INTO posts (community_id, ai_tag_id, author_id, title, body, repost_of, score, hot)
-       VALUES ($1, $2, $3, $4, $5, $6, 1, hot_rank(1, now())) RETURNING id`,
+      `INSERT INTO posts (community_id, ai_tag_id, author_id, title, body, repost_of, score, hot, published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 0, hot_rank(0, now()), now()) RETURNING id`,
       [root.community_id, root.ai_tag_id, req.user.id, root.title, comment, root.id]);
-    await db.query('INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1)', [req.user.id, p.id]);
     await db.query('UPDATE communities SET post_count = post_count + 1 WHERE id = $1', [root.community_id]);
     // A repost is an upvote for the original (one per person, so it cannot be farmed).
     const prev = (await db.query('SELECT value FROM post_votes WHERE user_id = $1 AND post_id = $2', [req.user.id, root.id])).rows[0]?.value || 0;
-    if (prev !== 1) {
+    if (prev !== 1 && root.author_id !== req.user.id) {   // reposting your own post is not an upvote for it
       await db.query(`INSERT INTO post_votes (user_id, post_id, value) VALUES ($1, $2, 1) ON CONFLICT (user_id, post_id) DO UPDATE SET value = 1`, [req.user.id, root.id]);
-      await db.query('UPDATE posts SET score = score + $2, hot = hot_rank(score + $2, created_at) WHERE id = $1', [root.id, 1 - prev]);
+      await db.query('UPDATE posts SET net = net + $2, score = greatest(net + $2, 0), hot = hot_rank(greatest(net + $2, 0), created_at) WHERE id = $1', [root.id, 1 - prev]);
     }
     if (root.author_id && root.author_id !== req.user.id)
       await db.query(`INSERT INTO notifications (user_id, kind, actor_id, post_id) VALUES ($1, 'repost', $2, $3)`, [root.author_id, req.user.id, p.id]);
@@ -433,8 +431,8 @@ async function repostCreate(req, res, [idStr]) {
 /** GET /reposts/:id — everyone who reposted a post (newest first). */
 async function repostsPage(req, res, [idStr]) {
   const id = Number(idStr);
-  const post = await one(`SELECT p.id, p.title, p.deleted_at, p.removed_at FROM posts p WHERE p.id = $1 AND p.repost_of IS NULL`, [id]);
-  if (!post || post.deleted_at || post.removed_at) throw new HttpError(404, 'That post doesn’t exist.');
+  const post = await one(`SELECT p.id, p.title, p.deleted_at, p.removed_at, p.published FROM posts p WHERE p.id = $1 AND p.repost_of IS NULL`, [id]);
+  if (!post || post.deleted_at || post.removed_at || !post.published) throw new HttpError(404, 'That post doesn’t exist.');
   const { posts, next } = await loadFeed({ repostOf: id, after: req.query.get('after') });
   return page(req, res, {
     title: `Reposts of ${post.title}`, noindex: true,
@@ -454,7 +452,7 @@ export async function userStats(userId) {
 /** GET /notifications — the latest 50, then mark everything read. */
 async function notificationsPage(req, res) {
   const { rows } = await q(`SELECT n.id, n.kind, n.created_at, n.read_at, n.post_id, CASE WHEN a.deleted_at IS NULL THEN a.username END AS actor,
-      p.title, p.deleted_at, p.removed_at
+      p.title, p.deleted_at, CASE WHEN p.published THEN p.removed_at ELSE now() END AS removed_at   -- an unpublished post reads as removed here
     FROM notifications n LEFT JOIN users a ON a.id = n.actor_id LEFT JOIN posts p ON p.id = n.post_id
     WHERE n.user_id = $1 ORDER BY n.id DESC LIMIT 50`, [req.user.id]);
   await q('UPDATE notifications SET read_at = now() WHERE user_id = $1 AND read_at IS NULL', [req.user.id]);
@@ -472,7 +470,7 @@ async function commentCreate(req, res, [idStr]) {
   }
   if (!body) throw new HttpError(400, 'A comment can’t be empty.');
   const id = await tx(async db => {
-    const post = (await db.query(`SELECT id FROM posts WHERE id = $1 AND deleted_at IS NULL AND removed_at IS NULL FOR NO KEY UPDATE`, [postId])).rows[0];
+    const post = (await db.query(`SELECT id FROM posts WHERE id = $1 AND deleted_at IS NULL AND removed_at IS NULL AND published FOR NO KEY UPDATE`, [postId])).rows[0];
     if (!post) throw new HttpError(404, 'That post is gone.');
     let depth = 0;
     if (parentId) {
@@ -483,8 +481,8 @@ async function commentCreate(req, res, [idStr]) {
     const { rows: [c] } = await db.query(
       'INSERT INTO comments (post_id, parent_id, author_id, depth, body) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [postId, parentId, req.user.id, depth, body]);
-    await db.query('INSERT INTO comment_votes (user_id, comment_id, value) VALUES ($1, $2, 1)', [req.user.id, c.id]);
     await db.query('UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1', [postId]);
+    await recordAction(db, { kind: 'comment.create', actorId: req.user.id, targetType: 'comment', targetId: c.id, meta: { post: postId, reply: Boolean(parentId) } });
     return c.id;
   });
   await recalc([req.user.id]);
@@ -516,8 +514,10 @@ async function commentDelete(req, res, [idStr]) {
 // ---------- Votes ----------
 // Per-target SQL for voting: table, votes table, key column and the score-update statement (p = post, c = comment).
 const VOTE_T = {
-  p: { t: 'posts', v: 'post_votes', k: 'post_id', upd: 'UPDATE posts SET score = score + $2, hot = hot_rank(score + $2, created_at) WHERE id = $1 RETURNING score' },
-  c: { t: 'comments', v: 'comment_votes', k: 'comment_id', upd: 'UPDATE comments SET score = score + $2 WHERE id = $1 RETURNING score' },
+  p: { t: 'posts', v: 'post_votes', k: 'post_id', vis: ' AND published',
+    upd: 'UPDATE posts SET net = net + $2, score = greatest(net + $2, 0), hot = hot_rank(greatest(net + $2, 0), created_at) WHERE id = $1 RETURNING score' },
+  c: { t: 'comments', v: 'comment_votes', k: 'comment_id', vis: ' AND EXISTS (SELECT 1 FROM posts pp WHERE pp.id = comments.post_id AND pp.published)',
+    upd: 'UPDATE comments SET net = net + $2, score = greatest(net + $2, 0) WHERE id = $1 RETURNING score' },
 };
 /** POST /vote — set, change or clear a vote on a post or comment. The target row is locked so the score can't drift under concurrent votes. */
 async function vote(req, res) {
@@ -528,7 +528,7 @@ async function vote(req, res) {
   let authorId;
   const result = await tx(async db => {
     // Lock the target row: serialises concurrent votes on it, so score can never drift.
-    const row = (await db.query(`SELECT score, author_id FROM ${T.t} WHERE id = $1 AND deleted_at IS NULL AND removed_at IS NULL FOR NO KEY UPDATE`, [id])).rows[0];
+    const row = (await db.query(`SELECT score, author_id FROM ${T.t} WHERE id = $1 AND deleted_at IS NULL AND removed_at IS NULL${T.vis} FOR NO KEY UPDATE`, [id])).rows[0];
     if (!row) throw new HttpError(404, 'That’s gone.');
     const prev = (await db.query(`SELECT value FROM ${T.v} WHERE user_id = $1 AND ${T.k} = $2`, [req.user.id, id])).rows[0]?.value || 0;
     if (prev === dir) return { score: row.score, vote: dir };
@@ -537,6 +537,7 @@ async function vote(req, res) {
       ON CONFLICT (user_id, ${T.k}) DO UPDATE SET value = EXCLUDED.value`, [req.user.id, id, dir]);
     const { rows: [u] } = await db.query(T.upd, [id, dir - prev]);
     authorId = row.author_id;
+    await recordAction(db, { kind: 'vote', actorId: req.user.id, targetType: b.type === 'p' ? 'post' : 'comment', targetId: id, meta: { from: prev, to: dir, score: u.score } });
     return { score: u.score, vote: dir };
   });
   if (authorId !== undefined) await recalc([req.user.id, authorId]);
@@ -573,7 +574,7 @@ async function profile(req, res, [name]) {
     if (m) vals.push(Number(m[1]));
     const { rows } = await qr(`SELECT cm.id, cm.post_id, cm.body, cm.score, cm.created_at, p.title AS post_title
       FROM comments cm JOIN posts p ON p.id = cm.post_id
-      WHERE cm.author_id = $1 AND cm.deleted_at IS NULL AND cm.removed_at IS NULL AND p.removed_at IS NULL
+      WHERE cm.author_id = $1 AND cm.deleted_at IS NULL AND cm.removed_at IS NULL AND p.removed_at IS NULL AND p.deleted_at IS NULL AND p.published
       ${m ? 'AND cm.id < $2' : ''} ORDER BY cm.id DESC LIMIT ${PAGE + 1}`, vals);
     const items = rows.slice(0, PAGE);
     const nextUrl = rows.length > PAGE ? `${base}?tab=comments&after=n${items[items.length - 1].id}` : null;
