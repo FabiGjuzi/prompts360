@@ -16,6 +16,7 @@ import { clearMicro } from '../http.js';
 import { resetTagCache } from '../routes/forum.js';
 import { clearSeoCache } from '../seo.js';
 import { refreshLevels } from '../points.js';
+import { bulkBar, selectColumn, bulkFlash } from './bulk.js';
 import { adminPage, csrf, table as htmlTable, card, nf, when, P } from './ui.js';
 
 /** Make every cache forget what it knows, so an edit shows up on the site immediately. */
@@ -236,12 +237,14 @@ export async function list(req, res, [name]) {
   const shown = rows.slice(0, PAGE);
   const qsOf = (extra = {}) => { const p = new URLSearchParams(); const m = { q: search, f, v: fv, sort: sortCol, dir: sortCol ? dir.toLowerCase() : '', ...extra }; for (const [k, v] of Object.entries(m)) if (v) p.set(k, v); const s = p.toString(); return s ? `?${s}` : ''; };
   const editable = T.pk && !T.noEdit && !T.readOnly;
-  const cols = [...T.list.map(n => ({ h: html`<a href="${url(name)}${qsOf({ sort: n, dir: sortCol === n && dir === 'DESC' ? 'asc' : 'desc', page: '' })}">${n}</a>`, f: r => cell(T, r, n) })),
+  const bulk = name === 'posts';
+  const cols = [...(bulk ? [selectColumn()] : []), ...T.list.map(n => ({ h: html`<a href="${url(name)}${qsOf({ sort: n, dir: sortCol === n && dir === 'DESC' ? 'asc' : 'desc', page: '' })}">${n}</a>`, f: r => cell(T, r, n) })),
     ...(T.pk && !T.readOnly ? [{ h: '', cls: 'act', f: r => html`${T.view ? html`<a href="${T.view(r)}" target="_blank" rel="noopener">view ↗</a> ` : ''}${editable ? html`<a href="${url(name, `/${idOf(T, r)}`)}">edit</a>` : html`<a href="${url(name, `/${idOf(T, r)}`)}">open</a>`}` }] : [])];
-  const flash = { saved: 'Saved.', created: 'Created.', deleted: 'Deleted.' }[req.query.get('n')];
+  const flash = { saved: 'Saved.', created: 'Created.', deleted: 'Deleted.' }[req.query.get('n')] || (bulk ? bulkFlash(req.query.get('bulk')) : undefined);
   const content = html`<div class="bar-tools"><form method="get" action="${url(name)}" class="inline">${f ? html`<input type="hidden" name="f" value="${f}"><input type="hidden" name="v" value="${fv}">` : ''}
 ${T.search ? html`<input type="search" name="q" value="${search}" placeholder="Search…" aria-label="Search ${T.label}"><button class="btn">Search</button>` : ''}</form>
 ${!T.noCreate && !T.readOnly && !T.noEdit ? html`<a class="btn primary" href="${url(name, '/new')}">+ New</a>` : ''}<span class="muted">${nf(n)} row${n === 1 ? '' : 's'}${f ? html` · filtered by ${f} = ${fv} · <a href="${url(name)}">clear</a>` : ''}</span></div>
+${bulk && n ? bulkBar(req, { from: 'posts', total: n, filter: { q: search, f, v: fv } }) : ''}
 ${htmlTable(cols, shown, { empty: 'No rows.' })}
 <p class="pager">${pg > 1 ? html`<a href="${url(name)}${qsOf({ page: String(pg - 1) })}">← Previous</a>` : ''}<span>Page ${pg}</span>${rows.length > PAGE ? html`<a href="${url(name)}${qsOf({ page: String(pg + 1) })}">Next →</a>` : ''}</p>`;
   return adminPage(req, res, { title: T.label, active: ['pages', 'nav_links', 'ai_tags', 'communities', 'posts', 'comments', 'users'].includes(name) ? `/t/${name}` : '/db', content, flash });

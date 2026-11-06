@@ -5,6 +5,7 @@ import * as A from './pages.js';
 import * as C from './crud.js';
 import * as G from './design.js';
 import * as X from './export.js';
+import { bulkPosts } from './bulk.js';
 
 const P = config.adminPath;
 const R = rest => new RegExp(`^${P}${rest}$`);
@@ -31,7 +32,7 @@ export const adminRoutes = !P ? [] : [
   ['GET', R('/design/preview'), G.designPreview, need],
   ['GET', R('/design/draft\\.([A-Za-z0-9_-]{10})\\.(css|js)'), G.designDraftFile, need],
   ['GET', R('/export'), X.exportPage, need],
-  ['GET', R('/export/content/(communities|posts)\\.csv'), X.exportContent, need],
+  ['GET', R('/export/content/(communities|posts|drafts)\\.csv'), X.exportContent, need],
   ['GET', R('/export/table/([a-z_]{1,40})\\.csv'), X.exportTable, need],
   ['GET', R('/export/all\\.zip'), X.exportAll, need],
   ['GET', R('/export/template/(communities|posts)\\.csv'), X.exportTemplate, need],
@@ -39,6 +40,7 @@ export const adminRoutes = !P ? [] : [
   ['POST', R('/import'), A.importPost, big],
   ['GET', R('/connections'), A.connections, need],
   ['POST', R('/connections'), A.connectionsPost, post],
+  ['POST', R('/bulk/posts'), bulkPosts, { ...post, bodyLimit: 131_072 }],
   ['GET', R('/drafts'), A.drafts, need],
   ['GET', R('/drafts/(\\d{1,15})'), A.draftPreview, need],
   ['POST', R('/drafts/publish'), A.draftsPublish, post],

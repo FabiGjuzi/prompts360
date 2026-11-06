@@ -16,6 +16,7 @@ import { adminPage, csrf, captcha, tile, table, card, lineChart, barChart, nf, m
 import { COMMUNITY_RE } from '../validate.js';
 import { parseObjects, unprotect } from '../csv.js';
 import { renderPost } from '../routes/forum.js';
+import { bulkBar, selectColumn, bulkFlash, publishDrafts } from './bulk.js';
 
 const note = (k, v) => html`<div class="kv"><span>${k}</span><b>${v}</b></div>`;
 
@@ -209,6 +210,9 @@ export async function connectionsPost(req, res) {
 // ---------- Import prompts ----------
 const SEED = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'seed', 'prompts.json');
 const bundled = () => { try { return fs.readFileSync(SEED, 'utf8'); } catch { return ''; } };
+// The SEO-planned library: 249 posts shipped as hidden drafts in 3 publishing waves (see Content > Drafts).
+const SEED_DRAFTS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'seed', 'drafts-library.json');
+const bundledDrafts = () => { try { return fs.readFileSync(SEED_DRAFTS, 'utf8'); } catch { return ''; } };
 const EXAMPLE = JSON.stringify({ communities: [{ name: 'Example_Prompts', title: 'Example prompts', description: 'What this community is about.', model: 'chatgpt' }],
   posts: [{ community: 'Example_Prompts', title: 'A useful prompt', body: 'Explain **{topic}** to me like I am new to it.\n\n```\nYou are a patient teacher…\n```' }] }, null, 2);
 
@@ -299,7 +303,9 @@ ${r.problems.length ? html`<h3>Problems (${r.problems.length})</h3><ul class="pl
 <div class="fld"><label for="importfile">Choose a .csv or .json file <small>(its text is loaded into the box below; nothing is uploaded until you press Preview or Import)</small></label><input type="file" id="importfile" accept=".csv,.json,.txt,text/csv,application/json,text/plain" data-fill="data"><small id="importfile-note" aria-live="polite"></small></div>
 <div class="fld"><label for="data">JSON or CSV</label><textarea id="data" name="data" rows="16" maxlength="4000000" placeholder="${EXAMPLE}">${text}</textarea></div>
 <div class="row"><button class="btn" name="mode" value="preview">Preview</button><button class="btn primary" name="mode" value="import">Import</button>
-${bundled() ? html`<button class="btn" name="mode" value="bundled-preview">Preview starter set</button><button class="btn primary" name="mode" value="bundled-import">Import starter set</button>` : ''}</div></form>
+${bundled() ? html`<button class="btn" name="mode" value="bundled-preview">Preview starter set</button><button class="btn primary" name="mode" value="bundled-import">Import starter set</button>` : ''}</div>
+${bundledDrafts() ? html`<fieldset class="card"><legend>Draft library (249 posts in 3 waves)</legend><p class="muted">Ships with the site. Every post is imported as a <b>hidden draft</b>: nobody but this dashboard can see it until you publish it on the <a href="${P}/drafts">Drafts</a> page. Importing twice is safe (existing posts are skipped).</p>
+<div class="row"><button class="btn" name="mode" value="drafts-preview">Preview draft library</button><button class="btn primary" name="mode" value="drafts-import">Import draft library as hidden drafts</button></div></fieldset>` : ''}</form>
 <p class="muted">CSV templates: <a href="${P}/export/template/communities.csv">communities.csv</a> · <a href="${P}/export/template/posts.csv">posts.csv</a> (first row = column names; <code>model</code> is an AI model slug such as <code>claude</code> or <code>general</code>). To get the data out, see <a href="${P}/export">Export</a>.</p>`;
   return adminPage(req, res, { title: 'Import prompts', active: '/import', content, status });
 };
@@ -307,10 +313,10 @@ export const importGet = (req, res) => importPage(req, res);
 /** POST /import */
 export async function importPost(req, res) {
   const mode = str(req.body.mode, 20);
-  const useBundled = mode.startsWith('bundled');
-  const text = useBundled ? bundled() : str(req.body.data, 4_000_000);
+  if (!['preview', 'import', 'bundled-preview', 'bundled-import', 'drafts-preview', 'drafts-import'].includes(mode)) throw new HttpError(400, 'Bad request.');
+  const useBundled = mode.startsWith('bundled') || mode.startsWith('drafts');
+  const text = mode.startsWith('drafts') ? bundledDrafts() : useBundled ? bundled() : str(req.body.data, 4_000_000);
   const dry = mode.endsWith('preview');
-  if (!['preview', 'import', 'bundled-preview', 'bundled-import'].includes(mode)) throw new HttpError(400, 'Bad request.');
   const result = await runImport(text, { dry });
   result.dry = dry;
   return importPage(req, res, { text: useBundled ? '' : text, result, status: result.error ? 400 : 200 });
@@ -319,19 +325,20 @@ export async function importPost(req, res) {
 
 // ---------- Drafts (hidden posts, published from here) ----------
 const wordsOf = b => (String(b).match(/\S+/g) || []).length;
-/** GET /drafts — every hidden draft, with preview, edit and publish buttons. */
+/** GET /drafts — every hidden draft, with checkboxes for mass actions, preview, edit and publish buttons. */
 export async function drafts(req, res) {
   const { rows } = await q(`SELECT p.id, p.title, p.wave, p.body, c.name AS community FROM posts p JOIN communities c ON c.id = p.community_id
     WHERE p.draft AND p.deleted_at IS NULL ORDER BY p.wave NULLS LAST, p.id LIMIT 400`);
   const { rows: byWave } = await q(`SELECT wave, count(*)::int AS n FROM posts WHERE draft AND deleted_at IS NULL GROUP BY wave ORDER BY wave NULLS LAST`);
   const total = byWave.reduce((a, r) => a + r.n, 0);
   const done = Number(req.query.get('published'));
-  const flash = Number.isInteger(done) && req.query.has('published') ? `Published ${done} post${done === 1 ? '' : 's'}.` : undefined;
-  const content = html`<p class="muted">Drafts are invisible to visitors, search, the sitemap, feeds, counts and points. Only this dashboard can open them. Publishing makes a post public, dates it now and adds it to the sitemap. ${nf(total)} draft${total === 1 ? '' : 's'} waiting.</p>
+  const flash = bulkFlash(req.query.get('bulk')) || (Number.isInteger(done) && req.query.has('published') ? `Published ${done} post${done === 1 ? '' : 's'}.` : undefined);
+  const content = html`<p class="muted">Drafts are invisible to visitors, search, the sitemap, feeds, counts and points. Only this dashboard can open them. Publishing makes a post public, dates it now and adds it to the sitemap. ${nf(total)} draft${total === 1 ? '' : 's'} waiting${total > 400 ? ' (the first 400 are listed; “all matching” below covers every draft)' : ''}.</p>
 ${card('Publish in bulk', html`<div class="row">
 ${byWave.filter(w => w.wave).map(w => html`<form method="post" action="${P}/drafts/publish">${csrf(req)}<input type="hidden" name="wave" value="${w.wave}"><button class="btn">Publish wave ${w.wave} (${w.n})</button></form>`)}
 <form method="post" action="${P}/drafts/publish" class="row">${csrf(req)}<label for="nx">Publish the next</label><input id="nx" name="next" type="number" min="1" max="250" value="20" required><button class="btn primary">drafts (lowest wave first)</button></form></div>`)}
-${table([{ h: 'ID', f: r => r.id }, { h: 'Title', f: r => html`<a href="${P}/drafts/${r.id}" target="_blank" rel="noopener">${r.title}</a>` }, { h: 'Community', f: r => `c/${r.community}` }, { h: 'Wave', f: r => r.wave ?? '–' },
+${total ? bulkBar(req, { from: 'drafts', total }) : ''}
+${table([selectColumn(), { h: 'ID', f: r => r.id }, { h: 'Title', f: r => html`<a href="${P}/drafts/${r.id}" target="_blank" rel="noopener">${r.title}</a>` }, { h: 'Community', f: r => `c/${r.community}` }, { h: 'Wave', f: r => r.wave ?? '–' },
   { h: 'Words', f: r => nf(wordsOf(r.body)) }, { h: '', f: r => html`<a class="btn" href="${P}/t/posts/${r.id}">Edit</a> <form method="post" action="${P}/drafts/publish" class="inline">${csrf(req)}<input type="hidden" name="id" value="${r.id}"><button class="btn primary">Publish</button></form>` }],
   rows, { empty: 'No drafts. Import posts with draft = 1, or tick “Draft” on a post, and they appear here.' })}`;
   return adminPage(req, res, { title: 'Drafts', active: '/drafts', content, flash });
@@ -349,13 +356,7 @@ export async function draftsPublish(req, res) {
   else if (req.body.wave && Number.isInteger(wave) && wave >= 1 && wave <= 99) sel = ['SELECT id FROM posts WHERE draft AND wave = $1 ORDER BY id', [wave]];
   else if (req.body.next && Number.isInteger(next) && next >= 1 && next <= 250) sel = ['SELECT id FROM posts WHERE draft ORDER BY wave NULLS LAST, id LIMIT $1', [next]];
   else throw new HttpError(400, 'Choose a draft, a wave or a number to publish.');
-  const n = await tx(async db => {
-    const ids = (await db.query(sel[0], sel[1])).rows.map(r => r.id);
-    if (!ids.length) return 0;
-    const { rows } = await db.query(`UPDATE posts SET draft = false, removed_at = NULL, created_at = now(), edited_at = NULL, hot = hot_rank(score, now()) WHERE id = ANY($1::bigint[]) AND draft RETURNING community_id`, [ids]);
-    await db.query(`UPDATE communities c SET post_count = (SELECT count(*) FROM posts p WHERE p.community_id = c.id AND p.deleted_at IS NULL AND p.removed_at IS NULL) WHERE c.id = ANY($1::bigint[])`, [[...new Set(rows.map(r => r.community_id))]]);
-    return rows.length;
-  });
+  const n = await tx(async db => publishDrafts(db, (await db.query(sel[0], sel[1])).rows.map(r => r.id)));
   logEvent('info', 'admin', `Published ${n} draft post${n === 1 ? '' : 's'}`);
   await invalidate();
   return redirect(res, `${P}/drafts?published=${n}`);

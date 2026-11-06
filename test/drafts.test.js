@@ -204,3 +204,25 @@ test('structured data: site-written posts are TechArticle, user posts stay Discu
   assert.match(u, /"@type":"DiscussionForumPosting"/); assert.doesNotMatch(u, /TechArticle/);
   for (const html of [ed, u]) for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
 });
+
+test('the bundled draft library: previews, imports as 249 hidden drafts in 3 waves, is safe to repeat, and every page renders once published', async () => {
+  const page = await adm.get(`${ADMIN}/import`); assert.match(page.text, /Draft library \(249 posts in 3 waves\)/); assert.match(page.text, /value="drafts-import"/);
+  assert.equal((await anon.post(`${ADMIN}/import`, { mode: 'drafts-import' })).status, 404);
+  const before = (await one("SELECT count(*)::int n FROM posts WHERE wave IN (1, 2, 3) AND title LIKE '%Claude%'")).n;
+  let r = await adm.apost('/import', { mode: 'drafts-preview' });
+  assert.equal(r.status, 200); assert.match(r.text, /Preview/); assert.match(r.text, /<strong>249<\/strong>|249/);
+  assert.equal((await one("SELECT count(*)::int n FROM posts WHERE wave IN (1, 2, 3) AND title LIKE '%Claude%'")).n, before, 'preview writes nothing');
+  r = await adm.apost('/import', { mode: 'drafts-import' }); assert.equal(r.status, 200);
+  const st = await one("SELECT count(*) FILTER (WHERE p.draft AND p.removed_at IS NOT NULL)::int d, count(*) FILTER (WHERE p.wave = 1)::int w1, count(*) FILTER (WHERE p.wave = 2)::int w2, count(*) FILTER (WHERE p.wave = 3)::int w3, count(*) FILTER (WHERE p.seo_title IS NOT NULL AND p.seo_desc IS NOT NULL)::int seo FROM posts p JOIN communities c ON c.id = p.community_id WHERE c.name NOT LIKE '%\\_%' AND p.wave IN (1, 2, 3)");
+  assert.deepEqual([st.d, st.w1, st.w2, st.w3, st.seo], [249, 64, 65, 120, 249]);
+  assert.equal((await one('SELECT count(*)::int n FROM communities WHERE removed_at IS NULL AND name IN (\'SoftwareEngineering\', \'LegalCompliance\', \'GeneralPrompting\')')).n, 3);
+  r = await adm.apost('/import', { mode: 'drafts-import' }); assert.match(r.text, /Duplicate posts skipped/); assert.equal((await one("SELECT count(*)::int n FROM posts p JOIN communities c ON c.id = p.community_id WHERE c.name NOT LIKE '%\\_%' AND p.draft")).n, 249);
+  assert.doesNotMatch((await anon.get('/sitemap.xml')).text, /\/p\/\d+\/claude/); assert.doesNotMatch((await anon.get('/')).text, /Claude Long-Context Prompts/);
+  // publish a sample through the bulk action and check what visitors get
+  const ids = (await rows("SELECT id FROM posts WHERE wave = 1 AND draft ORDER BY id LIMIT 5")).map(x => x.id);
+  await adm.apost('/bulk/posts', { from: 'drafts', action: 'publish', ...Object.fromEntries(ids.map(i => [`s.${i}`, '1'])) });
+  for (const id of ids) {
+    const a = await anon.get(`/p/${id}`); const pg = await anon.get(a.location);
+    assert.equal(pg.status, 200); assert.equal((pg.text.match(/<h1[ >]/g) || []).length, 1); assert.match(pg.text, /"@type":"TechArticle"/); assert.match(pg.text, /<meta name="description" content="[^"]{20,}">/);
+  }
+});

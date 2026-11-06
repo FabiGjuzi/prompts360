@@ -36,7 +36,7 @@ async function contentCsv(kind) {
     return { csv: stringify(['name', 'title', 'description', 'model'], rows.map(r => [r.name, r.title, r.description, r.model])), count: rows.length };
   }
   const { rows } = await q(`SELECT c.name AS community, p.title, p.body, t.slug AS model, p.url, p.draft, p.wave, p.seo_title, p.seo_desc FROM posts p JOIN communities c ON c.id = p.community_id JOIN ai_tags t ON t.id = p.ai_tag_id
-    WHERE p.deleted_at IS NULL AND (p.removed_at IS NULL OR p.draft) AND p.repost_of IS NULL AND c.removed_at IS NULL ORDER BY p.id LIMIT ${MAX_ROWS}`);
+    WHERE p.deleted_at IS NULL AND ${kind === 'drafts' ? 'p.draft' : '(p.removed_at IS NULL OR p.draft)'} AND p.repost_of IS NULL AND c.removed_at IS NULL ORDER BY p.id LIMIT ${MAX_ROWS}`);
   return { csv: stringify(['community', 'title', 'body', 'model', 'url', 'draft', 'wave', 'seo_title', 'seo_desc'], rows.map(r => [r.community, r.title, r.body, r.model, r.url, r.draft ? 1 : '', r.wave ?? '', r.seo_title ?? '', r.seo_desc ?? ''])), count: rows.length };
 }
 
@@ -62,7 +62,7 @@ export async function exportPage(req, res) {
   const by = new Map(rows.map(r => [r.name, Number(r.rows)]));
   const content = html`<p class="muted">Download the site’s data as CSV (opens in Excel, Numbers or Google Sheets, UTF-8). Only what the dashboard may show is included: password hashes, email fingerprints, login tokens and the email queue are never exported. Cells starting with <code>=</code> <code>+</code> <code>-</code> <code>@</code> get a leading <code>'</code> so a spreadsheet cannot run them as formulas; the importer removes it again.</p>
 <section class="card"><h2>Content (can be imported again)</h2><p class="muted">Communities and live posts (reposts are left out: they only point at another post), in the same columns the <a href="${P}/import">importer</a> reads. Edit in a spreadsheet, then import to add new rows. (Importing skips posts that already exist; it does not update them. Use the post editor for that.)</p>
-<div class="row"><a class="btn primary" href="${P}/export/content/communities.csv">communities.csv</a> <a class="btn primary" href="${P}/export/content/posts.csv">posts.csv</a></div></section>
+<div class="row"><a class="btn primary" href="${P}/export/content/communities.csv">communities.csv</a> <a class="btn primary" href="${P}/export/content/posts.csv">posts.csv</a> <a class="btn" href="${P}/export/content/drafts.csv">drafts.csv (hidden drafts only)</a></div><p class="muted">To export only some posts, tick them in the <a href="${P}/t/posts">Posts</a> or <a href="${P}/drafts">Drafts</a> list and choose “Export selected”.</p></section>
 <section class="card"><h2>Everything</h2><p class="muted">One ZIP with a CSV for every table below. Large tables are cut at ${nf(MAX_ROWS)} rows each.</p>
 <div class="row"><a class="btn primary" href="${P}/export/all.zip">Download all tables (.zip)</a></div></section>
 <section class="card"><h2>One table</h2><ul class="plain">${Object.entries(TABLES).map(([n, T]) => html`<li><a href="${P}/export/table/${n}.csv">${n}.csv</a> <span class="muted">· ${T.label}${by.has(n) ? ` · about ${nf(by.get(n))} rows` : ''}</span></li>`)}</ul></section>`;

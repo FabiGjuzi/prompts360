@@ -23,6 +23,12 @@
     d.querySelectorAll('[data-var],[data-font],[data-shape],[data-num]').forEach(el => el.addEventListener('input', apply));
     apply();
   }
+  // Mass selection: the header checkbox ticks every row checkbox of its table (rows also work without JavaScript).
+  d.addEventListener('change', e => {
+    const t = e.target;
+    if (!t.matches?.('input[data-selall]')) return;
+    for (const c of t.closest('table').querySelectorAll('input[name^="s."]')) c.checked = t.checked;
+  });
   d.querySelectorAll('textarea[data-count]').forEach(t => {
     const out = t.closest('.fld')?.querySelector('[data-counter]');
     if (!out) return;
