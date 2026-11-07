@@ -2,6 +2,7 @@
 // Same escape-by-default html`` as the public site. CSP forbids inline scripts/styles, so charts are SVG
 // drawn with attributes + CSS classes from public/admin.css.
 import { html, raw, timeAgo } from '../html.js';
+import { nyStamp } from '../tz.js';
 import { config } from '../config.js';
 import { assets } from '../assets.js';
 import { securityHeaders, send } from '../http.js';
@@ -18,6 +19,8 @@ const NAV = [
   ['System', [['/db', 'Database tables'], ['/account', 'Account & security']]],
 ];
 
+const hasLive = s => { const t = String(s); return t.includes('data-chart="') || t.includes('data-map '); };
+
 /** Render a dashboard page (no-store, noindex) inside the admin shell. */
 export function adminPage(req, res, { title, active = '', content, status = 200, flash, turnstile = false }) {
   res.setHeader('Cache-Control', 'no-store');
@@ -26,7 +29,7 @@ export function adminPage(req, res, { title, active = '', content, status = 200,
   const body = html`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><title>${title} · Dashboard</title>
 <link rel="stylesheet" href="${assets.adminCss}"><link rel="icon" href="${assets.icon}" type="image/svg+xml">
-<script src="${assets.adminJs}" defer></script>${hasEditor(content) ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
+<script src="${assets.adminJs}" defer></script>${hasLive(content) ? html`<script src="${assets.adminAnimJs}" defer></script>${String(content).includes('data-chart="') ? html`<script src="${assets.adminChartsJs}" defer></script>` : ''}${String(content).includes('data-map ') ? html`<script src="${assets.adminMapJs}" defer></script>` : ''}` : ''}${hasEditor(content) ? html`<link rel="stylesheet" href="${assets.editorCss}"><script src="${assets.editorJs}" defer></script>` : ''}${turnstile && config.turnstileSiteKey ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 </head><body class="adm" data-base="${P}"${req.admin ? html` data-csrf="${req.admin.csrf}"` : ''}>
 ${req.admin ? html`<aside class="side"><a class="brand" href="${P}">prompts360<small>superadmin</small></a>
 ${NAV.map(([group, items]) => html`<h2>${group}</h2><ul>${items.map(([href, label]) => html`<li><a href="${P}${href}"${active === href ? raw(' class="on" aria-current="page"') : ''}>${label}</a></li>`)}</ul>`)}
@@ -45,7 +48,8 @@ export const mb = n => `${nf(n)} MB`;
 export const bytes = n => (n >= 1073741824 ? `${(n / 1073741824).toFixed(2)} GB` : n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
 export const pct = (a, b) => (b ? `${(100 * a / b).toFixed(b > 1000 ? 2 : 1)}%` : '0%');
 export const uptime = s => (s >= 86400 ? `${Math.floor(s / 86400)}d ${Math.floor(s % 86400 / 3600)}h` : s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m` : `${Math.floor(s / 60)}m ${s % 60}s`);
-export const when = d => (d ? new Date(d).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : '–');
+/** A timestamp in New York time with its zone, e.g. 2026-07-04 12:30:00 EDT. */
+export const when = d => (d ? nyStamp(d) : '–');
 export { timeAgo, html, raw };
 
 // ---------- widgets ----------
@@ -64,6 +68,12 @@ export const card = (title, body, { cls = '', id } = {}) => html`<section class=
 // ---------- SVG charts ----------
 const W = 640, H = 180, L = 40, B = 20, T = 8, R = 8;
 const niceMax = v => { if (v <= 0) return 1; const p = 10 ** Math.floor(Math.log10(v)); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; };
+/** The data the browser script needs to take a chart over (the server-drawn SVG stays as the no-JavaScript version). `feed` names the
+ *  live data set that /charts.json refreshes; each series' `key` is its field in that set. */
+const chartData = (type, { series, labels, unit = '', label, feed = null, stack }) => JSON.stringify({
+  type, stack: stack ?? type === 'bar', unit, feed, labels, label: label || series.map(s => s.name).join(', '),
+  series: series.map(s => ({ name: s.name, cls: s.cls, key: s.key || null, values: s.values })),
+});
 const fmtAxis = v => (v >= 1e6 ? `${v / 1e6}M` : v >= 1e3 ? `${v / 1e3}k` : String(Math.round(v * 10) / 10));
 
 /**
@@ -71,7 +81,7 @@ const fmtAxis = v => (v >= 1e6 ? `${v / 1e6}M` : v >= 1e3 ? `${v / 1e3}k` : Stri
  * Accessible: role=img with a text summary, plus a visually hidden data table is not needed because the same
  * numbers appear in the tables next to it.
  */
-export function lineChart({ series, labels, unit = '', label }) {
+export function lineChart({ series, labels, unit = '', label, feed }) {
   const n = labels.length;
   if (!n) return html`<p class="empty">No data yet.</p>`;
   const max = niceMax(Math.max(1, ...series.flatMap(s => s.values)));
@@ -81,11 +91,11 @@ export function lineChart({ series, labels, unit = '', label }) {
   const xl = [0, Math.floor((n - 1) / 2), n - 1].filter((v, i, a) => a.indexOf(v) === i).map(i => html`<text class="ax" x="${x(i)}" y="${H - 4}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${labels[i]}</text>`);
   const lines = series.map(s => html`<polyline class="ln ${s.cls}" fill="none" points="${s.values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}"/>`);
   const legend = series.length > 1 ? html`<p class="legend">${series.map(s => html`<span class="${s.cls}">${s.name}</span>`)}</p>` : '';
-  return html`<figure class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label || series.map(s => s.name).join(', ')}">${grid}${xl}${lines}</svg>${legend}</figure>`;
+  return html`<figure class="chart" data-chart="${chartData('line', { series, labels, unit, label, feed })}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label || series.map(s => s.name).join(', ')}">${grid}${xl}${lines}</svg>${legend}</figure>`;
 }
 
 /** Bar chart (one or two stacked series): series [{name, cls, values}]. */
-export function barChart({ series, labels, unit = '', label }) {
+export function barChart({ series, labels, unit = '', label, feed, stack = true }) {
   const n = labels.length;
   if (!n) return html`<p class="empty">No data yet.</p>`;
   const totals = labels.map((_, i) => series.reduce((a, s) => a + s.values[i], 0));
@@ -95,5 +105,5 @@ export function barChart({ series, labels, unit = '', label }) {
   const bars = labels.map((_, i) => { let base = 0; return series.map(s => { const v = s.values[i], h = (H - T - B) * (v / max); const r = html`<rect class="${s.cls}" x="${(L + i * bw + bw * 0.12).toFixed(1)}" y="${(y(base + v)).toFixed(1)}" width="${(bw * 0.76).toFixed(1)}" height="${Math.max(0, h).toFixed(1)}"><title>${labels[i]} · ${s.name}: ${nf(v)}</title></rect>`; base += v; return r; }); });
   const xl = [0, Math.floor((n - 1) / 2), n - 1].filter((v, i, a) => a.indexOf(v) === i).map(i => html`<text class="ax" x="${L + i * bw + bw / 2}" y="${H - 4}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${labels[i]}</text>`);
   const legend = series.length > 1 ? html`<p class="legend">${series.map(s => html`<span class="${s.cls}">${s.name}</span>`)}</p>` : '';
-  return html`<figure class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label || series.map(s => s.name).join(', ')}">${grid}${bars}${xl}</svg>${legend}</figure>`;
+  return html`<figure class="chart" data-chart="${chartData('bar', { series, labels, unit, label, feed, stack })}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label || series.map(s => s.name).join(', ')}">${grid}${bars}${xl}</svg>${legend}</figure>`;
 }

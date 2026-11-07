@@ -80,6 +80,8 @@ Autoscaling containers with no servers to patch. DigitalOcean's built-in Cloudfl
    # (no longer needed: use the superadmin dashboard, see ADMIN_PATH)
    ```
 
+**Visitor map:** DigitalOcean's edge sends `do-connecting-ip` but no country header, so on this path the dashboard map shows "No country information is arriving" until a country source is added. Path B (orange-cloud Cloudflare) sends `cf-ipcountry`, which the app reads by default (`COUNTRY_HEADER`).
+
 **Settings already in the spec for this path:** `CLIENT_IP_HEADER=do-connecting-ip` (DigitalOcean's edge sets it, so it's safe to trust) and `EDGE_CACHE_SEC=0` (the platform CDN can't skip cache for logged-in users). Logged-out pages are still micro-cached for 5 s inside each instance.
 
 **Scaling:** autoscaling runs from 2 to 20 instances at 70% CPU. Raise `max_instance_count`, add a read replica and set `DATABASE_READ_URL`, then scale the database plan as needed.

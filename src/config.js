@@ -48,6 +48,7 @@ export const config = Object.freeze({
   turnstileSecret: req('TURNSTILE_SECRET', ''),
   originSecret: env.ORIGIN_SECRET || '',
   clientIpHeader: (env.CLIENT_IP_HEADER || '').toLowerCase(),
+  countryHeader: (env.COUNTRY_HEADER || 'cf-ipcountry').toLowerCase(),   // two-letter country code the edge adds (Cloudflare: CF-IPCountry); read only on verified requests
 
   cookieSecure: isProd || env.COOKIE_SECURE === '1',
   sessionIdleSec: int('SESSION_IDLE_SEC', 2 * 3600),

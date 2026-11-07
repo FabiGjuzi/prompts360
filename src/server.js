@@ -36,6 +36,13 @@ function clientIp(req) {
   return req.socket.remoteAddress || '0.0.0.0';
 }
 
+/** The visitor's country (ISO alpha-2) from the edge's header, only on verified requests; '' when unknown. Used for aggregate counts only. */
+function clientCountry(req) {
+  if (!config.clientIpHeader || !req.originVerified) return '';
+  const v = req.headers[config.countryHeader];
+  return typeof v === 'string' && /^[A-Za-z]{2}$/.test(v.trim()) ? v.trim().toUpperCase() : '';
+}
+
 /** The request pipeline: security headers -> health check -> origin lock -> static assets -> flood throttle -> micro-cache -> routing -> session -> auth checks -> body + CSRF check -> handler. */
 export async function handle(req, res) {
   securityHeaders(res);
@@ -51,6 +58,7 @@ export async function handle(req, res) {
   req.originVerified = !config.originSecret || safeEqual(req.headers['x-origin-secret'] || '', config.originSecret);
   if (!req.originVerified) { res.statusCode = 403; return res.end(); }
   req.ip = clientIp(req);
+  req.country = clientCountry(req);
 
   if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST') {
     res.setHeader('Allow', 'GET, HEAD, POST');

@@ -8,6 +8,8 @@ import { html, raw, slugify, safeUrl } from '../html.js';
 import { redirect, json, str, HttpError } from '../http.js';
 import { formToken } from '../crypto.js';
 import { liveSnapshot, systemSnapshot, logEvent } from '../metrics.js';
+import { nyClock } from '../tz.js';
+import { mapCard, mapData } from './livemap.js';
 import { TEXTS, CONN, checkConn, conn, isOverridden, t } from '../site.js';
 import { attemptLogin, createAdminSession, destroyAdminSession, cookieHeader, clearCookie, changePassword } from './auth.js';
 import { invalidate } from './crud.js';
@@ -45,16 +47,40 @@ export async function logoutPost(req, res) {
 }
 
 // ---------- Dashboard ----------
-const mini = (title, key, unit, rows, cls = 'c1') => card(title, lineChart({ series: [{ name: title, cls, values: rows.map(r => Number(r[key])) }], labels: rows.map(r => r.label), unit, label: title }), { cls: 'half' });
+// Live data sets: the dashboard draws its charts from these on first load, and /charts.json returns the same shapes every few seconds
+// so the browser can ease the charts to the new numbers. Each chart series names its `key` in one of these sets.
+const feedMins = r => ({ labels: r.map(x => x.label), requests: r.map(x => x.requests), pages: r.map(x => x.pages), avg: r.map(x => Math.round(x.avg)), p95: r.map(x => x.p95),
+  rss_mb: r.map(x => Number(x.rss_mb)), lag_ms: r.map(x => Number(x.lag_ms)), cpu_pct: r.map(x => Number(x.cpu_pct)), db_ms: r.map(x => Number(x.db_ms)) });
+const feedHrs = r => ({ labels: r.map(x => x.label), pages: r.map(x => x.pages), other: r.map(x => Math.max(0, x.requests - x.pages)) });
+const feedDays = r => ({ labels: r.map(x => x.label), visitors: r.map(x => x.visitors), signups: r.map(x => x.signups), posts: r.map(x => x.posts), comments: r.map(x => x.comments) });
+const ser = (feed, key, name, cls) => ({ name, cls, key, values: feed[key] });
+const mini = (title, key, unit, f, cls = 'c1') => card(title, lineChart({ feed: 'mins', series: [ser(f, key, title, cls)], labels: f.labels, unit, label: title }), { cls: 'half' });
+
+// The slower data sets are cached briefly (the 30-day query counts rows in three tables per day).
+const cache = new Map();
+async function cached(key, ttl, fn) {
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.t < ttl) return hit.v;
+  const v = await fn(); cache.set(key, { t: Date.now(), v });
+  return v;
+}
+/** GET /charts.json — polled by admin-charts.js every 5 seconds. */
+export async function chartsJson(req, res) {
+  const [mins, hrs, days] = await Promise.all([S.minutes(60), cached('hrs', 10_000, S.hours24), cached('days', 60_000, S.days30)]);
+  return json(req, res, 200, { now: Date.now(), mins: feedMins(mins), hrs: feedHrs(hrs), days: feedDays(days) });
+}
 
 async function dashboard(req, res) {
   const [k24, k1, mins, hrs, days, top, routes, cont, dbs, sec, seo, errs] = await Promise.all([
     S.kpi(24), S.kpi(1), S.minutes(60), S.hours24(), S.days30(), S.topPages(7), S.routeStats(), S.content(), S.database(), S.security(), S.seoHealth(), S.recentErrors(),
   ]);
-  const live = liveSnapshot(), sys = systemSnapshot();
+  const live = liveSnapshot(), sys = systemSnapshot(), geo = mapData(4);
+  const mf = feedMins(mins), hf = feedHrs(hrs), df = feedDays(days);
   const err24 = k24.requests ? pct(k24.s5, k24.requests) : '0%';
   const content = html`
-<div class="tiles" data-live>
+<div class="livebar" data-livebar><span class="dot" aria-hidden="true"></span><span>Live · updated <b data-live-stamp>${nyClock(Date.now())} New York</b></span><button type="button" class="btn sm" data-live-toggle aria-pressed="true">⏸ Pause</button></div>
+<div class="top">
+<div class="top-main"><div class="tiles" data-live>
 ${tile('Visitors now', live.visitors5m, 'last 5 min', { k: 'visitors5m' })}${tile('Active last minute', live.visitors1m, '', { k: 'visitors1m' })}
 ${tile('Requests / min', live.reqPerMin, '', { k: 'reqPerMin' })}${tile('Response p95 (1 min)', ms(live.p95), `p50 ${ms(live.p50)}`, { k: 'p95fmt' })}
 ${tile('Visitors today', live.visitorsToday, 'unique, approximate', { k: 'visitorsToday' })}${tile('Uptime', uptime(sys.uptimeSec), `node ${sys.node}`)}
@@ -64,20 +90,23 @@ ${tile('Visitors today', live.visitorsToday, 'unique, approximate', { k: 'visito
 ${tile('Requests', nf(k24.requests))}${tile('Page views', nf(k24.pages))}${tile('Server errors (5xx)', nf(k24.s5), err24 + ' of requests', { tone: k24.s5 ? 'bad' : '' })}
 ${tile('Client errors (4xx)', nf(k24.s4))}${tile('Latency p50 / p95', `${ms(k24.p50)} / ${ms(k24.p95)}`, `p99 ${ms(k24.p99)} · avg ${ms(k24.avg)}`)}${tile('Automated traffic', pct(k24.bots, k24.requests), `${nf(k24.bots)} requests`)}
 </div>
+</div>
+${mapCard(geo)}
+</div>
 <div class="grid2">
-${card('Traffic — last 60 minutes', lineChart({ series: [{ name: 'Requests / min', cls: 'c1', values: mins.map(r => r.requests) }, { name: 'Page views / min', cls: 'c2', values: mins.map(r => r.pages) }], labels: mins.map(r => r.label), label: 'Requests and page views per minute' }))}
-${card('Response time — last 60 minutes', lineChart({ series: [{ name: 'Average (ms)', cls: 'c1', values: mins.map(r => Math.round(r.avg)) }, { name: 'p95 (ms, approx.)', cls: 'c3', values: mins.map(r => r.p95) }], labels: mins.map(r => r.label), unit: 'ms', label: 'Average and p95 response time per minute' }))}
+${card('Traffic — last 60 minutes', lineChart({ feed: 'mins', series: [ser(mf, 'requests', 'Requests / min', 'c1'), ser(mf, 'pages', 'Page views / min', 'c2')], labels: mf.labels, label: 'Requests and page views per minute' }))}
+${card('Response time — last 60 minutes', lineChart({ feed: 'mins', series: [ser(mf, 'avg', 'Average (ms)', 'c1'), ser(mf, 'p95', 'p95 (ms, approx.)', 'c3')], labels: mf.labels, unit: 'ms', label: 'Average and p95 response time per minute' }))}
 </div>
 <h2 class="sect">Server health — last 60 minutes</h2>
 <div class="grid4">
-${mini('Memory (RSS MB)', 'rss_mb', ' MB', mins)}${mini('Event-loop lag p99 (ms)', 'lag_ms', ' ms', mins, 'c3')}${mini('CPU (% of one core)', 'cpu_pct', '%', mins, 'c2')}${mini('Database ping (ms)', 'db_ms', ' ms', mins, 'c4')}
+${mini('Memory (RSS MB)', 'rss_mb', ' MB', mf)}${mini('Event-loop lag p99 (ms)', 'lag_ms', ' ms', mf, 'c3')}${mini('CPU (% of one core)', 'cpu_pct', '%', mf, 'c2')}${mini('Database ping (ms)', 'db_ms', ' ms', mf, 'c4')}
 </div>
 <div class="grid2">
-${card('Page views & bots — last 24 hours', barChart({ series: [{ name: 'Page views', cls: 'c1', values: hrs.map(r => r.pages) }, { name: 'Other requests', cls: 'c5', values: hrs.map(r => Math.max(0, r.requests - r.pages)) }], labels: hrs.map(r => r.label), label: 'Hourly page views and other requests' }))}
-${card('Visitors — last 30 days', barChart({ series: [{ name: 'Visitors', cls: 'c1', values: days.map(r => r.visitors) }], labels: days.map(r => r.label), label: 'Daily visitors' }))}
+${card('Page views & bots — last 24 hours', barChart({ feed: 'hrs', series: [ser(hf, 'pages', 'Page views', 'c1'), ser(hf, 'other', 'Other requests', 'c5')], labels: hf.labels, label: 'Hourly page views and other requests' }))}
+${card('Visitors — last 30 days', barChart({ feed: 'days', series: [ser(df, 'visitors', 'Visitors', 'c1')], labels: df.labels, label: 'Daily visitors' }))}
 </div>
 <div class="grid2">
-${card('Community growth — last 30 days', barChart({ series: [{ name: 'Sign-ups', cls: 'c2', values: days.map(r => r.signups) }, { name: 'Posts', cls: 'c1', values: days.map(r => r.posts) }, { name: 'Comments', cls: 'c4', values: days.map(r => r.comments) }], labels: days.map(r => r.label), label: 'Daily sign-ups, posts and comments' }))}
+${card('Community growth — last 30 days', barChart({ feed: 'days', series: [ser(df, 'signups', 'Sign-ups', 'c2'), ser(df, 'posts', 'Posts', 'c1'), ser(df, 'comments', 'Comments', 'c4')], labels: df.labels, label: 'Daily sign-ups, posts and comments' }))}
 ${card('Content', html`<div class="kvs">${note('Members', nf(cont.users))}${note('Unverified accounts', nf(cont.unverified))}${note('Banned', nf(cont.banned))}${note('Posts', nf(cont.posts))}${note('Comments', nf(cont.comments))}${note('Communities', nf(cont.communities))}${note('AI models', nf(cont.models))}${note('Pages', nf(cont.pages))}${note('Votes', nf(cont.votes))}${note('Open reports', html`<a href="${P}/reports">${nf(cont.reports)}</a>`)}</div>`)}
 </div>
 <div class="grid2">
@@ -113,7 +142,7 @@ ${tile('Visitors today', l.visitorsToday, '', { k: 'visitorsToday' })}${tile('Me
 <p class="muted">Updates every 4 seconds. Nothing on this page is stored: it is the server's memory right now (no IP addresses are kept).</p>
 <div class="grid2">
 ${card('Where visitors are right now', html`<div class="tw"><table><thead><tr><th scope="col">Page</th><th scope="col" class="num">Visitors</th></tr></thead><tbody id="live-pages">${l.topPages.map(([p, n]) => html`<tr><td>${p}</td><td class="num">${n}</td></tr>`)}</tbody></table></div>`)}
-${card('Newest requests', html`<div class="tw"><table><thead><tr><th scope="col">Time</th><th scope="col">Method</th><th scope="col">Path</th><th scope="col" class="num">Status</th><th scope="col" class="num">Time</th><th scope="col">Route</th></tr></thead><tbody id="live-recent">${l.recent.map(r => html`<tr><td>${new Date(r.t).toISOString().slice(11, 19)}</td><td>${r.m}</td><td>${r.p}${r.bot ? ' 🤖' : ''}</td><td class="num">${r.s}</td><td class="num">${ms(r.ms)}</td><td>${r.r}</td></tr>`)}</tbody></table></div>`)}
+${card('Newest requests', html`<div class="tw"><table><thead><tr><th scope="col">Time (New York)</th><th scope="col">Method</th><th scope="col">Path</th><th scope="col" class="num">Status</th><th scope="col" class="num">Time</th><th scope="col">Route</th></tr></thead><tbody id="live-recent">${l.recent.map(r => html`<tr><td>${nyClock(r.t)}</td><td>${r.m}</td><td>${r.p}${r.bot ? ' 🤖' : ''}</td><td class="num">${r.s}</td><td class="num">${ms(r.ms)}</td><td>${r.r}</td></tr>`)}</tbody></table></div>`)}
 </div>`;
   return adminPage(req, res, { title: 'Live', active: '/live', content });
 }

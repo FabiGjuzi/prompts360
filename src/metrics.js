@@ -2,7 +2,7 @@
 //
 // PRIVACY: nothing here stores an IP address, a user id or a cookie. "Visitors" are counted with
 // sha256(daily random salt + ip + user-agent) kept ONLY in this process's memory; the salt is replaced
-// every UTC day and only the *count* is written to the database. Live-visitor data never leaves memory.
+// every New York day and only the *count* is written to the database. Live-visitor data never leaves memory.
 //
 // Flow: begin() on every request -> record() when the response ends -> the current minute is
 // accumulated in memory -> tick() (every 15 s) writes finished minutes and the day/route/page counters.
@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { q } from './db.js';
 import { recalc } from './points.js';
+import { nyDay } from './tz.js';
 
 // Latency histogram: upper bounds in ms (bucket 7 = slower than the last bound).
 export const BOUNDS = [10, 25, 50, 100, 250, 500, 1000];
@@ -31,7 +32,53 @@ let inflight = 0, started = Date.now();
 const totals = { requests: 0, errors5xx: 0, microHit: 0, microMiss: 0, limited: 0, csrf: 0 };
 const events = [];                         // buffered event_log rows
 
-const utcDay = ms => new Date(ms).toISOString().slice(0, 10);
+// ---------- Visitor locations (memory only) ----------
+// For the dashboard map: how many distinct visitors, per country, were seen in each 10-minute slot of the last 24 hours.
+// Only the country code that the edge (Cloudflare's CF-IPCountry header) already supplies is used; the visitor hash is the same
+// salted, in-memory-only hash as above. Nothing here is written to the database and a restart empties it.
+const GEO_SLOT = 600_000, GEO_KEEP = 25 * 3_600_000, UNKNOWN = 'ZZ';
+const geo = new Map();                     // slot start (ms) -> Map(country -> Set(visitor hash))
+let geoOk = 0, geoMiss = 0;                // human page views with / without a usable country since start
+const goodCountry = c => typeof c === 'string' && /^[A-Z]{2}$/.test(c) && c !== 'XX';
+
+/** Remember that visitor `vid` (from `country`, or unknown) was seen at `now`. */
+export function recordGeo(country, vid, now = Date.now()) {
+  const c = goodCountry(country) ? country : UNKNOWN;
+  if (c === UNKNOWN) geoMiss++; else geoOk++;
+  const slot = Math.floor(now / GEO_SLOT) * GEO_SLOT;
+  let m = geo.get(slot);
+  if (!m) {
+    m = new Map(); geo.set(slot, m);
+    for (const k of geo.keys()) if (k < now - GEO_KEEP) geo.delete(k);
+  }
+  let set = m.get(c);
+  if (!set) m.set(c, set = new Set());
+  if (set.size < 50_000) set.add(vid);
+}
+
+/** Distinct visitors per country over the last `hours` hours (a 10-minute slot counts when any part of it is inside the window),
+ *  plus who is online right now (last 5 minutes). Shape: {hours, now, total, unlocated, online, countries:[{c, n, live}], coverage}. */
+export function geoSnapshot(hours, now = Date.now()) {
+  const from = now - hours * 3_600_000;
+  const per = new Map();
+  for (const [slot, m] of geo) {
+    if (slot + GEO_SLOT <= from || slot > now) continue;
+    for (const [c, set] of m) { let u = per.get(c); if (!u) per.set(c, u = new Set()); for (const v of set) u.add(v); }
+  }
+  const liveBy = new Map();
+  for (const v of live.values()) if (now - v.t <= LIVE_WINDOW_MS && goodCountry(v.country)) liveBy.set(v.country, (liveBy.get(v.country) || 0) + 1);
+  const countries = [...per].filter(([c]) => c !== UNKNOWN).map(([c, u]) => ({ c, n: u.size, live: liveBy.get(c) || 0 })).sort((a, b) => b.n - a.n || a.c.localeCompare(b.c));
+  return {
+    hours, now, countries,
+    total: countries.reduce((a, r) => a + r.n, 0),
+    unlocated: per.get(UNKNOWN)?.size || 0,
+    online: [...liveBy.values()].reduce((a, b) => a + b, 0),
+    coverage: { located: geoOk, unlocated: geoMiss },
+  };
+}
+
+// A metrics "day" (and the visitor-hash salt) runs from New York midnight to New York midnight.
+const dayOf = ms => nyDay(ms);
 
 /** Called first thing for every request (after the health check). Records the outcome when the response ends. */
 export function begin(req, res) {
@@ -51,7 +98,7 @@ export function begin(req, res) {
 function rollover(now) {
   const m = minuteOf(now);
   if (m !== cur.ts) { finished.push(cur); cur = newMinute(m); if (finished.length > 120) finished.shift(); }
-  const d = utcDay(now);
+  const d = dayOf(now);
   if (d !== day) { day = d; salt = crypto.randomBytes(16); seen = new Set(); }
 }
 
@@ -83,7 +130,8 @@ function record(req, res, ms) {
       if (pageViews.size < 3000 || pageViews.has(p)) pageViews.set(p, (pageViews.get(p) || 0) + 1);
       const vid = crypto.createHash('sha256').update(salt).update(String(req.ip)).update(ua).digest('base64url').slice(0, 16);
       if (seen.size < 500_000) seen.add(vid);
-      live.set(vid, { t: now, path: p });
+      live.set(vid, { t: now, path: p, country: req.country });
+      recordGeo(req.country, vid, now);
       if (live.size > 20_000) prune(now);
     }
   }
@@ -94,6 +142,14 @@ function record(req, res, ms) {
 function prune(now = Date.now()) {
   for (const [k, v] of live) if (now - v.t > LIVE_WINDOW_MS) live.delete(k);
 }
+
+/** The minutes that exist only in memory so far (finished but not yet written, plus the one in progress), copied. */
+export function pendingMinutes() {
+  rollover(Date.now());
+  return [...finished, cur].map(m => ({ ...m, h: [...m.h] }));
+}
+/** The latest system sample (CPU % and database ping), for the in-progress minute. */
+export const lastSample = { cpu: 0, db: 0 };
 
 /** Count a named event on the current minute (rate-limit refusals, CSRF failures, micro-cache hits…). */
 export function count(name) {
@@ -191,6 +247,7 @@ export async function tick(force = false) {
   let dbMs = 0;
   try { const t0 = process.hrtime.bigint(); await q('SELECT 1'); dbMs = Math.round(Number(process.hrtime.bigint() - t0) / 1e6); } catch { dbMs = 9999; }
   const sample = { rss: Math.round(m.rss / 1048576), heap: Math.round(m.heapUsed / 1048576), lag: Math.round(eld.percentile(99) / 1e6), cpu: Math.min(999, Math.round(100 * (cpu.user + cpu.system) / el)), db: dbMs };
+  lastSample.cpu = sample.cpu; lastSample.db = sample.db;
   if (finished.length) eld.reset();
 
   const batch = finished.splice(0);
@@ -198,7 +255,7 @@ export async function tick(force = false) {
     try { await writeMinute(b, sample); } catch (e) { finished.unshift(b); console.error('[metrics]', e.message); break; }
   }
   if (batch.length || force) {
-    const d = utcDay(now);
+    const d = dayOf(now);
     const rs = [...routes]; routes.clear();
     const ps = [...pageViews].sort((a, b) => b[1] - a[1]).slice(0, 500); pageViews.clear();
     const pv = pvDelta, bh = botDelta; pvDelta = 0; botDelta = 0;
@@ -228,9 +285,9 @@ export async function tick(force = false) {
 /** Delete old metrics and log rows (called hourly). */
 export async function prunetables() {
   await q(`DELETE FROM metrics_minute WHERE ts < now() - interval '14 days'`);
-  await q(`DELETE FROM metrics_route WHERE day < current_date - 90`);
-  await q(`DELETE FROM metrics_page WHERE day < current_date - 90`);
-  await q(`DELETE FROM metrics_day WHERE day < current_date - 800`);
+  await q(`DELETE FROM metrics_route WHERE day < (now() AT TIME ZONE 'America/New_York')::date - 90`);
+  await q(`DELETE FROM metrics_page WHERE day < (now() AT TIME ZONE 'America/New_York')::date - 90`);
+  await q(`DELETE FROM metrics_day WHERE day < (now() AT TIME ZONE 'America/New_York')::date - 800`);
   await q(`DELETE FROM event_log WHERE ts < now() - interval '60 days'`);
   await q(`DELETE FROM notifications WHERE created_at < now() - interval '90 days'`);
   await q(`DELETE FROM event_log WHERE id < (SELECT coalesce(max(id), 0) - 100000 FROM event_log)`);

@@ -51,6 +51,9 @@
   const live = d.querySelector('[data-live]');
   if (!live) return;
   const base = d.body.dataset.base;
+  // Clock in New York time (same zone the server uses), so the live table matches every other time in the dashboard.
+  const NY = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const nyClock = t => NY.format(new Date(t));
   const ms = n => (n >= 1000 ? `${(n / 1000).toFixed(2)} s` : `${Math.round(n * 10) / 10} ms`);
   // Replace the rows of a <tbody> using only textContent (no HTML is ever parsed).
   const fill = (id, rows, classes) => {
@@ -70,7 +73,7 @@
       const j = await r.json();
       for (const el of d.querySelectorAll('[data-k]')) if (el.dataset.k in j) el.textContent = j[el.dataset.k];
       fill('live-pages', j.topPages, ['', 'num']);
-      fill('live-recent', j.recent.map(x => [new Date(x.t).toISOString().slice(11, 19), x.m, x.p + (x.bot ? ' 🤖' : ''), x.s, ms(x.ms), x.r]), ['', '', '', 'num', 'num', '']);
+      fill('live-recent', j.recent.map(x => [nyClock(x.t), x.m, x.p + (x.bot ? ' 🤖' : ''), x.s, ms(x.ms), x.r]), ['', '', '', 'num', 'num', '']);
     } catch { /* offline: try again on the next tick */ }
   };
   setInterval(refresh, 4000);

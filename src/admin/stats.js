@@ -1,6 +1,10 @@
 // admin/stats.js — database queries behind the dashboard (all read-only, parameterised, aggregate data only).
 import { q, primary } from '../db.js';
-import { BOUNDS } from '../metrics.js';
+import { BOUNDS, pendingMinutes, systemSnapshot, lastSample } from '../metrics.js';
+import { nyClock } from '../tz.js';
+
+/** Today's date in New York: the metrics day buckets (metrics_day / metrics_route / metrics_page) start and end at New York midnight. */
+const TODAY = "(now() AT TIME ZONE 'America/New_York')::date";
 
 /** Approximate percentile from latency histogram counts h[0..7] (returns the upper bound of the bucket it falls in). */
 export function percentile(h, p) {
@@ -27,16 +31,32 @@ export async function kpi(hours) {
     avg: req ? Number(r.ms_sum) / req : 0, max: Number(r.ms_max), p50: percentile(h, 0.5), p95: percentile(h, 0.95), p99: percentile(h, 0.99) };
 }
 
-/** Per-minute rows for the last hour (for the live charts). */
+/** Per-minute rows for the last hour (for the live charts), including the minute in progress and any finished minutes that the
+ *  background writer has not stored yet, so the charts move with the traffic instead of lagging up to 15 seconds behind it. */
 export async function minutes(n = 60) {
-  const { rows } = await q(`SELECT to_char(ts AT TIME ZONE 'UTC', 'HH24:MI') AS label, requests, pages, s4xx, s5xx, ms_sum, ms_max, ${H}, rss_mb, heap_mb, lag_ms, cpu_pct, db_ms
+  const { rows } = await q(`SELECT (extract(epoch FROM ts) * 1000)::bigint AS t, requests, pages, s4xx, s5xx, ms_sum, ms_max, ${H}, rss_mb, heap_mb, lag_ms, cpu_pct, db_ms
     FROM metrics_minute WHERE ts > now() - make_interval(mins => $1) ORDER BY ts`, [n]);
-  return rows.map(r => ({ ...r, avg: r.requests ? Number(r.ms_sum) / r.requests : 0, p95: percentile(hsum(r), 0.95) }));
+  const by = new Map(rows.map(r => [Number(r.t), { ...r, t: Number(r.t), requests: Number(r.requests), pages: Number(r.pages), s4xx: Number(r.s4xx), s5xx: Number(r.s5xx), ms_sum: Number(r.ms_sum), ms_max: Number(r.ms_max) }]));
+  const since = Date.now() - n * 60_000, sys = systemSnapshot();
+  for (const m of pendingMinutes()) {
+    if (m.ts <= since) continue;
+    const r = by.get(m.ts);
+    if (r) {   // a forced write stored the first part of this minute: add the rest
+      r.requests += m.requests; r.pages += m.pages; r.s4xx += m.s4; r.s5xx += m.s5; r.ms_sum += m.msSum; r.ms_max = Math.max(r.ms_max, m.msMax);
+      m.h.forEach((v, i) => { r[`h${i}`] = Number(r[`h${i}`]) + v; });
+    } else {
+      const o = { t: m.ts, requests: m.requests, pages: m.pages, s4xx: m.s4, s5xx: m.s5, ms_sum: Math.round(m.msSum), ms_max: m.msMax, rss_mb: sys.rssMb, heap_mb: sys.heapMb, lag_ms: Math.round(sys.lagP99Ms), cpu_pct: lastSample.cpu, db_ms: lastSample.db };
+      m.h.forEach((v, i) => { o[`h${i}`] = v; });
+      by.set(m.ts, o);
+    }
+  }
+  return [...by.values()].sort((a, b) => a.t - b.t).slice(-n)
+    .map(r => ({ ...r, label: nyClock(r.t).slice(0, 5), avg: r.requests ? Number(r.ms_sum) / r.requests : 0, p95: percentile(hsum(r), 0.95) }));
 }
 
 /** Hourly rows for the last 24 hours. */
 export async function hours24() {
-  const { rows } = await q(`SELECT to_char(date_trunc('hour', ts) AT TIME ZONE 'UTC', 'HH24"h"') AS label, sum(requests)::int AS requests, sum(pages)::int AS pages, sum(bots)::int AS bots, sum(s5xx)::int AS s5
+  const { rows } = await q(`SELECT to_char(date_trunc('hour', ts) AT TIME ZONE 'America/New_York', 'HH24"h"') AS label, sum(requests)::int AS requests, sum(pages)::int AS pages, sum(bots)::int AS bots, sum(s5xx)::int AS s5
     FROM metrics_minute WHERE ts > now() - interval '24 hours' GROUP BY date_trunc('hour', ts) ORDER BY date_trunc('hour', ts)`);
   return rows;
 }
@@ -44,20 +64,20 @@ export async function hours24() {
 /** One row per day for the last 30 days (days with no traffic show as zero). */
 export async function days30() {
   const { rows } = await q(`SELECT to_char(d::date, 'MM-DD') AS label, coalesce(m.visitors, 0) AS visitors, coalesce(m.pageviews, 0) AS pageviews, coalesce(m.bot_hits, 0) AS bots,
-      (SELECT count(*) FROM users u WHERE u.created_at::date = d::date AND u.verified_at IS NOT NULL)::int AS signups,
-      (SELECT count(*) FROM posts p WHERE p.created_at::date = d::date AND p.published)::int AS posts,
-      (SELECT count(*) FROM comments c WHERE c.created_at::date = d::date)::int AS comments
-    FROM generate_series(current_date - 29, current_date, interval '1 day') d LEFT JOIN metrics_day m ON m.day = d::date ORDER BY d`);
+      (SELECT count(*) FROM users u WHERE (u.created_at AT TIME ZONE 'America/New_York')::date = d::date AND u.verified_at IS NOT NULL)::int AS signups,
+      (SELECT count(*) FROM posts p WHERE (p.created_at AT TIME ZONE 'America/New_York')::date = d::date AND p.published)::int AS posts,
+      (SELECT count(*) FROM comments c WHERE (c.created_at AT TIME ZONE 'America/New_York')::date = d::date)::int AS comments
+    FROM generate_series(${TODAY} - 29, ${TODAY}, interval '1 day') d LEFT JOIN metrics_day m ON m.day = d::date ORDER BY d`);
   return rows;
 }
 
 export async function topPages(days = 7) {
-  const { rows } = await q(`SELECT path, sum(views)::int AS views FROM metrics_page WHERE day > current_date - $1::int GROUP BY path ORDER BY 2 DESC LIMIT 15`, [days]);
+  const { rows } = await q(`SELECT path, sum(views)::int AS views FROM metrics_page WHERE day > ${TODAY} - $1::int GROUP BY path ORDER BY 2 DESC LIMIT 15`, [days]);
   return rows;
 }
 export async function routeStats() {
   const { rows } = await q(`SELECT route, sum(hits)::int AS hits, round(sum(ms_sum)::numeric / greatest(sum(hits), 1), 1)::float AS avg, max(ms_max) AS max, sum(errors)::int AS errors
-    FROM metrics_route WHERE day >= current_date - 1 GROUP BY route ORDER BY 2 DESC LIMIT 25`);
+    FROM metrics_route WHERE day >= ${TODAY} - 1 GROUP BY route ORDER BY 2 DESC LIMIT 25`);
   return rows;
 }
 
@@ -102,7 +122,7 @@ export async function seoHealth() {
     (SELECT count(*) FROM communities WHERE removed_at IS NULL AND description = '')::int AS communities_no_desc,
     (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND published AND char_length(body) < 80 AND url IS NULL)::int AS thin_posts,
     (SELECT count(*) FROM posts WHERE deleted_at IS NULL AND removed_at IS NULL AND published)::int AS indexable_posts,
-    (SELECT coalesce(sum(bot_hits), 0) FROM metrics_day WHERE day > current_date - 7)::int AS bot_hits_7d`);
+    (SELECT coalesce(sum(bot_hits), 0) FROM metrics_day WHERE day > ${TODAY} - 7)::int AS bot_hits_7d`);
   return r;
 }
 

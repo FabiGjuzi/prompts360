@@ -9,6 +9,7 @@ import { kv } from '../kv.js';
 import { html, raw, esc, safeUrl } from '../html.js';
 import { wys } from '../wys.js';
 import { redirect, str, HttpError } from '../http.js';
+import { nyInput, nyToDate } from '../tz.js';
 import { logEvent } from '../metrics.js';
 import { destroyAllSessions } from '../session.js';
 import { refreshSite, TEXTS } from '../site.js';
@@ -83,7 +84,7 @@ export const TABLES = {
     filters: ['ai_tag_id'],
     cols: [text('name', 'Name (3–21 letters, digits or _) — page at /c/name', { req: true, max: 21, pattern: /^[A-Za-z0-9_]{3,21}$/ }), text('title', 'Title', { req: true, max: 100 }),
       area('description', 'Description', { rows: 6, max: 4000, md: true }), sel('ai_tag_id', 'AI model', tagOptions, { req: true }),
-      int('creator_id', 'Creator user ID (blank = the site account)', { def: official }), ts('removed_at', 'Removed at (UTC; set to hide the community)'), ro('post_count', 'Posts', 'int'), ro('created_at', 'Created', 'ts')],
+      int('creator_id', 'Creator user ID (blank = the site account)', { def: official }), ts('removed_at', 'Removed at (New York time; set to hide the community)'), ro('post_count', 'Posts', 'int'), ro('created_at', 'Created', 'ts')],
   },
   posts: {
     label: 'Posts', pk: ['id'], list: ['id', 'title', 'community_id', 'repost_of', 'published', 'wave', 'score', 'comment_count', 'created_at', 'removed_at'], search: ['title', 'body'], order: 'id DESC', view: r => (r.published ? `/p/${r.id}` : `${P}/posts/${r.id}/preview`),
@@ -92,7 +93,7 @@ export const TABLES = {
       sel('ai_tag_id', 'AI model tag (blank = the community’s model)', tagOptions), area('body', 'Body (required, except for a repost)', { rows: 22, max: 40000, md: true, req: true, soft: true, hl: 2, ho: 0 }), ro('repost_of', 'Repost of post ID', 'int'), int('author_id', 'Author user ID (default: the site account)', { def: official }),
       bool('published', 'Published: untick to keep this post hidden from the public site (a draft) until you publish it', { def: true }), int('wave', 'Publishing wave (optional, 1–99; used by “Publish a wave” above the Posts list)'),
       text('seo_title', 'Title tag override (optional; used as is, ≤ 60 characters is ideal, no site name is added)', { max: 120 }), area('seo_desc', 'Meta description (optional; blank = the first ~155 characters of the body)', { rows: 2, max: 300 }),
-      ts('created_at', 'Created (UTC; leave blank for now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC; set to hide the post)'),
+      ts('created_at', 'Created (New York time; leave blank for now)'), ts('deleted_at', 'Deleted at (New York time)'), ts('removed_at', 'Removed at (New York time; set to hide the post)'),
       ro('score', 'Score', 'int'), ro('comment_count', 'Comments', 'int')],
     before: async (db, v, ctx) => {
       // One flag: published = false is a draft that no public query or route can see. The first publication dates the post now.
@@ -122,7 +123,7 @@ export const TABLES = {
     label: 'Comments', pk: ['id'], list: ['id', 'post_id', 'author_id', 'body', 'score', 'created_at', 'removed_at'], search: ['body'], order: 'id DESC', filters: ['post_id', 'author_id'],
     view: r => `/p/${r.post_id}#c${r.id}`,
     cols: [int('post_id', 'Post ID', { req: true }), int('parent_id', 'Reply to comment ID (blank = top level)'), int('author_id', 'Author user ID', { def: official }),
-      area('body', 'Body', { rows: 8, req: true, max: 10000, md: true }), ts('created_at', 'Created (UTC; blank = now)'), ts('deleted_at', 'Deleted at (UTC)'), ts('removed_at', 'Removed at (UTC)'), ro('score', 'Score', 'int')],
+      area('body', 'Body', { rows: 8, req: true, max: 10000, md: true }), ts('created_at', 'Created (New York time; blank = now)'), ts('deleted_at', 'Deleted at (New York time)'), ts('removed_at', 'Removed at (New York time)'), ro('score', 'Score', 'int')],
     before: async (db, v, ctx) => {
       if (!(await db.query('SELECT 1 FROM posts WHERE id = $1', [v.post_id])).rowCount) throw new Problem('That post does not exist.');
       v.depth = 0;
@@ -141,8 +142,8 @@ export const TABLES = {
   },
   users: {
     label: 'Users', pk: ['id'], list: ['id', 'username', 'points', 'verified_at', 'banned_at', 'deleted_at', 'created_at'], search: ['username'], order: 'id DESC', noCreate: true, view: r => `/u/${r.username}`,
-    cols: [text('username', 'Username', { req: true, max: 20, pattern: /^[A-Za-z0-9_-]{3,20}$/ }), ts('verified_at', 'Email verified at (UTC)'), ts('banned_at', 'Banned at (UTC; set to ban and sign out everywhere)'),
-      ts('deleted_at', 'Deleted at (UTC)'), ro('points', 'Points (derived from activity, read-only)', 'int'), ro('created_at', 'Joined', 'ts')],
+    cols: [text('username', 'Username', { req: true, max: 20, pattern: /^[A-Za-z0-9_-]{3,20}$/ }), ts('verified_at', 'Email verified at (New York time)'), ts('banned_at', 'Banned at (New York time; set to ban and sign out everywhere)'),
+      ts('deleted_at', 'Deleted at (New York time)'), ro('points', 'Points (derived from activity, read-only)', 'int'), ro('created_at', 'Joined', 'ts')],
     after: async (db, row) => { if (row.banned_at || row.deleted_at) await destroyAllSessions(row.id); },
     protect: async row => { if (row.username === 'prompts360') throw new Problem('The site account cannot be changed or deleted.'); },
     afterDelete: async (db, row) => { await destroyAllSessions(row.id); },
@@ -163,7 +164,7 @@ export const TABLES = {
   },
   reports: {
     label: 'Reports', pk: ['id'], list: ['id', 'reason', 'post_id', 'comment_id', 'community_id', 'created_at', 'resolved_at'], search: ['reason'], order: 'id DESC', noCreate: true,
-    cols: [ro('reason', 'Reason'), ts('resolved_at', 'Resolved at (UTC; set to close the report)')],
+    cols: [ro('reason', 'Reason'), ts('resolved_at', 'Resolved at (New York time; set to close the report)')],
   },
   post_votes: { label: 'Post votes', pk: ['user_id', 'post_id'], list: ['user_id', 'post_id', 'value'], order: 'post_id DESC, user_id', noCreate: true, noEdit: true, cols: [],
     afterDelete: async (db, row) => { await db.query('UPDATE posts SET net = coalesce((SELECT sum(value) FROM post_votes WHERE post_id = $1), 0)::int WHERE id = $1', [row.post_id]); await db.query('UPDATE posts SET score = greatest(net, 0), hot = hot_rank(greatest(net, 0), created_at) WHERE id = $1', [row.post_id]); } },
@@ -265,7 +266,7 @@ async function fieldHtml(c, v) {
     return html`<div class="fld">${label(html`<select id="${id}" name="${c.n}"${c.req ? raw(' required') : ''}>${c.req ? '' : html`<option value="">—</option>`}${opts.map(([val, lab]) => html`<option value="${val}"${String(v ?? '') === val ? raw(' selected') : ''}>${lab}</option>`)}</select>`)}</div>`;
   }
   if (c.t === 'ts') {
-    const val = v ? new Date(v).toISOString().slice(0, 16) : '';
+    const val = v ? nyInput(v) : '';
     return html`<div class="fld">${label(html`<input type="datetime-local" id="${id}" name="${c.n}" value="${val}">`)}</div>`;
   }
   if (c.t === 'int') return html`<div class="fld">${label(html`<input type="number" id="${id}" name="${c.n}" value="${v ?? ''}" step="1"${c.req ? raw(' required') : ''}>`)}</div>`;
@@ -311,7 +312,7 @@ async function readValues(T, b, { op }) {
       if (!/^-?\d{1,15}$/.test(s)) throw new Problem(`${c.label.split(' (')[0]} must be a whole number.`);
       v[c.n] = Number(s);
     } else if (c.t === 'ts') {
-      const d = new Date(/Z|[+-]\d\d:?\d\d$/.test(s) ? s : `${s}Z`);
+      const d = /Z|[+-]\d\d:?\d\d$/.test(s) ? new Date(s) : nyToDate(s);   // a form value is New York wall time
       if (Number.isNaN(d.getTime())) throw new Problem(`${c.label.split(' (')[0]} is not a valid date.`);
       v[c.n] = d.toISOString();
     } else if (c.t === 'sel') {

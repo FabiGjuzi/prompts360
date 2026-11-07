@@ -54,7 +54,7 @@ Keys are separated with HKDF: index, pepper, CSRF, IP hashing and form tokens ea
 - Separate account (Argon2id + pepper), Turnstile on login, 8 attempts / 15 min / IP, uniform failure messages, optional `ADMIN_IP_ALLOW`.
 - Cookie `__Host-asid` (HttpOnly, SameSite=Strict, UA-bound), idle 30 min, absolute 8 h; CSRF token derived per admin session; password change signs out all admin sessions.
 - CRUD only on whitelisted tables; password hashes, email indexes, tokens and the mail outbox are never exposed; every write is audited in the event log.
-- Metrics are aggregate only: no IPs, user agents or user IDs are stored.
+- Metrics are aggregate only: no IPs, user agents or user IDs are stored. The dashboard's visitor map counts distinct salted visitor hashes per two-letter country code, in memory only (25 h, emptied on restart); the code comes from the edge's country header, which is read only when the origin is verified and only if it is exactly two letters. No IP address and no coordinates finer than a country are kept. Tell visitors in the privacy page that approximate country is counted.
 - Strict CSP with Trusted Types on the dashboard; no inline scripts or styles.
 
 ## Site design editor

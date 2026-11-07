@@ -5,6 +5,7 @@ import * as A from './pages.js';
 import * as C from './crud.js';
 import * as G from './design.js';
 import * as X from './export.js';
+import { geoJson } from './livemap.js';
 import { bulkPosts, postsPublish } from './bulk.js';
 
 const P = config.adminPath;
@@ -21,6 +22,8 @@ export const adminRoutes = !P ? [] : [
   ['POST', R('/logout'), A.logoutPost, post],
   ['GET', R('/live'), A.live, need],
   ['GET', R('/live\\.json'), A.liveJson, need],
+  ['GET', R('/charts\\.json'), A.chartsJson, need],
+  ['GET', R('/geo\\.json'), geoJson, need],
   ['GET', R('/logs'), A.logs, need],
   ['GET', R('/texts'), A.texts, need],
   ['POST', R('/texts'), A.textsPost, { ...post, bodyLimit: 400_000 }],

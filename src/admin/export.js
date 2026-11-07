@@ -7,13 +7,14 @@ import { q } from '../db.js';
 import { str, HttpError } from '../http.js';
 import { logEvent } from '../metrics.js';
 import { html } from '../html.js';
+import { nyDay } from '../tz.js';
 import { stringify } from '../csv.js';
 import { zip } from '../zip.js';
 import { TABLES } from './crud.js';
 import { adminPage, nf, P } from './ui.js';
 
 const MAX_ROWS = 200_000;
-const stamp = () => new Date().toISOString().slice(0, 10);
+const stamp = () => nyDay(Date.now());   // file names carry today's New York date
 
 /** Columns that may be exported for a registry table: the list columns plus every editable/read-only column. */
 export const exportColumns = T => [...new Set([...(T.list || []), ...T.cols.map(c => c.n)])];
