@@ -9,6 +9,8 @@ import { migrate, closeDb, q } from './db.js';
 import { connectKv, closeKv } from './kv.js';
 import { loadSession, readCookie } from './session.js';
 import { begin, count, logEvent, startMetrics } from './metrics.js';
+import { initGeoip } from './geoip.js';
+import { ensureBuiltinTasks, startScheduler, stopScheduler } from './tasks.js';
 import { ensureSite, refreshSite, t, conn } from './site.js';
 import { withDesign, ensureDesign, refreshDesign, liveAsset } from './design.js';
 import { robotsTxt, sitemapXml } from './seo.js';
@@ -178,6 +180,9 @@ async function startWorker() {
   await refreshSite();
   await refreshDesign();
   await refreshLevels();
+  await initGeoip();
+  await ensureBuiltinTasks();
+  startScheduler();
   const stopMetrics = startMetrics();
   logEvent('info', 'boot', `Server started (pid ${process.pid}, ${process.version})`);
   const server = createServer();
@@ -187,7 +192,7 @@ async function startWorker() {
     setInterval(() => cleanup().catch(e => console.error('[cleanup]', e.message)), 10 * 60_000),
   ];
   const stop = () => {
-    timers.forEach(clearInterval);
+    timers.forEach(clearInterval); stopScheduler();
     server.close(async () => { await stopMetrics().catch(() => {}); await closeKv().catch(() => {}); await closeDb().catch(() => {}); process.exit(0); });
     setTimeout(() => process.exit(0), 10_000).unref();
   };

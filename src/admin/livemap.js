@@ -24,7 +24,7 @@ export function mapData(hours, now = Date.now()) {
   const up = systemSnapshot().uptimeSec;
   let note = '';
   if (!g.coverage.located && !g.coverage.unlocated) note = 'No visitors since the last restart.';
-  else if (!g.coverage.located) note = `No country information is arriving. The hosting edge must send a country header (${config.countryHeader}); with Cloudflare, proxy the domain and see DEPLOY.md.`;
+  else if (!g.coverage.located) note = `No country could be determined for these visitors: the hosting edge sends no country header (${config.countryHeader}) and none of their addresses is in the country file (Dashboard → Visitor locations).`;
   else if (up < hours * 3600) note = `Location history is kept in memory, so this view only goes back to the last restart (${up < 3600 ? `${Math.max(1, Math.round(up / 60))} min` : `${Math.round(up / 360) / 10} h`} ago).`;
   return { hours, now: g.now, total: g.total, online: g.online, unlocated: g.unlocated, elsewhere, note, countries };
 }

@@ -18,6 +18,8 @@ import { resetTagCache } from '../routes/forum.js';
 import { clearSeoCache } from '../seo.js';
 import { refreshLevels } from '../points.js';
 import { recordAction } from '../actions.js';
+import { parseIp } from '../netutil.js';
+import { changed as geoChanged, reloadIndex as geoReload } from '../geoip.js';
 import { bulkBar, selectColumn, bulkFlash, statusCell, publishBar } from './bulk.js';
 import { adminPage, csrf, table as htmlTable, card, nf, when, P } from './ui.js';
 
@@ -176,6 +178,22 @@ export const TABLES = {
   metrics_day: { label: 'Metrics per day', pk: null, list: ['day', 'visitors', 'pageviews', 'bot_hits'], order: 'day DESC', readOnly: true, cols: [] },
   metrics_route: { label: 'Metrics per route', pk: null, list: ['day', 'route', 'hits', 'ms_sum', 'ms_max', 'errors'], order: 'day DESC, hits DESC', readOnly: true, cols: [] },
   metrics_page: { label: 'Page views per path', pk: null, list: ['day', 'path', 'views'], order: 'day DESC, views DESC', readOnly: true, cols: [] },
+  geoip_ranges: {
+    label: 'Visitor country ranges', pk: ['id'], list: ['id', 'ip_from', 'ip_to', 'country', 'source'], search: ['ip_from', 'ip_to', 'country'], order: 'family(ip_from), ip_from, id', filters: ['country', 'source'], noZip: true,
+    cols: [text('ip_from', 'First address of the range (IPv4 or IPv6)', { req: true, max: 45 }), text('ip_to', 'Last address of the range (same kind as the first)', { req: true, max: 45 }),
+      text('country', 'Country (2 letters, e.g. US)', { req: true, max: 2, pattern: /^[A-Za-z]{2}$/ }), ro('source', 'Source (feed = downloaded file, manual = made here; saving a range makes it manual)')],
+    before: (db, v) => {
+      const a = parseIp(v.ip_from), b = parseIp(v.ip_to);
+      if (!a || !b) throw new Problem('Both addresses must be valid IP addresses.');
+      if (a.fam !== b.fam) throw new Problem('Both addresses must be the same kind (IPv4 or IPv6).');
+      if (a.n > b.n) throw new Problem('The first address must not be after the last one.');
+      v.country = v.country.toUpperCase(); v.source = 'manual';
+    },
+    after: db => geoChanged(db),
+    afterDelete: db => geoChanged(db),
+  },
+  scheduled_tasks: { label: 'Scheduled tasks', pk: ['id'], list: ['id', 'name', 'kind', 'enabled', 'next_run', 'last_run', 'last_ok'], order: 'id', readOnly: true, cols: [] },
+  task_runs: { label: 'Task runs', pk: null, list: ['id', 'task_id', 'started_at', 'ok', 'trigger', 'message'], order: 'id DESC', readOnly: true, cols: [] },
   schema_migrations: { label: 'Schema migrations', pk: null, list: ['version', 'applied_at'], order: 'version', readOnly: true, cols: [] },
 };
 // Column types of list-only columns that are not editable (for display).
@@ -352,6 +370,7 @@ export async function create(req, res, [name]) {
     });
     logEvent('info', 'admin', `Created ${name} ${T.pk ? idOf(T, row) : ''}`);
     await invalidate();
+    if (name === 'geoip_ranges') await geoReload();
     return redirect(res, `${url(name)}?n=created`);
   } catch (e) {
     const msg = e instanceof Problem ? e.message : dbMessage(e);
@@ -393,6 +412,7 @@ export async function update(req, res, [name, idStr]) {
     });
     logEvent('info', 'admin', `Updated ${name} ${idStr}`);
     await invalidate();
+    if (name === 'geoip_ranges') await geoReload();
     return redirect(res, `${url(name)}?n=saved`);
   } catch (e) {
     const msg = e instanceof Problem ? e.message : dbMessage(e);
@@ -422,5 +442,6 @@ export async function remove(req, res, [name, idStr]) {
   }
   logEvent('warn', 'admin', `Deleted ${name} ${idStr}`);
   await invalidate();
+  if (name === 'geoip_ranges') await geoReload();
   return redirect(res, `${url(name)}?n=deleted`);
 }

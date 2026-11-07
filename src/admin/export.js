@@ -86,6 +86,7 @@ export async function exportTable(req, res, [name]) {
 export async function exportAll(req, res) {
   const files = []; let total = 0;
   for (const name of Object.keys(TABLES)) {
+    if (TABLES[name].noZip) continue;   // too big for the ZIP: has its own download
     const { csv, count } = await tableCsv(name);
     files.push({ name: `${name}.csv`, data: csv }); total += count;
   }

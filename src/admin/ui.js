@@ -15,6 +15,7 @@ const NAV = [
   ['Site', [['/design', 'Site design'], ['/texts', 'Texts & slogan'], ['/t/pages', 'Pages'], ['/t/nav_links', 'Navigation'], ['/t/ai_tags', 'AI models']]],
   ['Content', [['/t/communities', 'Communities'], ['/t/posts', 'Posts'], ['/t/comments', 'Comments'], ['/import', 'Import prompts'], ['/export', 'Export (CSV)'], ['/reports', 'Reports']]],
   ['Connections', [['/connections', 'Analytics & ads']]],
+  ['Automation', [['/tasks', 'Scheduled tasks'], ['/geoip', 'Visitor locations']]],
   ['People', [['/t/users', 'Users'], ['/t/levels', 'Levels'], ['/t/points_settings', 'Points settings']]],
   ['System', [['/db', 'Database tables'], ['/account', 'Account & security']]],
 ];

@@ -96,3 +96,4 @@ test('charts and map data need the admin session', async () => {
   for (const p of ['/charts.json', '/geo.json?h=4']) assert.ok([401, 403, 404].includes((await anon.get(ADMIN + p)).status));
   assert.equal((await anon.get('/geo.json?h=4')).status, 404);
 });
+

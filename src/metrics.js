@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { q } from './db.js';
 import { recalc } from './points.js';
+import { lookupCountry } from './geoip.js';
 import { nyDay } from './tz.js';
 
 // Latency histogram: upper bounds in ms (bucket 7 = slower than the last bound).
@@ -130,8 +131,9 @@ function record(req, res, ms) {
       if (pageViews.size < 3000 || pageViews.has(p)) pageViews.set(p, (pageViews.get(p) || 0) + 1);
       const vid = crypto.createHash('sha256').update(salt).update(String(req.ip)).update(ua).digest('base64url').slice(0, 16);
       if (seen.size < 500_000) seen.add(vid);
-      live.set(vid, { t: now, path: p, country: req.country });
-      recordGeo(req.country, vid, now);
+      const country = req.country || lookupCountry(String(req.ip));   // the edge's header if it sends one, else the local country file (geoip.js)
+      live.set(vid, { t: now, path: p, country });
+      recordGeo(country, vid, now);
       if (live.size > 20_000) prune(now);
     }
   }

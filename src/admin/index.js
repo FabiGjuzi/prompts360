@@ -7,6 +7,8 @@ import * as G from './design.js';
 import * as X from './export.js';
 import { geoJson } from './livemap.js';
 import { bulkPosts, postsPublish } from './bulk.js';
+import * as K from './tasks.js';
+import * as Z from './geoip.js';
 
 const P = config.adminPath;
 const R = rest => new RegExp(`^${P}${rest}$`);
@@ -49,6 +51,21 @@ export const adminRoutes = !P ? [] : [
   ['GET', R('/reports'), A.reports, need],
   ['POST', R('/reports/(\\d{1,15})/remove'), A.reportAction(true), post],
   ['POST', R('/reports/(\\d{1,15})/resolve'), A.reportAction(false), post],
+  ['GET', R('/tasks'), K.list, need],
+  ['GET', R('/tasks/new'), K.newForm, need],
+  ['POST', R('/tasks/new'), K.create, { ...post, bodyLimit: 40_000 }],
+  ['GET', R('/tasks/(\\d{1,15})'), K.editForm, need],
+  ['POST', R('/tasks/(\\d{1,15})'), K.update, { ...post, bodyLimit: 40_000 }],
+  ['POST', R('/tasks/(\\d{1,15})/delete'), K.remove, post],
+  ['POST', R('/tasks/(\\d{1,15})/toggle'), K.toggle, post],
+  ['POST', R('/tasks/(\\d{1,15})/run'), K.run, post],
+  ['GET', R('/tasks/(\\d{1,15})/runs'), K.runs, need],
+  ['GET', R('/geoip'), Z.page, need],
+  ['POST', R('/geoip/refresh'), Z.refresh, post],
+  ['POST', R('/geoip/reset'), Z.reset, post],
+  ['GET', R('/geoip/file\\.csv'), Z.file, need],
+  ['GET', R('/geoip/raw'), Z.rawGet, need],
+  ['POST', R('/geoip/raw'), Z.rawPost, { ...post, bodyLimit: 800_000 }],
   ['GET', R('/db'), A.dbIndex, need],
   ['GET', R('/account'), A.account, need],
   ['POST', R('/account'), A.accountPost, post],

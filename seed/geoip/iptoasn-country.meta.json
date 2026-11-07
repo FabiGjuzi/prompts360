@@ -1,0 +1,8 @@
+{
+  "source": "IPtoASN country ranges (public domain, PDDL 1.0), as mirrored by github.com/sapics/ip-location-db",
+  "urlV4": "https://github.com/sapics/ip-location-db/releases/download/latest/iptoasn-country-ipv4.csv",
+  "urlV6": "https://github.com/sapics/ip-location-db/releases/download/latest/iptoasn-country-ipv6.csv",
+  "sourceModified": "2026-11-07T01:44:30.000Z",
+  "ipv4Rows": 230543,
+  "ipv6Rows": 65068
+}
